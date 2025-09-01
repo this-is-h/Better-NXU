@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      0.3.3.4
-// @description  这是一个增强 NXU 网站使用体验的JavaScript脚本.
+// @version      0.3.5
+// @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
 // @storageName  h.nxu
