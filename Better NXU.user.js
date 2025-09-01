@@ -122,11 +122,17 @@ TuanWei:
     'use strict';
 
     // ==Basic==
+        // 添加 Vue 和 Vant 组件到页面
         function AddVant() {
             unsafeWindow.Vue = Vue;
             GM_addStyle(GM_getResourceText("vant-css"));
             unsafeWindow.eval(GM_getResourceText("vant-js"));
             unsafeWindow.vant = vant;
+        }
+
+        function AddTesseract() {
+            unsafeWindow.Tesseract = Tesseract;
+            Tesseract = unsafeWindow.Tesseract;
         }
 
         function Basic() {
@@ -153,11 +159,14 @@ TuanWei:
         const Host = window.location.host;
         const Origin = window.location.origin;
         const Path = window.location.pathname;
+        // tesseract 提示消息
         const LoadMessage = { "loading tesseract core": "核心加载", "initializing tesseract": "初始化", "loading language traineddata": "加载语言训练数据", "initializing api": "初始化接口", "recognizing text": "识别验证码" };
+        // 配置版本，增加即可使用户弹出更新窗口
         const ConfigVersion = 3;
     // /==Constant==
 
     // ==Function==
+        // 识别验证码
         function GetVerificationCode(web) {
             var url = "";
             switch (web) {
@@ -186,6 +195,7 @@ TuanWei:
             });
         }
 
+        // 自定义的控制台输出，提高可识别度
         function MyConsole(msg, custom = "") {
             if (typeof (msg) != 'object') {
                 // if (/\n/.test(msg)) {
@@ -214,6 +224,7 @@ TuanWei:
             }
         }
 
+        // 检查账号密码是否配置
         function CheckUsernameAndSecret(web) {
             const username = GM_getValue(web + ".username", false);
             const password = GM_getValue(web + ".password", false);
@@ -228,6 +239,7 @@ TuanWei:
             return true;
         }
 
+        // 获取查询参数
         function GetQuery(msg) {
             // 获取当前页面的 URL
             let urlString = window.location.href;
@@ -265,6 +277,7 @@ TuanWei:
             });
         }
 
+        // 关闭当前页面
         function CloseWin() {
             try {
                 window.opener = window;
@@ -278,6 +291,7 @@ TuanWei:
     // /==Function==
 
     MyConsole(`开始运行`);
+    // 配置信息
     MyConsole(Info);
     // MyConsole(`预判断...`);
     // switch (Host) {
@@ -285,6 +299,7 @@ TuanWei:
     //         break;
     // }
     // MyConsole(`预判断未匹配`);
+    // 确保页面完全加载
     MyConsole(`等待页面加载完毕...`);
     while (document.readyState != "complete") {
         await WaitTime(500);
@@ -295,8 +310,7 @@ TuanWei:
             MyConsole("欢迎使用 webvpn");
             if (Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1) {
                 MyConsole("这里是 - 登录页");
-                unsafeWindow.eval(GM_getResourceText("tesseract"));
-                Tesseract = unsafeWindow.Tesseract;
+                AddTesseract();
                 Basic();
                 webvpnLogin();
             } else if (Url == 'https://webvpn.nxu.edu.cn/' || Path == "/") {
@@ -309,8 +323,7 @@ TuanWei:
                 MyConsole("这里是 - 教务系统");
                 if (Url.indexOf('index.action') != -1 || Url.indexOf('login.action') != -1) {
                     MyConsole("正在 - 登录页");
-                    unsafeWindow.eval(GM_getResourceText("tesseract"));
-                    Tesseract = unsafeWindow.Tesseract;
+                    AddTesseract();
                     Basic();
                     jwglLogin();
                 } else if (Url.indexOf('cas.action') != -1 || Url.indexOf('home.action') != -1) {
@@ -374,8 +387,7 @@ TuanWei:
             MyConsole("欢迎使用教务系统");
             if (Path == '/index.action' || Path == '/login.action') {
                 MyConsole("这里是 - 登录页");
-                unsafeWindow.eval(GM_getResourceText("tesseract"));
-                Tesseract = unsafeWindow.Tesseract;
+                AddTesseract();
                 Basic();
                 jwglLogin();
             } else if (Url.indexOf('cas.action') != -1 || Url.indexOf('home.action') != -1) {
@@ -396,8 +408,7 @@ TuanWei:
             MyConsole("欢迎使用统一身份认证系统");
             if (Path == "/authserver/login") {
                 MyConsole("这里是 - 登录页");
-                unsafeWindow.eval(GM_getResourceText("tesseract"));
-                Tesseract = unsafeWindow.Tesseract;
+                AddTesseract();
                 Basic();
                 webvpnLogin();
             }
@@ -420,8 +431,7 @@ TuanWei:
                 MyConsole("欢迎使用教务系统");
                 if (Path == '/index.action' || Path == '/login.action') {
                     MyConsole("这里是 - 登录页");
-                    unsafeWindow.eval(GM_getResourceText("tesseract"));
-                    Tesseract = unsafeWindow.Tesseract;
+                    AddTesseract();
                     Basic();
                     jwglLogin();
                 } else if (Url.indexOf('cas.action') != -1 || Url.indexOf('home.action') != -1) {
@@ -473,6 +483,7 @@ TuanWei:
             `);
             return;
         }
+        // 多次登录失败会需要验证码，一般不会出现
         if (document.querySelector("p#cpatchaDiv") && document.querySelector("p#cpatchaDiv").innerHTML && document.querySelector("p#cpatchaDiv").innerHTML.replace(/\s/g, '') != '') {
             // var verification = await GetVerificationCode("WebVPN");
             // document.querySelector('input#captchaResponse').value = verification;
@@ -481,6 +492,7 @@ TuanWei:
         }
         const username = GM_getValue("WebVPN.username");
         const password = GM_getValue("WebVPN.password");
+        // 确保填充，有时候执行太快会出现未填充登录失败的情况
         while (document.querySelector('input#username').value != username || document.querySelector('input#password').value != password) {
             document.querySelector('input#username').value = GM_getValue("WebVPN.username");
             document.querySelector('input#password').value = GM_getValue("WebVPN.password");
@@ -511,6 +523,7 @@ TuanWei:
                 return;
             }
         }
+        // 可能是网络问题，部分时候下载很慢
         createToast("info", `下载识别模型可能需要花费一些时间，请耐心等待...`, 0);
         var verification = await GetVerificationCode("Jwgl");
         document.getElementsByName("loginForm.name")[0].value = GM_getValue("Jwgl.username");
@@ -520,6 +533,7 @@ TuanWei:
     }
 
     async function webvpnMain() {
+        // 页面有渲染时间，确保元素渲染完成
         while (!document.querySelector("div[title=教务管理平台]")) {
             await WaitTime(500);
         }
@@ -584,18 +598,7 @@ TuanWei:
         update.use(vant);
         update.mount("#update");
 
-        // //更新弹窗
-        // const version = GM_getValue('version');
-        // if (version != Version) {
-        //     GM_setValue('version', Version);
-        //     createToast("info", `
-        //         <p style="font-weight:bold;margin-bottom:0.5em">Better NXU V ${Version} 已更新！</p>
-        //         <p style="margin-bottom:0.5em">${VersionContent}</p>
-        //         <a href="javascript:void(0)" onclick="CAT_userConfig()" style="font-weight:bold;font-size:small">> 前往配置 <</a>
-        //     `);
-        // }
-
-        // 设置
+        // 添加 Better NXU 设置及下拉菜单
         GM_addStyle(`
             #betternxu-settings .wrdvpn-navbar__user__menu {
                 display:none;
@@ -612,6 +615,7 @@ TuanWei:
             <ul class="wrdvpn-navbar__user__menu">
                 <li class="wrdvpn-navbar__user__menuitem"><a href="/h/settings" target="_blank">设置</a></li>
                 <li class="wrdvpn-navbar__user__menuitem"><a href="/h/about" target="_blank">关于我们</a></li>
+                <li class="wrdvpn-navbar__user__menuitem"><a href="https://github.com/this-is-h/Better-NXU" target="_blank">Github</a></li>
             </ul>
         `;
         div.className = 'wrdvpn-navbar__user';
@@ -763,7 +767,7 @@ TuanWei:
         while (iframe.contentWindow && iframe.contentWindow.courseBeautify != true) {
             await WaitTime(500, 0, true, "iframe");
         }
-        // 等待 iframe 中的内容加载完成后获取内容高度并设置 iframe 高度
+        // 等待 iframe 中的内容加载完成后获取内容高度并设置 iframe 高度（首次）
         var iframeDocument = iframe.contentWindow.document;
         if (!iframeDocument.querySelector("table")) {
             iframe.style.height = "100px";
@@ -771,7 +775,7 @@ TuanWei:
             var height = (iframeDocument.querySelector("table").scrollHeight + 100) + 'px';
             iframe.style.height = height;
         }
-        // 监听来自iframe的消息
+        // 监听来自iframe的消息（切换个人和班级课表时触发）
         window.addEventListener('message', function(event) {    
             if (event.data.type === 'COURSE_BEAUTIFY_CHANGED') {
                 console.log('changed to:', event.data.value);
@@ -788,9 +792,11 @@ TuanWei:
     }
 
     function jwglExportCourses() {
+        // 没有课表的情况
         if (!document.querySelector("table")) {
             return;
         }
+        // webvpn 环境下无法引入 snapdom，无法截图
         var isWebvpn = true;
         if (Host == "jwgl.nxu.edu.cn" || Host.indexOf('202.201.128.234') != -1) {
             isWebvpn = false;
@@ -813,6 +819,7 @@ TuanWei:
         `
         const exportOperation = Vue.createApp({
             template: export_template,
+            // 此页面上的vue语法失效（未知问题）
             // setup() {
             //     unsafeWindow.hExportImage = async() => {
             //         vant.showNotify({ type: 'primary', message: '已尝试下载，请查看下载目录' });
@@ -842,6 +849,7 @@ TuanWei:
         }
 
         unsafeWindow.hExportData = () => {
+            // 这一部分 AI 实现的还没细看·v·
             function parseRangeString(str, filterType = null) {
                 str = str.trim();
                 if (str.startsWith('(') && str.endsWith(')')) {
@@ -933,7 +941,7 @@ TuanWei:
                 return cell.cellIndex;
             }
 
-            if (document.querySelector("#h-course-data") && document.querySelector("#h-course-data")) {
+            if (unsafeWindow.hCourseData != undefined) {
                 return unsafeWindow.hCourseData;
             }
 
@@ -1023,12 +1031,15 @@ TuanWei:
             //     }
             //     return value;
             // }));
-            return JSON.stringify(exportData, (key, value) => {
+            unsafeWindow.hCourseData = JSON.stringify(exportData, (key, value) => {
                 if (typeof value === 'object' && value instanceof Set) {
                 return [...value];
                 }
                 return value;
             });
+
+            // 挂载到 unsafewindow 上，下次直接返回即可
+            return unsafeWindow.hCourseData;
         }
 
         unsafeWindow.hExportJson = async() => {
@@ -1245,8 +1256,6 @@ TuanWei:
         CloseWin();
 
         CAT_userConfig()
-        
-        // unsafeWindow.searchTeachers = searchTeachers;
 
         GM_addElement(document.querySelector('body'), 'div', { id: 'settings' });
         GM_addStyle(`
@@ -1283,8 +1292,6 @@ TuanWei:
 
         createToast("info", `请等待页面部署`, 0);
         createToast("error", `暂未实现的页面`, 0);
-        
-        // unsafeWindow.searchTeachers = searchTeachers;
 
         GM_addElement(document.querySelector('body'), 'div', { id: 'settings' });
         GM_addStyle(`
@@ -1304,6 +1311,7 @@ TuanWei:
         tools.mount("#tools");
     }
 
+    // 后面的代码会很乱，能跑的代码就先让它跑着吧（）
     async function webvpnHTools() {
         function searchTeachers(name, page = 1) {
             function xmlToJson(xml) {
