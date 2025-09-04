@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      0.3.5
+// @version      0.4.0
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
@@ -25,11 +25,10 @@
 // @grant        window.close
 // @require      https://scriptcat.org/lib/1405/1.0.7/h.notification.js
 // @require      https://unpkg.com/vue@3/dist/vue.global.js
-// @require      https://unpkg.com/tesseract.js@5/dist/tesseract.min.js
 // @require      https://cdn.jsdelivr.net/npm/@zumer/snapdom/dist/snapdom.min.js
 // @require      https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
 // @resource     svg-logo https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.1/css/all.min.css
-// @resource     tesseract https://unpkg.com/tesseract.js@5/dist/tesseract.min.js
+// @resource     tesseract-js https://unpkg.com/tesseract.js@5/dist/tesseract.min.js
 // @resource     vant-css https://unpkg.com/vant@4/lib/index.css
 // @resource     vue-js https://unpkg.com/vue@3/dist/vue.global.js
 // @resource     vant-js https://unpkg.com/vant@4.8.0/lib/vant.min.js
@@ -131,8 +130,8 @@ TuanWei:
         }
 
         function AddTesseract() {
+            unsafeWindow.eval(GM_getResourceText("tesseract-js"));
             unsafeWindow.Tesseract = Tesseract;
-            Tesseract = unsafeWindow.Tesseract;
         }
 
         function Basic() {
@@ -492,12 +491,15 @@ TuanWei:
         }
         const username = GM_getValue("WebVPN.username");
         const password = GM_getValue("WebVPN.password");
+        document.querySelector("input#rememberMe").click();
         // 确保填充，有时候执行太快会出现未填充登录失败的情况
-        while (document.querySelector('input#username').value != username || document.querySelector('input#password').value != password) {
+        while (document.querySelector('input#username').value != username || document.querySelector('input#password').value != password || document.querySelector("input#rememberMe").value != 'true') {
             document.querySelector('input#username').value = GM_getValue("WebVPN.username");
             document.querySelector('input#password').value = GM_getValue("WebVPN.password");
+            document.querySelector("input#rememberMe").value = true;
             await WaitTime(100);
         }
+        // return;
         if (document.querySelector('button[type=submit]')) {
             document.querySelector('button[type=submit]').click();
         } else {
@@ -941,21 +943,30 @@ TuanWei:
                 return cell.cellIndex;
             }
 
+            // 生成唯一ID
+            function generateCourseId() {
+                return 'c' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            }
+
             if (unsafeWindow.hCourseData != undefined) {
                 return unsafeWindow.hCourseData;
             }
 
             var exportData = {
                 "meta": {
+                    "format": "better-nxu-course",
+                    "version": 2,
+                    "revision": 0,
                     "total_weeks": 16,
                     "classes_per_day": 5,
                     "week_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-                    "class_times": ["08:10-09:45", "10:15-11:50", "14:00-15:35", "15:55-17:30", "19:00-20:35", "21:00"]
+                    "class_times": ["08:10-09:45", "10:15-11:50", "14:00-15:35", "15:55-17:30", "19:00-20:35", "21:00"],
+                    "class_times_detai": ["08:10-08:55", "09:00-09:45", "10:15-11:00", "11:00-11:50", "14:00-14:45", "14:50-15:35", "15:55-16:40", "16:45-17:30", "19:00-19:45", "19:50-20:35", "21:00"]
                 },
                 "schedule": {}
             };
 
-            const numberJson = {"一":1,"二":"1a","三":2,"四":"2a","五":3,"六":"3a","七":4,"八":"4a","九":5,"十":"5a","十一":6,"十二":"6a"}
+            const numberJson = {"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10,"十一":11,"十二":12}
             const dayJson = {"1":"Monday","2":"Tuesday","3":"Wednesday","4":"Thursday","5":"Friday","6":"Saturday","7":"Sunday"}
 
             $("td > div").each(function () {
@@ -975,11 +986,16 @@ TuanWei:
                 (content.length == 3) ? (content.splice(1, 0, "未定")) : (null);
                 var content_array = [];
                 for (let i = 0; i < content.length; i += 4) {
-                    content_array.push(content.slice(i, i + 4));
+                    if (/^[0-9\-\(\)\[\]单双周]*$/.test(content[i])) {
+                        content_array.push(content.slice(i, i + 2));
+                        i -= 2;
+                    } else {
+                        content_array.push(content.slice(i, i + 4));
+                    }
                 }
                 // console.log(content_array);
                 exportData.schedule[day] == null ? exportData.schedule[day] = {} : null;
-                for (let i = 0; i < duration / 2; i++) {
+                for (let i = 0; i < duration; i++) {
                     exportData.schedule[day][number + i] == null ? exportData.schedule[day][number + i] = {} : null;
                 }
                 for (let i = 0; i < content_array.length; i++) {
@@ -991,15 +1007,17 @@ TuanWei:
                     var variations_content;
                     variations ? variations_content = content_array[i][2].match(/[单双]/)[0] : variations_content = null;
                     var week = parseRangeString(content_array[i][2], variations_content);
+                    const courseId = generateCourseId();
                     // console.log(content_array[i])
                     // console.log(week, variations, variations_content)
-                    for (let j = 0; j < duration / 2; j++) {
+                    for (let j = 0; j < duration; j++) {
                         if (content_array.length > 1) {
                             if (exportData.schedule[day][number + j][content_array[i][1]] == null){
                                 exportData.schedule[day][number + j][content_array[i][1]] = []
                             }
                             console.log(content_array[i])
                             exportData.schedule[day][number + j][content_array[i][1]].push({
+                                "id": courseId,
                                 "teacher": content_array[i][0],
                                 "classroom": content_array[i][3],
                                 "week": week,
@@ -1007,8 +1025,9 @@ TuanWei:
                                 "variations_content": variations_content
                             })
                         } else {
-                            exportData.schedule[day][number + j][content_array[i][0]] = [{
-                                "teacher": content_array[i][1], 
+                            exportData.schedule[day][number + j][/\(助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][1] : content_array[i][0]] = [{
+                                "id": courseId,
+                                "teacher": /\(助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][0] : content_array[i][1], 
                                 "classroom": content_array[i][3], 
                                 "week": week,
                                 "variations": variations,
@@ -1156,10 +1175,15 @@ TuanWei:
             // content = content.split(/(?<!\d|\[|\]|\(|\))[ \n\r]+(?<!\d|\[|\]|\(|\))/);
             content = content.split(/\n|(?<!\n)\s{2,}?(?!\n)/);
             console.log(content);
-            (content.length == 3) ? (content.splice(1, 0, "未定")) : (null);
+            (content.length == 3) ? (content.splice(1, 0, "空")) : (null);
             var content_array = [];
             for (let i = 0; i < content.length; i += 4) {
-                content_array.push(content.slice(i, i + 4));
+                if (/^[0-9\-\(\)\[\]单双周]*$/.test(content[i])) {
+                    content_array.push(content.slice(i, i + 2));
+                    i -= 2;
+                } else {
+                    content_array.push(content.slice(i, i + 4));
+                }
             }
             console.log(content_array);
             div.css("display", "flex");
@@ -1168,6 +1192,7 @@ TuanWei:
             div.css("align-items", "center");
             div.css("text-align", "center");
             div.html("");
+            let temp_var;
             for (let i = 0; i < content_array.length; i++) {
                 if (content_array.length > 1) {
                     if (i == 0 || content_array[i][1] == content_array[i - 1][1]) {
@@ -1181,6 +1206,11 @@ TuanWei:
                         div.append(jwglClass(content_array[i], 0));
                     }
                 } else {
+                    if (/\(助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0])) {
+                        temp_var = content_array[i][0];
+                        content_array[i][0] = content_array[i][1];
+                        content_array[i][1] = temp_var;
+                    }
                     div.append(jwglClass(content_array[i]));
                 }
             }
@@ -1948,19 +1978,33 @@ TuanWei:
                             // 遍历每一节课
                             classPeriods.forEach((period, periodIndex) => {
                                 const periodKey = periodIndex + 1;
-                                const classInfo = daySchedule[periodKey] || {};
-                                    // 检查是否有课程
-                                    if (Object.keys(classInfo).length > 0) {
+                                const classIndex = periodKey * 2 - 1;
+                                const classInfo = daySchedule[classIndex] || {};
+                                const nextClassInfo = daySchedule[classIndex + 1] || {};
+                                console.log(classInfo)
+                                console.log(nextClassInfo)
+
+                                let is_half = true;
+                                let is_online = false;
+                                // 检查是否有课程
+                                if (Object.keys(classInfo).length > 0) {
                                     // 有课程的情况：合并同一时间段内所有课程所有老师的week信息
                                     const allHasClassWeeks = new Set();
                                     
                                     // 遍历同一时间段内的所有课程
-                                    Object.values(classInfo).forEach(courseDetails => {
-                                        // 遍历每个课程的所有老师信息
+                                    for (const courseName in classInfo) {
+                                        const courseDetails = classInfo[courseName] || [];
+                                        if (nextClassInfo[courseName] && nextClassInfo[courseName][0] && courseDetails[0].id == nextClassInfo[courseName][0].id) {
+                                            is_half = false;
+                                        }
+                                        // 遍历每个课程的所有教室老师信息
                                         courseDetails.forEach(detail => {
+                                            if (/尔雅/.test(detail.classroom)) {
+                                                is_online = true;
+                                            }
                                             (detail.week || []).forEach(week => allHasClassWeeks.add(week));
                                         });
-                                    });
+                                    }
 
                                     // 找出没有课程的周数
                                     const noClassWeeks = [];
@@ -1970,15 +2014,26 @@ TuanWei:
                                         }
                                     }
 
-                                    // 如果有没课的周数，记录下来
-                                    if (noClassWeeks.length > 0) {
+                                    // 如果有没课的周数，记录文件名（姓名）
+                                    if (is_half) {
+                                        result[cnDay][periodIndex].push(`${fileNameWithoutExt}${is_half ? "(下半节)" : ""}`);
+                                    } else if (noClassWeeks.length > 0) {
                                         result[cnDay][periodIndex].push(`${fileNameWithoutExt}(${noClassWeeks.join(',')})`);
+                                    } else if (is_online) {
+                                        result[cnDay][periodIndex].push(`${fileNameWithoutExt}${is_half ? "(下半节)" : ""}(尔雅)`);
                                     }
                                     // 所有周都有课的情况下，不记录
                                 } else {
-                                    // 没有课程的情况：记录文件名
-                                    result[cnDay][periodIndex].push(fileNameWithoutExt);
+                                    // 没有课程的情况：记录文件名（姓名）
+                                    if (Object.keys(nextClassInfo).length > 0) {
+                                        // 如果下半节有课则记录上半节
+                                        result[cnDay][periodIndex].push(`${fileNameWithoutExt}${is_half ? "(上半节)" : ""}`);
+                                    } else {
+                                        // 如果下半节没课则直接记录文件名（姓名）
+                                        result[cnDay][periodIndex].push(fileNameWithoutExt);
+                                    }
                                 }
+
                             });
                         });
                     });
@@ -2018,8 +2073,14 @@ TuanWei:
                             const jsonContent = JSON.parse(e.target.result);
 
                             // 验证是否为课表JSON文件
-                            if (!(jsonContent && typeof jsonContent === 'object' && 'meta' in jsonContent && 'schedule' in jsonContent)) {
+                            if (!(jsonContent && typeof jsonContent === 'object' && 'meta' in jsonContent && 'schedule' in jsonContent && jsonContent.meta.format == 'better-nxu-course')) {
                                 createToast("warning", `文件 "${file.name}" 不是有效的课表JSON文件`, 3);
+                                return;
+                            }
+
+                            // 验证版本
+                            if (!jsonContent.meta.version || jsonContent.meta.version < 2) {
+                                createToast("warning", `文件 "${file.name}" 版本过低，请前往教务系统重新导出最新版文件`, 3);
                                 return;
                             }
 
