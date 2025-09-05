@@ -47,3 +47,25 @@
     - 暂无
 - ⛔无法实现（技术限制，可能是暂时的）
     - 下载附件自动识别验证码并下载（似乎因CSP限制无法加载tessact.js）
+
+## 关于我们
+
+### 项目介绍
+- 这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
+- 你是否面临着以下情况？
+    - 每次登录都需要输入账号与密码
+    - 记不清各个网站的链接，每次需要找很久
+    - 进入某个网站后，需要点击很多次才能到达目标页面（如知网万方）
+    - 教务系统的课表难以阅读
+    - 抢课进不去，找不到备用网站，输入验证码很繁琐
+    - ……
+- 本项目以 WebVPN 为入口，为各个 NXU 网站提供了一些额外的功能，希望能给你带来更好的体验！
+- 本项目的代码将保持以 [MIT 协议](https://mit-license.org/) 开源，欢迎大家提交 PR 与 Issue，共建更加美好的 Better NXU。
+
+### 问题反馈
+- 左：[兔小巢反馈平台](https://txc.qq.com/products/680684)
+- 右：QQ交流群
+<div style="display: flex; justify-content: center; align-items: center;">
+  <img src="assets/img/issue.png" style="width: 49%;padding: 10px;" />
+  <img src="assets/img/group.png" style="width: 49%;padding: 10px;" />
+</div>

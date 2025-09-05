@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      0.4.0
+// @version      0.4.1
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
@@ -1025,9 +1025,9 @@ TuanWei:
                                 "variations_content": variations_content
                             })
                         } else {
-                            exportData.schedule[day][number + j][/\(助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][1] : content_array[i][0]] = [{
+                            exportData.schedule[day][number + j][/\(外聘|助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][1] : content_array[i][0]] = [{
                                 "id": courseId,
-                                "teacher": /\(助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][0] : content_array[i][1], 
+                                "teacher": /\(外聘|助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][0] : content_array[i][1], 
                                 "classroom": content_array[i][3], 
                                 "week": week,
                                 "variations": variations,
@@ -1111,27 +1111,28 @@ TuanWei:
 
         function jwglClass(content_array, mode = -1) {
             if (mode == 0) {
+                /^\s*$/.test(content_array[0]) ? content_array[0] = "未知教师" : (null);
                 return `
-                <div class="class_main" style="display:flex;flex-direction:column;align-items:center;margin-bottom:1em">
-                    <div class="classroom">${content_array[3]}</div>
-                    <div class="subject">${content_array[1]}</div>
-                    <div class="teacher">${content_array[2]}<br>${content_array[0]}</div>
-                </div>
-            `;
+                    <div class="class_main" style="display:flex;flex-direction:column;align-items:center;margin-bottom:1em">
+                        <div class="subject">${content_array[1]}</div>
+                        <div class="teacher">${content_array[0]}<br><mark>${content_array[3]}</mark><br>${content_array[2]}</div>
+                    </div>
+                `;
             } else if (mode > 0) {
+                /^\s*$/.test(content_array[0]) ? content_array[0] = "未知教师" : (null);
                 return `
-                <div class="class_main" style="display:flex;flex-direction:column;align-items:center;margin-bottom:1em">
-                    <div class="teacher">${content_array[2]}<br>${content_array[0]}</div>
-                </div>
-            `;
+                    <div class="class_main" style="display:flex;flex-direction:column;align-items:center;margin-bottom:1em">
+                        <div class="teacher">${content_array[0]}<br><mark>${content_array[3]}</mark><br>${content_array[2]}</div>
+                    </div>
+                `;
             } else {
+                /^\s*$/.test(content_array[1]) ? content_array[1] = "未知教师" : (null);
                 return `
-                <div class="class_main" style="display:flex;flex-direction:column;align-items:center;margin-bottom:1em">
-                    <div class="classroom">${content_array[3]}</div>
-                    <div class="subject">${content_array[0]}</div>
-                    <div class="teacher">${content_array[2]}<br>${content_array[1]}</div>
-                </div>
-            `;
+                    <div class="class_main" style="display:flex;flex-direction:column;align-items:center;margin-bottom:1em">
+                        <div class="subject">${content_array[0]}</div>
+                        <div class="teacher">${content_array[1]}<br><mark>${content_array[3]}</mark><br>${content_array[2]}</div>
+                    </div>
+                `;
             }
         }
 
@@ -1195,18 +1196,18 @@ TuanWei:
             let temp_var;
             for (let i = 0; i < content_array.length; i++) {
                 if (content_array.length > 1) {
+                    if (content_array[i].length == 2 && /^[0-9\-\(\)\[\]单双周]*$/.test(content_array[i][0])) {
+                        content_array[i].unshift(content_array[i-1][1]);
+                        content_array[i].unshift(content_array[i-1][0]);
+                    }
                     if (i == 0 || content_array[i][1] == content_array[i - 1][1]) {
                         div.append(jwglClass(content_array[i], i));
                     } else {
-                        if (content_array[i].length == 2 && /^[0-9\-\(\)\[\]单双周]*$/.test(content_array[i][0])) {
-                            content_array[i].unshift(content_array[i-1][1]);
-                            content_array[i].unshift(content_array[i-1][0]);
-                        }
                         div.append('<div style="height:1px; background-color: grey;width: 90%;margin-bottom:1em"></div>')
                         div.append(jwglClass(content_array[i], 0));
                     }
                 } else {
-                    if (/\(助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0])) {
+                    if (/\(外聘|助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0])) {
                         temp_var = content_array[i][0];
                         content_array[i][0] = content_array[i][1];
                         content_array[i][1] = temp_var;
@@ -2018,7 +2019,7 @@ TuanWei:
                                     if (is_half) {
                                         result[cnDay][periodIndex].push(`${fileNameWithoutExt}${is_half ? "(下半节)" : ""}`);
                                     } else if (noClassWeeks.length > 0) {
-                                        result[cnDay][periodIndex].push(`${fileNameWithoutExt}(${noClassWeeks.join(',')})`);
+                                        result[cnDay][periodIndex].push(`${fileNameWithoutExt}${is_online ? "(尔雅)" : ""}(${noClassWeeks.join(',')})`);
                                     } else if (is_online) {
                                         result[cnDay][periodIndex].push(`${fileNameWithoutExt}${is_half ? "(下半节)" : ""}(尔雅)`);
                                     }
