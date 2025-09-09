@@ -66,6 +66,6 @@
 - 左：[兔小巢反馈平台](https://txc.qq.com/products/680684)
 - 右：QQ交流群
 <div style="display: flex; justify-content: center; align-items: center;">
-  <img src="assets/img/issue.png" style="width: 49%;padding: 10px;" />
-  <img src="assets/img/group.png" style="width: 49%;padding: 10px;" />
+  <img src="https://raw.githubusercontent.com/this-is-h/Better-NXU/main/assets/img/issue.png" style="width: 49%;padding: 10px;" />
+  <img src="https://raw.githubusercontent.com/this-is-h/Better-NXU/main/assets/img/group.png" style="width: 49%;padding: 10px;" />
 </div>
