@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      0.4.2
+// @version      0.5.0
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
@@ -22,6 +22,7 @@
 // @grant        GM_addElement
 // @grant        GM_setClipboard
 // @grant        GM_xmlhttpRequest
+// @grant        GM_openInTab
 // @grant        window.close
 // @require      https://scriptcat.org/lib/1405/1.0.7/h.notification.js
 // @require      https://unpkg.com/vue@3/dist/vue.global.js
@@ -66,12 +67,17 @@ WebVPN:
         description: 是否添加抢课备用列表
         type: checkbox
         default: false
+    customTool:
+        title: H - 小工具
+        description: 是否添加小工具列表
+        type: checkbox
+        default: true
     customCard:
         title: 在主页需要添加的卡片
         description: 这里可以选择在主页增加的自定义卡片
         type: mult-select
-        default: ['教务管理','学工系统','信息门户','中国知网', '万方数据', 'H小工具','大先生']
-        values: ['教务管理','学工系统','信息门户','中国知网', '万方数据', 'H小工具','大先生']
+        default: ['教务管理','学工系统','信息门户','中国知网', '万方数据','大先生']
+        values: ['教务管理','学工系统','信息门户','中国知网', '万方数据','大先生']
     qualityJson:
         title: 评教系统自定义配置（暂未实现）
         description: 这里可以配置评教系统的自定义设置，请严格按照以下要求：1. 每一条规则均用[]表示，每条规则之间用英文逗号,隔开。2. 内有三个参数，每个参数之间用英文逗号,隔开。3. 参数1为一个数字，表示第几列；参数2为一个字符串，需用英文单引号'引用，表示这一列匹配的内容是什么；参数3为一个数字，1表示完全同意，2表示同意，以此类推。  示例：[[0, '“四史”教育'， 2], [1, 'XX学院'， 1]]
@@ -118,177 +124,177 @@ TuanWei:
         default: false
  ==/UserConfig== */
 
-(async function() {
+(async function () {
     'use strict';
 
     // ==Basic==
-        // 添加 Vue 和 Vant 组件到页面
-        function AddVant() {
-            unsafeWindow.Vue = Vue;
-            GM_addStyle(GM_getResourceText("vant-css"));
-            unsafeWindow.eval(GM_getResourceText("vant-js"));
-            unsafeWindow.vant = vant;
-        }
+    // 添加 Vue 和 Vant 组件到页面
+    function AddVant() {
+        unsafeWindow.Vue = Vue;
+        GM_addStyle(GM_getResourceText("vant-css"));
+        unsafeWindow.eval(GM_getResourceText("vant-js"));
+        unsafeWindow.vant = vant;
+    }
 
-        function AddTesseract() {
-            unsafeWindow.eval(GM_getResourceText("tesseract-js"));
-            unsafeWindow.Tesseract = Tesseract;
-        }
+    function AddTesseract() {
+        unsafeWindow.eval(GM_getResourceText("tesseract-js"));
+        unsafeWindow.Tesseract = Tesseract;
+    }
 
-        function Basic() {
-            // 添加Notification组件
-                // 添加组件
-                addToast();
-                //createToast("success", "测试消息", 0);
-                // 添加css样式
-                GM_addStyle(ToastCss);
-                GM_addStyle(GM_getResourceText("svg-logo").replace(/\.\.\/webfonts/g, "https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.1/webfonts"));
-                //绑定Toast事件
-                unsafeWindow.createToast = createToast;
-                unsafeWindow.removeToast = removeToast;
-            // 绑定事件
-                unsafeWindow.CAT_userConfig = CAT_userConfig;
-            // UI
-                AddVant();
-        }
+    function Basic() {
+        // 添加Notification组件
+        // 添加组件
+        addToast();
+        //createToast("success", "测试消息", 0);
+        // 添加css样式
+        GM_addStyle(ToastCss);
+        GM_addStyle(GM_getResourceText("svg-logo").replace(/\.\.\/webfonts/g, "https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.1/webfonts"));
+        //绑定Toast事件
+        unsafeWindow.createToast = createToast;
+        unsafeWindow.removeToast = removeToast;
+        // 绑定事件
+        unsafeWindow.CAT_userConfig = CAT_userConfig;
+        // UI
+        AddVant();
+    }
     // /==Basic==
 
     // ==Constant==
-        const Info = GM_info;
-        const Url = window.location.href;
-        const Host = window.location.host;
-        const Origin = window.location.origin;
-        const Path = window.location.pathname;
-        // tesseract 提示消息
-        const LoadMessage = { "loading tesseract core": "核心加载", "initializing tesseract": "初始化", "loading language traineddata": "加载语言训练数据", "initializing api": "初始化接口", "recognizing text": "识别验证码" };
-        const Version = Info.script.version;
-        // 配置版本，增加即可使用户弹出更新窗口
-        const ConfigVersion = 3;
+    const Info = GM_info;
+    const Url = window.location.href;
+    const Host = window.location.host;
+    const Origin = window.location.origin;
+    const Path = window.location.pathname;
+    // tesseract 提示消息
+    const LoadMessage = { "loading tesseract core": "核心加载", "initializing tesseract": "初始化", "loading language traineddata": "加载语言训练数据", "initializing api": "初始化接口", "recognizing text": "识别验证码" };
+    const Version = Info.script.version;
+    // 配置版本，增加即可使用户弹出更新窗口
+    const ConfigVersion = 4;
     // /==Constant==
 
     // ==Function==
-        // 识别验证码
-        function GetVerificationCode(web) {
-            var url = "";
-            switch (web) {
-                case "WebVPN":
-                    url = "https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b/authserver/captcha.html?vpn-1&ts=225";
-                    break;
-                case "Jwgl":
-                    url = "captcha/image.action";
-                    break;
-                case "TuanWei":
-                    url = "https://tuanwei.nxu.edu.cn/system/resource/js/filedownload/createimage.jsp";
-                    break;
-                default:
-                    return;
-            }
-            MyConsole(url);
-            return new Promise(function (resolve, reject) {
-                Tesseract.recognize(
-                    url,
-                    'eng',
-                    { logger: m => LoadMessage[m.status] ? (MyConsole(LoadMessage[m.status])) : (null) }
-                ).then(({ data: { text } }) => {
-                    MyConsole(text.replace(/\s+/g, ''));
-                    resolve(text.replace(/\s+/g, ''));
-                })
-            });
+    // 识别验证码
+    function GetVerificationCode(web) {
+        var url = "";
+        switch (web) {
+            case "WebVPN":
+                url = "https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b/authserver/captcha.html?vpn-1&ts=225";
+                break;
+            case "Jwgl":
+                url = "captcha/image.action";
+                break;
+            case "TuanWei":
+                url = "https://tuanwei.nxu.edu.cn/system/resource/js/filedownload/createimage.jsp";
+                break;
+            default:
+                return;
         }
+        MyConsole(url);
+        return new Promise(function (resolve, reject) {
+            Tesseract.recognize(
+                url,
+                'eng',
+                { logger: m => LoadMessage[m.status] ? (MyConsole(LoadMessage[m.status])) : (null) }
+            ).then(({ data: { text } }) => {
+                MyConsole(text.replace(/\s+/g, ''));
+                resolve(text.replace(/\s+/g, ''));
+            })
+        });
+    }
 
-        // 自定义的控制台输出，提高可识别度
-        function MyConsole(msg, custom = "") {
-            if (typeof (msg) != 'object') {
-                // if (/\n/.test(msg)) {
-                //     console.log("======== Better NXU ========\n" + msg + "\n======== Better NXU ========");
-                // } else {
-                    console.log(
-                        '%c %s %c %s',
-                        'border-radius: 5px;padding: 3px 4px;color: white;background-color: #3a8bff;margin-bottom: 0.5em',
-                        'Better NXU',
-                        'margin-left: 0.6em;font-size:1.2em',
-                        '\n' + msg,
-                    );
-                    if (custom != "") {
-                        console.info("自定义信息：" + custom)
-                    }
-                // }
-            } else {
-                console.log(
-                    '%c %s %c %s',
-                    'border-radius: 5px;padding: 3px 4px;color: white;background-color: #3a8bff;margin-bottom: 0.5em',
-                    'Better NXU',
-                    'margin-left: 0.6em;',
-                    '\n下面是一个object对象',
-                );
-                console.log(msg);
+    // 自定义的控制台输出，提高可识别度
+    function MyConsole(msg, custom = "") {
+        if (typeof (msg) != 'object') {
+            // if (/\n/.test(msg)) {
+            //     console.log("======== Better NXU ========\n" + msg + "\n======== Better NXU ========");
+            // } else {
+            console.log(
+                '%c %s %c %s',
+                'border-radius: 5px;padding: 3px 4px;color: white;background-color: #3a8bff;margin-bottom: 0.5em',
+                'Better NXU',
+                'margin-left: 0.6em;font-size:1.2em',
+                '\n' + msg,
+            );
+            if (custom != "") {
+                console.info("自定义信息：" + custom)
             }
+            // }
+        } else {
+            console.log(
+                '%c %s %c %s',
+                'border-radius: 5px;padding: 3px 4px;color: white;background-color: #3a8bff;margin-bottom: 0.5em',
+                'Better NXU',
+                'margin-left: 0.6em;',
+                '\n下面是一个object对象',
+            );
+            console.log(msg);
         }
+    }
 
-        // 检查账号密码是否配置
-        function CheckUsernameAndSecret(web) {
-            const username = GM_getValue(web + ".username", false);
-            const password = GM_getValue(web + ".password", false);
-            if (!username || !password) {
-                MyConsole("账号密码未配置\n请前往配置相关信息");
-                createToast("error", `
+    // 检查账号密码是否配置
+    function CheckUsernameAndSecret(web) {
+        const username = GM_getValue(web + ".username", false);
+        const password = GM_getValue(web + ".password", false);
+        if (!username || !password) {
+            MyConsole("账号密码未配置\n请前往配置相关信息");
+            createToast("error", `
                     <p style="margin-bottom:0.5em;margin-top: 0">账号密码未配置<br>请前往配置相关信息</p>
                     <a href="javascript:void(0)" onclick="CAT_userConfig()" style="font-weight:bold;font-size:small">> 前往配置 <</a>
                 `);
-                return false;
-            }
-            return true;
+            return false;
         }
+        return true;
+    }
 
+    // 获取查询参数
+    function GetQuery(msg) {
+        // 获取当前页面的 URL
+        let urlString = window.location.href;
+        // 创建 URL 对象
+        let url = new URL(urlString);
         // 获取查询参数
-        function GetQuery(msg) {
-            // 获取当前页面的 URL
-            let urlString = window.location.href;
-            // 创建 URL 对象
-            let url = new URL(urlString);
-            // 获取查询参数
-            let searchParams = new URLSearchParams(url.search);
-            let result = searchParams.get(msg);
-            return result;
-        }
+        let searchParams = new URLSearchParams(url.search);
+        let result = searchParams.get(msg);
+        return result;
+    }
 
-        // 随机数
-        function Random(min, max) {
-            return parseInt(Math.random() * (max - min + 1) + min, 10);
-        }
+    // 随机数
+    function Random(min, max) {
+        return parseInt(Math.random() * (max - min + 1) + min, 10);
+    }
 
-        // 等待执行
-        function WaitTime(min, max = 0, log = true, msg = "无") {
-            var waitmsg, waittime, line;
-            if (max == 0) {
-                waittime = min;
-                waitmsg = `====================\n等待了：${(waittime / 1000)} 秒\n备注：${msg}\n====================`;
-            } else {
-                waittime = Random(min, max);
-                waitmsg = `====================\n随机等待了：${(waittime / 1000)} 秒\n备注：${msg}\n====================`;
+    // 等待执行
+    function WaitTime(min, max = 0, log = true, msg = "无") {
+        var waitmsg, waittime, line;
+        if (max == 0) {
+            waittime = min;
+            waitmsg = `====================\n等待了：${(waittime / 1000)} 秒\n备注：${msg}\n====================`;
+        } else {
+            waittime = Random(min, max);
+            waitmsg = `====================\n随机等待了：${(waittime / 1000)} 秒\n备注：${msg}\n====================`;
 
-            }
-            return new Promise(function (resolve, reject) {
-                setTimeout(function () {
-                    if (log) {
-                        MyConsole(waitmsg.replace(/ /g, ""));
-                    }
-                    resolve();
-                }, waittime);
-            });
         }
+        return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+                if (log) {
+                    MyConsole(waitmsg.replace(/ /g, ""));
+                }
+                resolve();
+            }, waittime);
+        });
+    }
 
-        // 关闭当前页面
-        function CloseWin() {
-            try {
-                window.opener = window;
-                var win = window.open("", "_self");
-                win.close();
-                top.close();
-            } catch (e) {
-                console.log("关闭页面失败", e);
-            }
+    // 关闭当前页面
+    function CloseWin() {
+        try {
+            window.opener = window;
+            var win = window.open("", "_self");
+            win.close();
+            top.close();
+        } catch (e) {
+            console.log("关闭页面失败", e);
         }
+    }
     // /==Function==
 
     MyConsole(`开始运行`);
@@ -309,7 +315,7 @@ TuanWei:
     switch (Host) {
         case 'webvpn.nxu.edu.cn':
             MyConsole("欢迎使用 webvpn");
-            if (Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1|| Url.indexOf('login') != -1) {
+            if (Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1 || (Url.indexOf('login') != -1 && Url.indexOf('nonlogin') == -1)) {
                 MyConsole("这里是 - 登录页");
                 AddTesseract();
                 Basic();
@@ -505,7 +511,7 @@ TuanWei:
         if (document.querySelector('button[type=submit]')) {
             document.querySelector('button[type=submit]').click();
         } else {
-           document.querySelector('a#login_submit').click(); 
+            document.querySelector('a#login_submit').click();
         }
     }
 
@@ -590,7 +596,7 @@ TuanWei:
                 const show = Vue.ref(false);
                 show.value = update_show;
                 const goConfig = () => {
-                    CAT_userConfig();
+                    GM_openInTab("https://webvpn.nxu.edu.cn/h/settings")
                 }
                 const closeFunc = () => {
                     GM_setValue('firstSet', true);
@@ -637,8 +643,8 @@ TuanWei:
         div.className = 'wrdvpn-navbar__user';
         div.id = 'betternxu-settings';
         document.querySelector("header .rt").appendChild(div);
-        
-        
+
+
         // 抢课备用列表
         function divCard(href, icon, title, content) {
             var div = document.createElement('div');
@@ -688,8 +694,29 @@ TuanWei:
             }
         }
 
+        //自定义工具
+        if (GM_getValue('WebVPN.customTool', false)) {
+            mainDiv.prepend(titleCard("H - 小工具", "custom"));
+            const customDiv = document.querySelector('div[data-id=custom] div.block-group__content');
+            customDiv.appendChild(divCard(
+                `https://webvpn.nxu.edu.cn/h/tools`,
+                '<div class="block-group__item__logo" style="background-color: #4472c4;">工</div>',
+                `站内小工具`, "一些方便的自制小工具")
+            );
+            customDiv.appendChild(divCard(
+                `https://nxu-cdig.thisish.cn`,
+                '<div class="block-group__item__logo" style="background-color: #95c2fb;">猫</div>',
+                `猫狗图鉴`, "猫猫狗狗们的线上家园")
+            );
+            customDiv.appendChild(divCard(
+                `https://campus-charge.thisish.cn/`,
+                '<div class="block-group__item__logo" style="background-color: #95c2fb;">猫</div>',
+                `NXU Charge`, "充电桩状态查看")
+            );
+        }
+
         //自定义卡片
-        const webVPNCustomCard = GM_getValue("WebVPN.customCard", ['教务管理','学工系统','信息门户','中国知网', '万方数据', 'H小工具','大先生']);
+        const webVPNCustomCard = GM_getValue("WebVPN.customCard", ['教务管理', '学工系统', '信息门户', '中国知网', '万方数据', 'H小工具', '大先生']);
         if (webVPNCustomCard.length != 0) {
             mainDiv.prepend(titleCard("自定义", "custom"));
             const customDiv = document.querySelector('div[data-id=custom] div.block-group__content');
@@ -728,13 +755,13 @@ TuanWei:
                     `万方数据`, "万方数据知识服务平台")
                 );
             }
-            if (webVPNCustomCard.indexOf('H小工具') != -1) {
-                customDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/h/tools`,
-                    '<div class="block-group__item__logo" style="background-color: #4472c4;">工</div>',
-                    `小工具 - H`, "一些方便的小工具 - H")
-                );
-            }
+            // if (webVPNCustomCard.indexOf('H小工具') != -1) {
+            //     customDiv.appendChild(divCard(
+            //         `https://webvpn.nxu.edu.cn/h/tools`,
+            //         '<div class="block-group__item__logo" style="background-color: #4472c4;">工</div>',
+            //         `小工具 - H`, "一些方便的小工具 - H")
+            //     );
+            // }
             if (webVPNCustomCard.indexOf('大先生') != -1) {
                 customDiv.appendChild(divCard(
                     `https://chat.zju.edu.cn`,
@@ -772,7 +799,7 @@ TuanWei:
                 await WaitTime(500);
             }
             if (jwglCustomMenu.indexOf('全部学期成绩') != -1) {
-                addMenu(1,4,'personGrade.action?method=historyCourseGrade','全部学期成绩');
+                addMenu(1, 4, 'personGrade.action?method=historyCourseGrade', '全部学期成绩');
             }
         }
     }
@@ -792,7 +819,7 @@ TuanWei:
             iframe.style.height = height;
         }
         // 监听来自iframe的消息（切换个人和班级课表时触发）
-        window.addEventListener('message', function(event) {    
+        window.addEventListener('message', function (event) {
             if (event.data.type === 'COURSE_BEAUTIFY_CHANGED') {
                 console.log('changed to:', event.data.value);
                 // 等待 iframe 中的内容加载完成后获取内容高度并设置 iframe 高度
@@ -828,7 +855,7 @@ TuanWei:
         const export_template = `
             <div style="width:100%;display:flex;align-items: center;justify-content:center;gap:1em">
                 H - 将课表导出为
-                ${ isWebvpn ? '' : '<van-button plain type="primary" size="small" onclick="hExportImage()">图片</van-button>'}
+                ${isWebvpn ? '' : '<van-button plain type="primary" size="small" onclick="hExportImage()">图片</van-button>'}
                 <van-button plain type="primary" size="small" onclick="hExportJson()">json文件</van-button>
                 <van-button plain type="primary" size="small" onclick="hExportExcel()">Excel表格</van-button>
             </div>
@@ -853,7 +880,7 @@ TuanWei:
         exportOperation.use(vant);
         exportOperation.mount("#h-export");
 
-        unsafeWindow.hExportImage = async() => {
+        unsafeWindow.hExportImage = async () => {
             vant.showNotify({ type: 'primary', message: '已尝试下载，请查看下载目录' });
             const el = document.querySelector('table');
             await snapdom.download(el, {
@@ -871,10 +898,10 @@ TuanWei:
                 if (str.startsWith('(') && str.endsWith(')')) {
                     str = str.substring(1, str.length - 1).trim();
                 }
-                
+
                 let tokens = str.split(/\s+/);
                 let result = [];
-                
+
                 for (let token of tokens) {
                     let rangeMatch = token.match(/\[(\d+)-(\d+)\]/);
                     if (rangeMatch) {
@@ -890,13 +917,13 @@ TuanWei:
                         }
                     }
                 }
-                
+
                 if (filterType === "单") {
                     result = result.filter(num => num % 2 !== 0);
                 } else if (filterType === "双") {
                     result = result.filter(num => num % 2 === 0);
                 }
-                
+
                 return new Set(result);
             }
 
@@ -905,40 +932,40 @@ TuanWei:
                 const tbody = row.parentElement;
                 const rows = Array.from(tbody.rows);
                 const rowIndex = row.rowIndex;
-                
+
                 // 初始化列占用状态数组
                 let colOccupied = [];
-                
+
                 // 遍历所有行，计算列占用情况
                 for (let i = 0; i < rows.length; i++) {
                     const currentRow = rows[i];
                     const cells = Array.from(currentRow.cells);
-                    
+
                     // 初始化当前行的列状态
                     if (!colOccupied[i]) {
                         colOccupied[i] = [];
                     }
-                    
+
                     let colIndex = 0;
-                    
+
                     // 遍历当前行的所有单元格
                     for (let j = 0; j < cells.length; j++) {
                         const currentCell = cells[j];
-                        
+
                         // 找到第一个未被占用的列
                         while (colOccupied[i][colIndex]) {
                             colIndex++;
                         }
-                        
+
                         // 如果这是我们要查找的单元格
                         if (i === rowIndex && currentCell === cell) {
                             return colIndex;
                         }
-                        
+
                         // 标记当前单元格占用的列
                         const rowspan = currentCell.rowSpan || 1;
                         const colspan = currentCell.colSpan || 1;
-                        
+
                         // 标记所有受影响的行和列
                         for (let k = 0; k < rowspan; k++) {
                             if (!colOccupied[i + k]) {
@@ -948,11 +975,11 @@ TuanWei:
                                 colOccupied[i + k][colIndex + l] = true;
                             }
                         }
-                        
+
                         colIndex += colspan;
                     }
                 }
-                
+
                 // 如果未找到（理论上不应该发生），返回cellIndex作为后备方案
                 return cell.cellIndex;
             }
@@ -980,8 +1007,8 @@ TuanWei:
                 "schedule": {}
             };
 
-            const numberJson = {"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10,"十一":11,"十二":12}
-            const dayJson = {"1":"Monday","2":"Tuesday","3":"Wednesday","4":"Thursday","5":"Friday","6":"Saturday","7":"Sunday"}
+            const numberJson = { "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10, "十一": 11, "十二": 12 }
+            const dayJson = { "1": "Monday", "2": "Tuesday", "3": "Wednesday", "4": "Thursday", "5": "Friday", "6": "Saturday", "7": "Sunday" }
 
             $("td > div").each(function () {
                 var div = $(this);
@@ -1000,7 +1027,7 @@ TuanWei:
                 (content.length == 3) ? (content.splice(1, 0, "未定")) : (null);
                 var content_array = [];
                 for (let i = 0; i < content.length; i += 4) {
-                    if (/^[0-9\-\(\)\[\]单双周]*$/.test(content[i])) {
+                    if (/^[0-9\-()[\]单双周]*$/.test(content[i])) {
                         content_array.push(content.slice(i, i + 2));
                         i -= 2;
                     } else {
@@ -1013,9 +1040,9 @@ TuanWei:
                     exportData.schedule[day][number + i] == null ? exportData.schedule[day][number + i] = {} : null;
                 }
                 for (let i = 0; i < content_array.length; i++) {
-                    if (content_array[i].length == 2 && /^[0-9\-\(\)\[\]单双周]*$/.test(content_array[i][0])) {
-                        content_array[i].unshift(content_array[i-1][1]);
-                        content_array[i].unshift(content_array[i-1][0]);
+                    if (content_array[i].length == 2 && /^[0-9\-()[\]单双周]*$/.test(content_array[i][0])) {
+                        content_array[i].unshift(content_array[i - 1][1]);
+                        content_array[i].unshift(content_array[i - 1][0]);
                     }
                     var variations = !(content_array[i][2].match(/[单双]/) == null);
                     var variations_content;
@@ -1026,7 +1053,7 @@ TuanWei:
                     // console.log(week, variations, variations_content)
                     for (let j = 0; j < duration; j++) {
                         if (content_array.length > 1) {
-                            if (exportData.schedule[day][number + j][content_array[i][1]] == null){
+                            if (exportData.schedule[day][number + j][content_array[i][1]] == null) {
                                 exportData.schedule[day][number + j][content_array[i][1]] = []
                             }
                             console.log(content_array[i])
@@ -1041,8 +1068,8 @@ TuanWei:
                         } else {
                             exportData.schedule[day][number + j][/\(外聘|助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][1] : content_array[i][0]] = [{
                                 "id": courseId,
-                                "teacher": /\(外聘|助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][0] : content_array[i][1], 
-                                "classroom": content_array[i][3], 
+                                "teacher": /\(外聘|助理|教授\)|\(讲师\)|\(\)/.test(content_array[i][0]) ? content_array[i][0] : content_array[i][1],
+                                "classroom": content_array[i][3],
                                 "week": week,
                                 "variations": variations,
                                 "variations_content": variations_content
@@ -1066,7 +1093,7 @@ TuanWei:
             // }));
             unsafeWindow.hCourseData = JSON.stringify(exportData, (key, value) => {
                 if (typeof value === 'object' && value instanceof Set) {
-                return [...value];
+                    return [...value];
                 }
                 return value;
             });
@@ -1075,26 +1102,26 @@ TuanWei:
             return unsafeWindow.hCourseData;
         }
 
-        unsafeWindow.hExportJson = async() => {
+        unsafeWindow.hExportJson = async () => {
             vant.showNotify({ type: 'primary', message: '已尝试下载，请查看下载目录' });
             var courseJson = await hExportData();
             const blob = new Blob([courseJson], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            
+
             const a = document.createElement('a');
             a.href = url;
             a.download = window.top.document.querySelector(".layui-nav-item.layuimini-setting a").innerText + '.json';
             a.style = "display:none";
             document.body.appendChild(a);
             a.click();
-            
+
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
         }
 
-        unsafeWindow.hExportExcel = async() => {
+        unsafeWindow.hExportExcel = async () => {
             vant.showNotify({ type: 'danger', message: '暂未实现的功能' });
         }
     }
@@ -1102,9 +1129,9 @@ TuanWei:
     async function jwglCourseBeautify() {
         unsafeWindow.courseBeautify = false;
         unsafeWindow.courseBeautifyProxy = new Proxy({ value: courseBeautify }, {
-            set: function(target, property, value) {
+            set: function (target, property, value) {
                 if (property === 'value') {
-                target[property] = value;
+                    target[property] = value;
                     // 通知父页面变量已更改
                     window.parent.postMessage({
                         type: 'COURSE_BEAUTIFY_CHANGED',
@@ -1193,7 +1220,7 @@ TuanWei:
             (content.length == 3) ? (content.splice(1, 0, "空")) : (null);
             var content_array = [];
             for (let i = 0; i < content.length; i += 4) {
-                if (/^[0-9\-\(\)\[\]单双周]*$/.test(content[i])) {
+                if (/^[0-9\-()[\]单双周]*$/.test(content[i])) {
                     content_array.push(content.slice(i, i + 2));
                     i -= 2;
                 } else {
@@ -1210,9 +1237,9 @@ TuanWei:
             let temp_var;
             for (let i = 0; i < content_array.length; i++) {
                 if (content_array.length > 1) {
-                    if (content_array[i].length == 2 && /^[0-9\-\(\)\[\]单双周]*$/.test(content_array[i][0])) {
-                        content_array[i].unshift(content_array[i-1][1]);
-                        content_array[i].unshift(content_array[i-1][0]);
+                    if (content_array[i].length == 2 && /^[0-9\-()[\]单双周]*$/.test(content_array[i][0])) {
+                        content_array[i].unshift(content_array[i - 1][1]);
+                        content_array[i].unshift(content_array[i - 1][0]);
                     }
                     if (i == 0 || content_array[i][1] == content_array[i - 1][1]) {
                         div.append(jwglClass(content_array[i], i));
@@ -1295,29 +1322,461 @@ TuanWei:
         unsafeWindow.createToast = createToast;
         unsafeWindow.removeToast = removeToast;
 
-        createToast("info", `请等待页面部署`, 0);
-        createToast("error", `暂未实现的页面`, 0);
-        createToast("info", `为您跳转到默认配置页面`, 0);
-        CloseWin();
+        var toast = createToast("info", `请等待工具部署`, 0);
+        // CloseWin();
 
-        CAT_userConfig()
+        // CAT_userConfig()
 
         GM_addElement(document.querySelector('body'), 'div', { id: 'settings' });
         GM_addStyle(`
-
-        `);
-        const tools_template = `
-
-        `
-        const tools = Vue.createApp({
-            template: tools_template,
-            setup() {
-                
-                return {  };
+            :root {
+                --van-doc-black: #000;
+                --van-doc-white: #fff;
+                --van-doc-gray-1: #f7f8fa;
+                --van-doc-gray-2: #f2f3f5;
+                --van-doc-gray-3: #ebedf0;
+                --van-doc-gray-4: #dcdee0;
+                --van-doc-gray-5: #c8c9cc;
+                --van-doc-gray-6: #969799;
+                --van-doc-gray-7: #646566;
+                --van-doc-gray-8: #323233;
+                --van-doc-blue: #1989fa;
+                --van-doc-green: #07c160;
+                --van-doc-purple: #8e69d3;
+                --van-doc-background: #eff2f5;
             }
-        });
-        tools.use(vant);
-        tools.mount("#tools");
+
+            /* 美化滚动条 */
+            *::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            *::-webkit-scrollbar-corner {
+                background-color: transparent;
+            }
+
+            *::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 100px;
+            }
+
+            *::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 100px;
+            }
+
+            /* Firefox 滚动条样式 */
+            * {
+                scrollbar-width: thin;
+                scrollbar-color: #c1c1c1 #f1f1f1;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html, body, #settings {
+                width: 100%;
+                height: 100%;
+                background-color: var(--van-doc-background);
+                overflow: hidden;
+            }
+
+            #settings {
+                padding: 20px;
+                display: flex;
+                gap: 1em;
+                overflow-x: auto; 
+                scrollbar-width: auto;
+            }
+
+            .group {
+                flex-shrink: 0; 
+                width: 400px;
+                height: 100%;
+                border-radius: 20px;
+                overflow: hidden;
+                background-color: var(--van-doc-gray-1);
+                scrollbar-width: auto;
+            }
+
+            .group-content {
+                width: 100%;
+                height: calc(100% - 46px);
+                overflow: hidden;
+                overflow-y: auto;
+                padding-bottom: 32px;
+            }
+
+            .group h2 {
+                color: var(--van-doc-gray-6);
+                margin: 0;
+                padding: 32px 16px 16px;
+                font-size: 14px;
+                font-weight: 400;
+                line-height: 16px;
+            }
+
+            .group h3 {
+                color: var(--van-doc-gray-6);
+                margin: 0;
+                padding: 16px 32px 16px;
+                font-size: 14px;
+                font-weight: 400;
+                line-height: 14px;
+            }
+        `);
+        const settings_template = `
+            <div class="group">
+                <van-nav-bar title="WebVPN 页面设置" />
+                <div class="group-content">
+                    <van-form>
+                        <h2>登录设置</h2>
+                        <van-cell-group inset>
+                            <van-cell center title="是否自动登录">
+                                <template #right-icon>
+                                    <van-switch v-model="webVPNAutoLogin" />
+                                </template>
+                            </van-cell>
+                            <van-field v-model="webVPNAccount" label="账号" autocomplete="off" placeholder="请输入账号（学号）" />
+                            <van-field v-model="webVPNPassword" type="password" autocomplete="off" label="密码" placeholder="请输入密码（登录校园网的密码）" />
+                        </van-cell-group>
+                        <h2>卡片设置</h2>
+                        <van-cell-group inset>
+                            <van-cell center title="是否显示抢课备用列表">
+                                <template #right-icon>
+                                    <van-switch v-model="webVPNCourseGrab" />
+                                </template>
+                            </van-cell>
+                            <van-cell center title="是否显示工具列表">
+                                <template #right-icon>
+                                    <van-switch v-model="webVPNCustomTool" />
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                        <h3>需要添加的自定义卡片</h3>
+                        <van-checkbox-group v-model="webVPNCustomCard">
+                            <van-cell-group inset>
+                                <van-cell
+                                    v-for="(item, index) in webVPNCustomCardList"
+                                    clickable
+                                    :key="item"
+                                    :title="item"
+                                    @click="cellCheckBoxToggle(webVPNCustomCardRefs, index)"
+                                >
+                                    <template #right-icon>
+                                        <van-checkbox
+                                            :name="item"
+                                            :ref="el => webVPNCustomCardRefs[index] = el"
+                                            @click.stop
+                                        />
+                                    </template>
+                                </van-cell>
+                            </van-cell-group>
+                        </van-checkbox-group>
+                        <h2>其他设置</h2>
+                        <van-cell-group inset>
+                        <van-cell center title="是否自动关闭错误网站">
+                                <template #right-icon>
+                                    <van-switch v-model="webVPNAutoClose" />
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                    </van-form>
+                </div>
+            </div>
+            <div class="group">
+                <van-nav-bar title="教务系统页面设置" />
+                <div class="group-content">
+                    <van-form>
+                        <h2>登录设置</h2>
+                        <van-cell-group inset>
+                            <van-cell center title="是否自动登录">
+                                <template #right-icon>
+                                    <van-switch v-model="jwglAutoLogin" />
+                                </template>
+                            </van-cell>
+                            <van-field v-model="jwglAccount" label="账号" autocomplete="off" placeholder="请输入账号（学号）" />
+                            <van-field v-model="jwglPassword" type="password" label="密码" autocomplete="off" placeholder="请输入密码（登录校园网的密码）" />
+                        </van-cell-group>
+                        <h2>功能设置</h2>
+                        <van-cell-group inset>
+                            <van-cell center title="是否自动美化课表">
+                                <template #right-icon>
+                                    <van-switch v-model="jwglCourseBeautify" />
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                        <!-- <h2>菜单设置</h2> -->
+                        <h3>在菜单需要添加的条目</h3>
+                        <van-checkbox-group v-model="jwglCustomMenu">
+                            <van-cell-group inset>
+                                <van-cell
+                                    v-for="(item, index) in jwglCustomMenuList"
+                                    clickable
+                                    :key="item"
+                                    :title="item"
+                                    @click="cellCheckBoxToggle(jwglCustomMenuRefs, index)"
+                                >
+                                    <template #right-icon>
+                                        <van-checkbox
+                                            :name="item"
+                                            :ref="el => jwglCustomMenuRefs[index] = el"
+                                            @click.stop
+                                        />
+                                    </template>
+                                </van-cell>
+                            </van-cell-group>
+                        </van-checkbox-group>
+                    </van-form>
+                </div>
+            </div>
+            <div class="group">
+                <van-nav-bar title="团委官网页面设置" />
+                <div class="group-content">
+                    <van-form>
+                        <h2>下载设置</h2>
+                        <van-cell-group inset>
+                            <van-cell center style="--van-cell-text-color:var(--van-doc-gray-6)" title="是否自动下载附件" @click="unrealizedFunction">
+                                <template #right-icon>
+                                    <van-switch v-model="tuanweiAutoDownload" disabled />
+                                </template>
+                            </van-cell>
+                            <van-cell center style="--van-cell-text-color:var(--van-doc-gray-6)" title="是否自动关闭下载页面" @click="unrealizedFunction">
+                                <template #right-icon>
+                                    <van-switch v-model="tuanweiAutoDownloadClose" disabled />
+                                </template>
+                            </van-cell>
+                        </van-cell-group>
+                    </van-form>
+                </div>
+            </div>
+            <div class="group">
+                <van-empty style="width: 100%;height: 100%;" description="更多设置等待建设中...">
+                    <template #image>
+                        <svg width="160" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <g fill="none" class="nc-icon-wrapper">
+                                <path
+                                    d="M14.5489 8H9.4513L9.08052 19.9253C9.0382 21.0584 9.94529 22 11.0791 22H12.921C14.0549 22 14.962 21.0584 14.9197 19.9254L14.5489 8Z"
+                                    fill="url(#hammer_existing_0)"
+                                    data-glass="origin"
+                                    mask="url(#hammer_mask)"
+                                />
+                                <path
+                                    d="M14.5489 8H9.4513L9.08052 19.9253C9.0382 21.0584 9.94529 22 11.0791 22H12.921C14.0549 22 14.962 21.0584 14.9197 19.9254L14.5489 8Z"
+                                    fill="url(#hammer_existing_0)"
+                                    data-glass="clone"
+                                    filter="url(#hammer_filter)"
+                                    clip-path="url(#hammer_clipPath)"
+                                />
+                                <path
+                                    d="M3 9V5C3 3.34315 4.34315 2 6 2H14.7393C15.4739 2 16.1833 2.26975 16.7324 2.75781L19.9932 5.65625C20.6335 6.22554 21 7.04162 21 7.89844V9.5C21 10.8807 19.8807 12 18.5 12H6C4.34315 12 3 10.6569 3 9Z"
+                                    fill="url(#hammer_existing_1)"
+                                    data-glass="blur"
+                                />
+                                <path
+                                    d="M3 9V5C3 3.34315 4.34315 2 6 2H14.7393C15.4739 2 16.1833 2.26975 16.7324 2.75781L19.9932 5.65625C20.6335 6.22554 21 7.04162 21 7.89844V9.5C21 10.8807 19.8807 12 18.5 12V11.25C19.4665 11.25 20.25 10.4665 20.25 9.5V7.89844C20.25 7.33628 20.0393 6.79772 19.665 6.38574L19.4951 6.2168L16.2344 3.31836C15.8225 2.95228 15.2902 2.75 14.7393 2.75H6C4.75736 2.75 3.75 3.75736 3.75 5V9C3.75 10.2426 4.75736 11.25 6 11.25V12C4.34315 12 3 10.6569 3 9ZM18.5 11.25V12H6V11.25H18.5Z"
+                                    fill="url(#hammer_existing_2)"
+                                />
+                                <defs>
+                                    <linearGradient
+                                        id="hammer_existing_0"
+                                        x1="12"
+                                        y1="8"
+                                        x2="12"
+                                        y2="22"
+                                        gradientUnits="userSpaceOnUse"
+                                    >
+                                        <stop stop-color="rgba(87, 87, 87, 1)" data-glass-11="on" />
+                                        <stop offset="1" stop-color="rgba(21, 21, 21, 1)" data-glass-12="on" />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="hammer_existing_1"
+                                        x1="12"
+                                        y1="2"
+                                        x2="12"
+                                        y2="12"
+                                        gradientUnits="userSpaceOnUse"
+                                    >
+                                        <stop stop-color="rgba(227, 227, 229, 0.6)" data-glass-21="on" />
+                                        <stop
+                                            offset="1"
+                                            stop-color="rgba(187, 187, 192, 0.6)"
+                                            data-glass-22="on"
+                                        />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="hammer_existing_2"
+                                        x1="12"
+                                        y1="2"
+                                        x2="12"
+                                        y2="7.791"
+                                        gradientUnits="userSpaceOnUse"
+                                    >
+                                        <stop stop-color="rgba(255, 255, 255, 1)" data-glass-light="on" />
+                                        <stop
+                                            offset="1"
+                                            stop-color="rgba(255, 255, 255, 1)"
+                                            stop-opacity="0"
+                                            data-glass-light="on"
+                                        />
+                                    </linearGradient>
+                                    <filter
+                                        id="hammer_filter"
+                                        x="-100%"
+                                        y="-100%"
+                                        width="400%"
+                                        height="400%"
+                                        filterUnits="objectBoundingBox"
+                                        primitiveUnits="userSpaceOnUse"
+                                    >
+                                        <feGaussianBlur
+                                            stdDeviation="2"
+                                            x="0%"
+                                            y="0%"
+                                            width="100%"
+                                            height="100%"
+                                            in="SourceGraphic"
+                                            edgeMode="none"
+                                            result="blur"
+                                        />
+                                    </filter>
+                                    <clipPath id="hammer_clipPath">
+                                        <path
+                                            d="M3 9V5C3 3.34315 4.34315 2 6 2H14.7393C15.4739 2 16.1833 2.26975 16.7324 2.75781L19.9932 5.65625C20.6335 6.22554 21 7.04162 21 7.89844V9.5C21 10.8807 19.8807 12 18.5 12H6C4.34315 12 3 10.6569 3 9Z"
+                                            fill="url(#hammer_existing_1)"
+                                        />
+                                    </clipPath>
+                                    <mask id="hammer_mask">
+                                        <rect width="100%" height="100%" fill="#FFF" />
+                                        <path
+                                            d="M3 9V5C3 3.34315 4.34315 2 6 2H14.7393C15.4739 2 16.1833 2.26975 16.7324 2.75781L19.9932 5.65625C20.6335 6.22554 21 7.04162 21 7.89844V9.5C21 10.8807 19.8807 12 18.5 12H6C4.34315 12 3 10.6569 3 9Z"
+                                            fill="#000"
+                                        />
+                                    </mask>
+                                </defs>
+                            </g>
+                        </svg>
+                    </template>
+                </van-empty>
+            </div>
+        `
+        const settings = Vue.createApp({
+            template: settings_template,
+            setup() {
+                const cellCheckBoxToggle = (refs, index) => {
+                    refs[index].toggle();
+                };
+
+                const webVPNAutoLogin = Vue.ref(GM_getValue("WebVPN.autoLogin", false));
+                const webVPNAccount = Vue.ref(GM_getValue("WebVPN.username", ''));
+                const webVPNPassword = Vue.ref(GM_getValue("WebVPN.password", ''));
+                const webVPNCourseGrab = Vue.ref(GM_getValue('WebVPN.courseGrab', false));
+                const webVPNCustomTool = Vue.ref(GM_getValue("WebVPN.customTool", true));
+                const webVPNCustomCard = Vue.ref(GM_getValue("WebVPN.customCard", []));
+                const webVPNCustomCardList = ['教务管理', '学工系统', '信息门户', '中国知网', '万方数据',  '大先生'];
+                const webVPNCustomCardRefs = Vue.ref([]);
+                const webVPNAutoClose = Vue.ref(GM_getValue("WebVPN.autoClose", false));
+
+                Vue.watch(webVPNCustomCard, (newValue, oldValue) => {
+                    console.log(newValue, oldValue)
+                    let a = []
+                    console.log(a.concat(newValue))
+                    GM_setValue("WebVPN.customCard", newValue);
+                })
+
+                Vue.watch(webVPNAutoLogin, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.autoLogin", newValue);
+                });
+
+                Vue.watch(webVPNAccount, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.username", newValue);
+                });
+
+                Vue.watch(webVPNPassword, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.password", newValue);
+                });
+
+                Vue.watch(webVPNCourseGrab, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.courseGrab", newValue);
+                });
+
+                Vue.watch(webVPNCustomTool, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.customTool", newValue);
+                });
+
+                Vue.watch(webVPNAutoClose, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.autoClose", newValue);
+                });
+
+                const jwglAutoLogin = Vue.ref(GM_getValue("Jwgl.autoLogin", false));
+                const jwglAccount = Vue.ref(GM_getValue("Jwgl.username", ''));
+                const jwglPassword = Vue.ref(GM_getValue("Jwgl.password", ''));
+                const jwglCourseBeautify = Vue.ref(GM_getValue("Jwgl.courseBeautify", true));
+                const jwglCustomMenu = Vue.ref(GM_getValue("Jwgl.customMenu", []));
+                const jwglCustomMenuList = ['全部学期成绩'];
+                const jwglCustomMenuRefs = Vue.ref([]);
+
+                Vue.watch(jwglCustomMenu, (newValue, oldValue) => {
+                    console.log(newValue, oldValue)
+                    let a = []
+                    console.log(a.concat(newValue))
+                    GM_setValue("Jwgl.customMenu", newValue);
+                })
+
+                Vue.watch(webVPNAutoLogin, (newValue, oldValue) => {
+                    GM_setValue("Jwgl.autoLogin", newValue);
+                });
+
+                Vue.watch(webVPNAccount, (newValue, oldValue) => {
+                    GM_setValue("Jwgl.username", newValue);
+                });
+
+                Vue.watch(webVPNPassword, (newValue, oldValue) => {
+                    GM_setValue("Jwgl.password", newValue);
+                });
+
+                Vue.watch(jwglCourseBeautify, (newValue, oldValue) => {
+                    GM_setValue("Jwgl.courseBeautify", newValue);
+                });
+
+                Vue.onBeforeUpdate(() => {
+                    webVPNCustomCardRefs.value = [];
+                    jwglCustomMenuRefs.value = [];
+                });
+
+                const unrealizedFunction = () => {
+                    createToast("error", `暂未实现的功能`, 3);
+                }
+
+                return {
+                    cellCheckBoxToggle,
+                    webVPNAutoLogin,
+                    webVPNAccount,
+                    webVPNPassword,
+                    webVPNCourseGrab,
+                    webVPNCustomTool,
+                    webVPNCustomCard,
+                    webVPNCustomCardList,
+                    webVPNCustomCardRefs,
+                    webVPNAutoClose,
+                    jwglAutoLogin,
+                    jwglAccount,
+                    jwglPassword,
+                    jwglCourseBeautify,
+                    jwglCustomMenu,
+                    jwglCustomMenuList,
+                    jwglCustomMenuRefs,
+                    unrealizedFunction
+                };
+            },
+            mounted() {
+                removeToast(toast);
+                createToast("success", `设置页面部署完毕`, 2);
+            }
+        })
+        settings.use(vant);
+        settings.mount("#settings");
     }
 
     async function webvpnHAbout() {
@@ -1335,7 +1794,7 @@ TuanWei:
         unsafeWindow.createToast = createToast;
         unsafeWindow.removeToast = removeToast;
 
-        createToast("info", `请等待页面部署`, 0);
+        var toast = createToast("info", `请等待工具部署`, 0);
         createToast("error", `暂未实现的页面`, 0);
 
         GM_addElement(document.querySelector('body'), 'div', { id: 'settings' });
@@ -1348,8 +1807,12 @@ TuanWei:
         const tools = Vue.createApp({
             template: tools_template,
             setup() {
-                
-                return {  };
+
+                return {};
+            },
+            mounted() {
+                removeToast(toast);
+                createToast("success", `关于我们部署完毕`, 2);
             }
         });
         tools.use(vant);
@@ -1366,7 +1829,7 @@ TuanWei:
                 // return JSON.stringify(json, null, 2);
                 return json;
             }
-                
+
             function parseElement(element) {
                 let obj = {};
                 if (element.nodeType === 1) { // Element
@@ -1380,18 +1843,18 @@ TuanWei:
                 } else if (element.nodeType === 3) { // Text
                     obj = element.nodeValue;
                 }
-                
+
                 if (element.hasChildNodes()) {
                     for (let i = 0; i < element.childNodes.length; i++) {
                         let item = element.childNodes.item(i);
                         let nodeName = item.nodeName;
-                        if (typeof(obj[nodeName]) === 'undefined') {
+                        if (typeof (obj[nodeName]) === 'undefined') {
                             obj[nodeName] = parseElement(item);
                         } else {
-                            if (typeof(obj[nodeName].push) === 'undefined') {
-                            let old = obj[nodeName];
-                            obj[nodeName] = [];
-                            obj[nodeName].push(old);
+                            if (typeof (obj[nodeName].push) === 'undefined') {
+                                let old = obj[nodeName];
+                                obj[nodeName] = [];
+                                obj[nodeName].push(old);
                             }
                             obj[nodeName].push(parseElement(item));
                         }
@@ -1413,7 +1876,7 @@ TuanWei:
                             const raw_result = xmlToJson(data);
                             // console.log(raw_result);
                             if (raw_result.page == undefined) {
-                               resolve({success: false,msg: "webvpn登录已过期"}); 
+                                resolve({ success: false, msg: "webvpn登录已过期" });
                             }
                             // 构建最终的JSON对象
                             console.log(raw_result);
@@ -1421,20 +1884,20 @@ TuanWei:
                             const now_page = parseInt(pages[1]);
                             const all_page = parseInt(pages[2]);
                             if (all_page == 0) {
-                               resolve({success: false,msg: "查询不到该教师"}); 
+                                resolve({ success: false, msg: "查询不到该教师" });
                             }
-                            var result = {success: true, page: [now_page, all_page], data: []};
+                            var result = { success: true, page: [now_page, all_page], data: [] };
                             var name;
                             if (raw_result.val.length == undefined) {
-                                    name = raw_result.word["#text"].replace(raw_result.val["#text"] + "-", "");
-                                    result.data.push({name: name, number: raw_result.val["#text"], unit: raw_result.remind["#text"]});
+                                name = raw_result.word["#text"].replace(raw_result.val["#text"] + "-", "");
+                                result.data.push({ name: name, number: raw_result.val["#text"], unit: raw_result.remind["#text"] });
                             } else {
                                 for (let i = 0; i < raw_result.val.length; i++) {
                                     // if (result.data[i%3] == undefined) {
                                     //     result.data[i%3] = [];
                                     // }
                                     name = raw_result.word[i]["#text"].replace(raw_result.val[i]["#text"] + "-", "");
-                                    result.data.push({name: name, number: raw_result.val[i]["#text"], unit: raw_result.remind[i]["#text"]});
+                                    result.data.push({ name: name, number: raw_result.val[i]["#text"], unit: raw_result.remind[i]["#text"] });
                                 }
                             }
                             resolve(result);
@@ -1450,7 +1913,7 @@ TuanWei:
 
                 xhr.open("POST", "https://webvpn.nxu.edu.cn/http/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2c90171/StuExpbook/AutoCompleteServletSrtp?vpn-12-o1-202.201.128.142=");
                 xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
-                
+
                 try {
                     xhr.send(data);
                 } catch (err) {
@@ -1473,7 +1936,7 @@ TuanWei:
         unsafeWindow.removeToast = removeToast;
 
         var toast = createToast("info", `请等待工具部署`, 0);
-        
+
         unsafeWindow.searchTeachers = searchTeachers;
 
         GM_addElement(document.querySelector('body'), 'div', { id: 'tools' });
@@ -1773,7 +2236,7 @@ TuanWei:
             />
             <van-sidebar v-model="active" @change="onChange" style="z-index:9999">
                 <van-sidebar-item title="在职教师工号查询" />
-                <van-sidebar-item title="Campus Charge" />
+                <!-- <van-sidebar-item title="Campus Charge" /> -->
                 <van-sidebar-item title="空课表生成" />
                 <van-sidebar-item title="🚧等待⚠️施工" />
             </van-sidebar>
@@ -1806,9 +2269,9 @@ TuanWei:
                         <span>宁夏大学创新创业服务平台</span>
                     </div>
                 </div>
-                <div>
+                <!-- <div>
                     <iframe src="//campus-charge.thisish.cn" style="width: 100%;height: 100%;border: none;"></iframe>
-                </div>
+                </div> -->
                 <div style="width: 100%;height:100%;padding:10px">
                     <div class="schedule-manager">
                         <!-- 顶部导航 -->
@@ -1894,13 +2357,13 @@ TuanWei:
                 const onSearchClick = () => {
                     searchTeacher(searchValue.value);
                 };
-                const searchTeacher = async(val) => {
+                const searchTeacher = async (val) => {
                     // console.log(val)
                     // vant.showToast(val)
                     if (val.toLowerCase() == "moss") {
                         createToast("info", decodeURI("%E6%81%AD%E5%96%9C%E4%BD%A0%E5%8F%91%E7%8E%B0%E4%BA%86%E8%BF%99%E4%B8%AA%E5%B0%8F%E5%BD%A9%E8%9B%8B~"), 0);
                         open("//moss.thisish.cn");
-                        return;   
+                        return;
                     }
                     teacherList.value = [];
                     var now_page = 1;
@@ -1915,7 +2378,7 @@ TuanWei:
                             break;
                         }
                         for (let i = 0; i < list.data.length; i++) {
-                            row = i%3 + now_row;
+                            row = i % 3 + now_row;
                             if (row >= 3) {
                                 row -= 3;
                             }
@@ -2005,7 +2468,7 @@ TuanWei:
                                 if (Object.keys(classInfo).length > 0) {
                                     // 有课程的情况：合并同一时间段内所有课程所有老师的week信息
                                     const allHasClassWeeks = new Set();
-                                    
+
                                     // 遍历同一时间段内的所有课程
                                     for (const courseName in classInfo) {
                                         const courseDetails = classInfo[courseName] || [];
@@ -2236,7 +2699,7 @@ TuanWei:
                     showExportMenu.value = false;
                 };
 
-                return { 
+                return {
                     active,
                     onClickLeft,
                     onChange,
@@ -2255,15 +2718,15 @@ TuanWei:
                     exportToExcel,
                     exportToImage,
                     removeFile
-                };
+                }
+            },
+            mounted() {
+                removeToast(toast);
+                createToast("success", `小工具部署完毕`, 2);
             }
         });
         tools.use(vant);
         tools.mount("#tools");
-
-        removeToast(toast);
-        createToast("success", `小工具部署完毕`, 2);
-        
     }
 
 
