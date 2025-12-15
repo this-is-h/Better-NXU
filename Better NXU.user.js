@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      0.5.0
+// @version      0.5.1
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
@@ -33,6 +33,10 @@
 // @resource     vant-css https://unpkg.com/vant@4/lib/index.css
 // @resource     vue-js https://unpkg.com/vue@3/dist/vue.global.js
 // @resource     vant-js https://unpkg.com/vant@4.8.0/lib/vant.min.js
+// @resource     github-markdown-css https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css
+// @resource     marked-js https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js
+// @resource     about-md https://gh.llkk.cc/https://github.com/this-is-h/Better-NXU/raw/refs/heads/main/README.md
+// @resource     update-md https://gh.llkk.cc/https://github.com/this-is-h/Better-NXU/raw/refs/heads/main/CHANGELOG.md
 // @connect      webvpn.nxu.edu.cn
 // @connect      v1.hitokoto.cn
 // ==/UserScript==
@@ -1674,7 +1678,7 @@ TuanWei:
                 const webVPNCourseGrab = Vue.ref(GM_getValue('WebVPN.courseGrab', false));
                 const webVPNCustomTool = Vue.ref(GM_getValue("WebVPN.customTool", true));
                 const webVPNCustomCard = Vue.ref(GM_getValue("WebVPN.customCard", []));
-                const webVPNCustomCardList = ['教务管理', '学工系统', '信息门户', '中国知网', '万方数据',  '大先生'];
+                const webVPNCustomCardList = ['教务管理', '学工系统', '信息门户', '中国知网', '万方数据', '大先生'];
                 const webVPNCustomCardRefs = Vue.ref([]);
                 const webVPNAutoClose = Vue.ref(GM_getValue("WebVPN.autoClose", false));
 
@@ -1795,28 +1799,136 @@ TuanWei:
         unsafeWindow.removeToast = removeToast;
 
         var toast = createToast("info", `请等待工具部署`, 0);
-        createToast("error", `暂未实现的页面`, 0);
+        // createToast("error", `暂未实现的页面`, 0);
 
-        GM_addElement(document.querySelector('body'), 'div', { id: 'settings' });
+        GM_addStyle(GM_getResourceText("github-markdown-css"))
+        eval(GM_getResourceText("marked-js"))
+
+        GM_addElement(document.querySelector('body'), 'div', { id: 'about' });
         GM_addStyle(`
+            :root {
+                --van-doc-black: #000;
+                --van-doc-white: #fff;
+                --van-doc-gray-1: #f7f8fa;
+                --van-doc-gray-2: #f2f3f5;
+                --van-doc-gray-3: #ebedf0;
+                --van-doc-gray-4: #dcdee0;
+                --van-doc-gray-5: #c8c9cc;
+                --van-doc-gray-6: #969799;
+                --van-doc-gray-7: #646566;
+                --van-doc-gray-8: #323233;
+                --van-doc-blue: #1989fa;
+                --van-doc-green: #07c160;
+                --van-doc-purple: #8e69d3;
+                --van-doc-background: #eff2f5;
+            }
 
+            /* 美化滚动条 */
+            *::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            *::-webkit-scrollbar-corner {
+                background-color: transparent;
+            }
+
+            *::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 100px;
+            }
+
+            *::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 100px;
+            }
+
+            /* Firefox 滚动条样式 */
+            * {
+                scrollbar-width: thin;
+                scrollbar-color: #c1c1c1 #f1f1f1;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html, body, #about {
+                width: 100%;
+                height: 100%;
+                background-color: var(--van-doc-background);
+                overflow: hidden;
+            }
+
+            #about {
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                gap: 3em;
+                overflow-x: auto; 
+                scrollbar-width: auto;
+            }
+
+            @media (max-width: 767px) {
+                #about {
+                    justify-content: start;
+                }
+            }
+
+            .group {
+                flex-shrink: 0; 
+                width: 450px;
+                height: 100%;
+                border-radius: 20px;
+                overflow: hidden;
+                background-color: var(--van-doc-gray-1);
+                scrollbar-width: auto;
+            }
+
+            .group-content {
+                width: 100%;
+                height: calc(100% - 46px);
+                overflow: hidden;
+                overflow-y: auto;
+                padding-bottom: 32px;
+            }
+
+            .markdown-body {
+                box-sizing: border-box;
+                min-width: 200px;
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 25px;
+            }
         `);
-        const tools_template = `
+        const about_template = `
+            <div class="group">
+                <van-nav-bar title="关于我们" />
+                <div class="group-content markdown-body" id="aboutmd">
 
+                </div>
+            </div>
+            <div class="group">
+                <van-nav-bar title="更新日志" />
+                <div class="group-content markdown-body" id="updatemd">
+                
+                </div>
+            </div> 
         `
-        const tools = Vue.createApp({
-            template: tools_template,
+        const about = Vue.createApp({
+            template: about_template,
             setup() {
 
                 return {};
             },
             mounted() {
+                document.getElementById('aboutmd').innerHTML = marked.parse(GM_getResourceText("about-md").replace(/(.*[\r?\n]){2}/, ''));
+                document.getElementById('updatemd').innerHTML = marked.parse(GM_getResourceText("update-md").replace(/(.*[\r?\n]){2}/, ''));
                 removeToast(toast);
                 createToast("success", `关于我们部署完毕`, 2);
             }
         });
-        tools.use(vant);
-        tools.mount("#tools");
+        about.use(vant);
+        about.mount("#about");
     }
 
     // 后面的代码会很乱，能跑的代码就先让它跑着吧（）
