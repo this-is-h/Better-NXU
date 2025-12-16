@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      0.5.1
+// @version      1.0.0
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
@@ -12,6 +12,7 @@
 // @match        *://202.201.128.234/*
 // @match        *://tuanwei.nxu.edu.cn/*
 // @match        *://ids.nxu.edu.cn/*
+// @match        *://open.weixin.qq.com/*
 // @grant        GM_info
 // @grant        GM_log
 // @grant        CAT_userConfig
@@ -59,6 +60,11 @@ WebVPN:
     autoLogin:
         title: 自动登录WebVPN
         description: 是否自动登录WebVPN
+        type: checkbox
+        default: false
+    autoReLogin:
+        title: 微信快速登录
+        description: 是否在多因子认证（微信扫码）时启用快速登录
         type: checkbox
         default: false
     autoClose:
@@ -173,7 +179,7 @@ TuanWei:
     const LoadMessage = { "loading tesseract core": "核心加载", "initializing tesseract": "初始化", "loading language traineddata": "加载语言训练数据", "initializing api": "初始化接口", "recognizing text": "识别验证码" };
     const Version = Info.script.version;
     // 配置版本，增加即可使用户弹出更新窗口
-    const ConfigVersion = 4;
+    const ConfigVersion = 5;
     // /==Constant==
 
     // ==Function==
@@ -317,13 +323,25 @@ TuanWei:
     }
     MyConsole(`判断页面...`);
     switch (Host) {
+        case 'open.weixin.qq.com':
+            MyConsole("欢迎使用微信登录");
+            weixinLogin();
+            break;
         case 'webvpn.nxu.edu.cn':
             MyConsole("欢迎使用 webvpn");
-            if (Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1 || (Url.indexOf('login') != -1 && Url.indexOf('nonlogin') == -1)) {
+            if ((Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1 || Url.indexOf('login') != -1) && (Url.indexOf('nonlogin') == -1 && Url.indexOf('connect/qrconnect') == -1 && Url.indexOf('reAuthCheck') == -1)) {
                 MyConsole("这里是 - 登录页");
                 AddTesseract();
                 Basic();
                 webvpnLogin();
+            } else if (Url.indexOf('/authserver/reAuthCheck/') != -1) {
+                MyConsole("这里是 - 确认页");
+                Basic();
+                webvpnCheck();
+            } else if (Url.indexOf('/77726476706e69737468656265737421ffe7449269276d59660187e289446d36a8d6/connect/qrconnect') != -1) {
+                MyConsole("这里是 - 扫码页");
+                Basic();
+                webvpnReLogin();
             } else if (Url == 'https://webvpn.nxu.edu.cn/' || Path == "/") {
                 MyConsole("这里是 - 主页");
                 Basic();
@@ -422,6 +440,10 @@ TuanWei:
                 AddTesseract();
                 Basic();
                 webvpnLogin();
+            } else if (Path == ('/authserver/callback')) {
+                MyConsole("正在 - 微信认证页");
+                Basic();
+                idsReLogin();
             }
             break;
         // case 'tuanwei.nxu.edu.cn':
@@ -462,6 +484,16 @@ TuanWei:
             return;
     }
     return;
+
+    async function weixinLogin() {
+        while (!document.querySelector('.js_quick_login') && !document.querySelector('.js_quick_login').innerHTML) {
+            await WaitTime(300);
+        }
+        while (document.querySelector('.js_quick_login').style.display == 'none') {
+            await WaitTime(300);
+        }
+        document.querySelector('.js_quick_login').querySelector('button').click()
+    }
 
     async function webvpnLogin() {
         if (!GM_getValue("WebVPN.autoLogin", false)) {
@@ -517,6 +549,33 @@ TuanWei:
         } else {
             document.querySelector('a#login_submit').click();
         }
+    }
+
+    async function webvpnCheck() {
+        if (!GM_getValue("WebVPN.autoReLogin", false)) {
+            return;
+        }
+        createToast("info", `尝试自动登录...`);
+        unsafeWindow.reAuthByCombined('weixin')
+    }
+
+    async function webvpnReLogin() {
+        if (!GM_getValue("WebVPN.autoReLogin", false)) {
+            return;
+        }
+        createToast("info", `尝试自动登录...`);
+        console.log(Url)
+        location.href = `https://open.weixin.qq.com/connect/qrconnect?appid=${GetQuery('appid')}&redirect_uri=https://ids.nxu.edu.cn/authserver/callback&response_type=code&scope=snsapi_login&state=${GetQuery('state')}&fast_login=1`
+    }
+
+    async function idsReLogin() {
+        if (!document.querySelector("#welcome.warn") && !document.querySelector("#welcome.warn").innerHTML && document.querySelector("#welcome.warn").innerHTML.indexOf("授权失败") == -1) {
+            return
+        }
+        createToast("info", `请稍候...`);
+        createToast("info", `尝试跳转至正确页面`);
+        console.log(Url)
+        location.href = `https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b/authserver/callback?code=${GetQuery('code')}&state=${GetQuery('state')}`
     }
 
     async function jwglLogin() {
@@ -742,7 +801,7 @@ TuanWei:
                 customDiv.appendChild(divCard(
                     `https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f5fe51d229287d1e7b0c9ce29b5b/`,
                     '<div class="block-group__item__logo" style="background-color: #0966b5;">信</div>',
-                    `信息门户`, "综合信息服务门户")
+                    `信息门户（旧）`, "综合信息服务门户")
                 );
             }
             if (webVPNCustomCard.indexOf('中国知网') != -1) {
@@ -1444,6 +1503,11 @@ TuanWei:
                             </van-cell>
                             <van-field v-model="webVPNAccount" label="账号" autocomplete="off" placeholder="请输入账号（学号）" />
                             <van-field v-model="webVPNPassword" type="password" autocomplete="off" label="密码" placeholder="请输入密码（登录校园网的密码）" />
+                            <van-cell center title="是否在多因子认证（微信扫码）时启用快速登录">
+                                <template #right-icon>
+                                    <van-switch v-model="webVPNAutoReLogin" />
+                                </template>
+                            </van-cell>
                         </van-cell-group>
                         <h2>卡片设置</h2>
                         <van-cell-group inset>
@@ -1673,6 +1737,7 @@ TuanWei:
                 };
 
                 const webVPNAutoLogin = Vue.ref(GM_getValue("WebVPN.autoLogin", false));
+                const webVPNAutoReLogin = Vue.ref(GM_getValue("WebVPN.autoReLogin", false));
                 const webVPNAccount = Vue.ref(GM_getValue("WebVPN.username", ''));
                 const webVPNPassword = Vue.ref(GM_getValue("WebVPN.password", ''));
                 const webVPNCourseGrab = Vue.ref(GM_getValue('WebVPN.courseGrab', false));
@@ -1691,6 +1756,10 @@ TuanWei:
 
                 Vue.watch(webVPNAutoLogin, (newValue, oldValue) => {
                     GM_setValue("WebVPN.autoLogin", newValue);
+                });
+
+                Vue.watch(webVPNAutoReLogin, (newValue, oldValue) => {
+                    GM_setValue("WebVPN.autoReLogin", newValue);
                 });
 
                 Vue.watch(webVPNAccount, (newValue, oldValue) => {
@@ -1765,6 +1834,7 @@ TuanWei:
                     webVPNCustomCardRefs,
                     webVPNAutoClose,
                     jwglAutoLogin,
+                    webVPNAutoReLogin,
                     jwglAccount,
                     jwglPassword,
                     jwglCourseBeautify,
@@ -1852,6 +1922,18 @@ TuanWei:
                 box-sizing: border-box;
             }
 
+            ul {
+                list-style-type: disc;
+            }
+
+            :is(dir, menu, ol, ul) ul {
+                list-style-type: circle;
+            }
+
+            :is(dir, menu, ol, ul) :is(dir, menu, ol, ul) ul {
+                list-style-type: square;
+            }
+
             html, body, #about {
                 width: 100%;
                 height: 100%;
@@ -1860,23 +1942,16 @@ TuanWei:
             }
 
             #about {
-                padding: 20px;
+                padding: 20px 1vw;
                 display: flex;
-                justify-content: center;
-                gap: 3em;
+                gap: 1vw;
                 overflow-x: auto; 
                 scrollbar-width: auto;
             }
 
-            @media (max-width: 767px) {
-                #about {
-                    justify-content: start;
-                }
-            }
-
             .group {
                 flex-shrink: 0; 
-                width: 450px;
+                width: 32vw;
                 height: 100%;
                 border-radius: 20px;
                 overflow: hidden;
@@ -1892,6 +1967,15 @@ TuanWei:
                 padding-bottom: 32px;
             }
 
+            .group-content:not(.markdown-body) > h2 {
+                color: var(--van-doc-gray-6);
+                margin: 0;
+                padding: 32px 16px 16px;
+                font-size: 14px;
+                font-weight: 400;
+                line-height: 16px;
+            }
+
             .markdown-body {
                 box-sizing: border-box;
                 min-width: 200px;
@@ -1903,22 +1987,175 @@ TuanWei:
         const about_template = `
             <div class="group">
                 <van-nav-bar title="关于我们" />
-                <div class="group-content markdown-body" id="aboutmd">
-
-                </div>
+                <div class="group-content markdown-body" id="aboutmd"></div>
             </div>
             <div class="group">
                 <van-nav-bar title="更新日志" />
-                <div class="group-content markdown-body" id="updatemd">
-                
+                <div class="group-content markdown-body" id="updatemd"></div>
+            </div>
+            <div class="group">
+                <van-nav-bar title="致谢名单" />
+                <div class="group-content">
+                    <h2>特别鸣谢</h2>
+                    <van-cell-group inset>
+                        <van-cell title="H" label="This is H" center is-link @click="dialogH = true">
+                            <template #icon>
+                                <van-image
+                                    round
+                                    width="24"
+                                    style="margin-right: 10px; width: 24px"
+                                    src="https://gh.llkk.cc/https://github.com/this-is-h/NXU-CDIG/raw/refs/heads/main/src/assets/img/h.png"
+                                />
+                            </template>
+                        </van-cell>
+                        <van-cell title="Smile232323" label="日拱一卒，干就完事了" center is-link url="https://github.com/Smile232323">
+                            <template #icon>
+                                <van-image
+                                    round
+                                    width="24"
+                                    style="margin-right: 10px; width: 24px"
+                                    src="https://gh.llkk.cc/https://github.com/this-is-h/Better-NXU/raw/refs/heads/main/assets/img/Smile232323.png"
+                                />
+                            </template>
+                        </van-cell>
+                        <van-dialog v-model:show="dialogH" title="关注我们">
+                            <van-image style="padding: 1em 0.5em" src="https://gh.llkk.cc/https://github.com/this-is-h/NXU-CDIG/raw/refs/heads/main/src/assets/img/gzh-large.png" />
+                        </van-dialog>
+                    </van-cell-group>
+                    <h2>项目支持</h2>
+                    <van-cell-group inset>
+                        <van-cell
+                            title="ScriptCat"
+                            label="脚本猫脚本站,在这里你可以与全世界分享你的用户脚本"
+                            url="https://scriptcat.org/zh-CN"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <img
+                                    style="margin-right: 10px; width: 24px"
+                                    src="	https://scriptcat.org/_next/image?url=%2Fassets%2Flogo.png&w=64&q=75"
+                                />
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="Vue"
+                            label="一款用于构建用户界面的 JavaScript 框架"
+                            url="https://cn.vuejs.org/"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <svg
+                                    style="margin-right: 10px"
+                                    class="logo"
+                                    viewBox="0 0 128 128"
+                                    width="24"
+                                    height="24"
+                                    data-v-35dc6318=""
+                                >
+                                    <path
+                                        fill="#42b883"
+                                        d="M78.8,10L64,35.4L49.2,10H0l64,110l64-110C128,10,78.8,10,78.8,10z"
+                                        data-v-35dc6318=""
+                                    ></path>
+                                    <path
+                                        fill="#35495e"
+                                        d="M78.8,10L64,35.4L49.2,10H25.6L64,76l38.4-66H78.8z"
+                                        data-v-35dc6318=""
+                                    ></path>
+                                </svg>
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="Vant"
+                            label="一个轻量、可定制的移动端组件库"
+                            url="https://vant-ui.github.io/vant/#/zh-CN"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <img
+                                    style="margin-right: 10px; width: 24px"
+                                    src="https://fastly.jsdelivr.net/npm/@vant/assets/logo.png"
+                                />
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="Tesseract"
+                            label="Tesseract is an open source text recognition (OCR) Engine, available under the Apache 2.0 license."
+                            url="https://github.com/tesseract-ocr/tessdoc"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <span style="margin-right: 10px; width: 24px; text-align: center;font-weight: bold">T</span>
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="SnapDOM"
+                            label="SnapDOM is a next-generation DOM Capture Engine — ultra-fast, modular, and extensible."
+                            url="https://github.com/zumerlab/snapdom"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <span style="margin-right: 10px; width: 24px; text-align: center;font-weight: bold">S</span>
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="SheetJS"
+                            label="SheetJS Tools for Excel Spreadsheets"
+                            url="https://sheetjs.com/"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <img
+                                    style="margin-right: 10px; width: 24px"
+                                    src="https://sheetjs.com/sketch128.png"
+                                />
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="Marked"
+                            label="a low-level markdown compiler for parsing markdown without caching or blocking for long periods of time."
+                            url="https://marked.js.org/"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <img
+                                    style="margin-right: 10px; width: 24px"
+                                    src="https://marked.js.org/img/logo-black.svg"
+                                />
+                            </template>
+                        </van-cell>
+                        <van-cell
+                            title="一言（Hitokoto）"
+                            label="动漫也好、小说也好、网络也好，不论在哪里，我们总会看到有那么一两个句子能穿透你的心。我们把这些句子汇聚起来，形成一言网络，以传递更多的感动。如果可以，我们希望我们没有停止服务的那一天。"
+                            url="https://hitokoto.cn/"
+                            center
+                            is-link
+                        >
+                            <template #icon>
+                                <img
+                                    style="margin-right: 10px; width: 24px"
+                                    src="https://developer.hitokoto.cn/logo.png"
+                                />
+                            </template>
+                        </van-cell>
+                    </van-cell-group>
                 </div>
             </div> 
         `
         const about = Vue.createApp({
             template: about_template,
             setup() {
-
-                return {};
+                const dialogH = Vue.ref(false)
+                return {
+                    dialogH
+                };
             },
             mounted() {
                 document.getElementById('aboutmd').innerHTML = marked.parse(GM_getResourceText("about-md").replace(/(.*[\r?\n]){2}/, ''));

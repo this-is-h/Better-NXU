@@ -48,7 +48,7 @@
 - ⛔无法实现（技术限制，可能是暂时的）
     - 下载附件自动识别验证码并下载（似乎因CSP限制无法加载tessact.js）
 
-## 关于我们
+## ⭐️关于我们
 
 ### 项目介绍
 - 这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
@@ -66,6 +66,6 @@
 - 左：[兔小巢反馈平台](https://txc.qq.com/products/680684)
 - 右：QQ交流群
 <div style="display: flex; justify-content: center; align-items: center;">
-  <img src="https://raw.githubusercontent.com/this-is-h/Better-NXU/main/assets/img/issue.png" style="width: 49%;padding: 10px;" />
-  <img src="https://raw.githubusercontent.com/this-is-h/Better-NXU/main/assets/img/group.png" style="width: 49%;padding: 10px;" />
+  <img src="https://gh.llkk.cc/https://github.com/this-is-h/Better-NXU/raw/refs/heads/main/assets/img/issue.png" style="width: 49%;padding: 10px;" />
+  <img src="https://gh.llkk.cc/https://github.com/this-is-h/Better-NXU/raw/refs/heads/main/assets/img/group.png" style="width: 49%;padding: 10px;" />
 </div>
