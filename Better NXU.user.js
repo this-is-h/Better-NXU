@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      1.0.0
+// @version      1.0.1
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @author       H
 // @run-at       document-idle
@@ -329,26 +329,7 @@ TuanWei:
             break;
         case 'webvpn.nxu.edu.cn':
             MyConsole("欢迎使用 webvpn");
-            if ((Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1 || Url.indexOf('login') != -1) && (Url.indexOf('nonlogin') == -1 && Url.indexOf('connect/qrconnect') == -1 && Url.indexOf('reAuthCheck') == -1)) {
-                MyConsole("这里是 - 登录页");
-                AddTesseract();
-                Basic();
-                webvpnLogin();
-            } else if (Url.indexOf('/authserver/reAuthCheck/') != -1) {
-                MyConsole("这里是 - 确认页");
-                Basic();
-                webvpnCheck();
-            } else if (Url.indexOf('/77726476706e69737468656265737421ffe7449269276d59660187e289446d36a8d6/connect/qrconnect') != -1) {
-                MyConsole("这里是 - 扫码页");
-                Basic();
-                webvpnReLogin();
-            } else if (Url == 'https://webvpn.nxu.edu.cn/' || Path == "/") {
-                MyConsole("这里是 - 主页");
-                Basic();
-                webvpnMain();
-            } else if (Url.indexOf('xsfw/sys/xggzptapp/*default/index.do') != -1) {
-                MyConsole("这里是 - 学工系统");
-            } else if (Url.indexOf('/77726476706e69737468656265737421fae04690693e7045300d8db9d6562d/') != -1 || Url.indexOf('/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2ca0677/') != -1) {
+            if (Url.indexOf('/77726476706e69737468656265737421fae04690693e7045300d8db9d6562d/') != -1 || Url.indexOf('/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2ca0677/') != -1) {
                 MyConsole("这里是 - 教务系统");
                 if (Url.indexOf('index.action') != -1 || Url.indexOf('login.action') != -1) {
                     MyConsole("正在 - 登录页");
@@ -368,6 +349,25 @@ TuanWei:
                     AddVant();
                     jwglCourseBeautify();
                 }
+            } else if ((Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1 || Url.indexOf('login') != -1) && (Url.indexOf('nonlogin') == -1 && Url.indexOf('connect/qrconnect') == -1 && Url.indexOf('reAuthCheck') == -1)) {
+                MyConsole("这里是 - 登录页");
+                AddTesseract();
+                Basic();
+                webvpnLogin();
+            } else if (Url.indexOf('/authserver/reAuthCheck/') != -1) {
+                MyConsole("这里是 - 确认页");
+                Basic();
+                webvpnCheck();
+            } else if (Url.indexOf('/77726476706e69737468656265737421ffe7449269276d59660187e289446d36a8d6/connect/qrconnect') != -1) {
+                MyConsole("这里是 - 扫码页");
+                Basic();
+                webvpnReLogin();
+            } else if (Url == 'https://webvpn.nxu.edu.cn/' || Path == "/") {
+                MyConsole("这里是 - 主页");
+                Basic();
+                webvpnMain();
+            } else if (Url.indexOf('xsfw/sys/xggzptapp/*default/index.do') != -1) {
+                MyConsole("这里是 - 学工系统");
             } else if (Url.indexOf('/77726476706e69737468656265737421fbf952d2243e635930068cb8') != -1 || Url.indexOf('/77726476706e69737468656265737421e7e056d2243e635930068cb8') != -1) {
                 MyConsole("这里是 - 中国知网");
                 if (Url.indexOf('/xmlRead/trialRead') != -1) {
@@ -1797,15 +1797,15 @@ TuanWei:
                     GM_setValue("Jwgl.customMenu", newValue);
                 })
 
-                Vue.watch(webVPNAutoLogin, (newValue, oldValue) => {
+                Vue.watch(jwglAutoLogin, (newValue, oldValue) => {
                     GM_setValue("Jwgl.autoLogin", newValue);
                 });
 
-                Vue.watch(webVPNAccount, (newValue, oldValue) => {
+                Vue.watch(jwglAccount, (newValue, oldValue) => {
                     GM_setValue("Jwgl.username", newValue);
                 });
 
-                Vue.watch(webVPNPassword, (newValue, oldValue) => {
+                Vue.watch(jwglPassword, (newValue, oldValue) => {
                     GM_setValue("Jwgl.password", newValue);
                 });
 
