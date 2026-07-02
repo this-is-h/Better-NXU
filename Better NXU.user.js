@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      1.0.1
-// @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
+// @version      1.0.2
+// @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）- Bug 修复版
 // @author       H
 // @run-at       document-idle
 // @storageName  h.nxu
@@ -148,7 +148,8 @@ TuanWei:
 
     function AddTesseract() {
         unsafeWindow.eval(GM_getResourceText("tesseract-js"));
-        unsafeWindow.Tesseract = Tesseract;
+        // 注意：不要覆盖 unsafeWindow.Tesseract，eval 执行后它已经在 unsafeWindow 上了
+        // unsafeWindow.Tesseract = Tesseract; // ← 删除这行，Tesseract 在沙箱里不存在，会把正确的值覆盖成 undefined
     }
 
     function Basic() {
@@ -191,24 +192,33 @@ TuanWei:
                 url = "https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b/authserver/captcha.html?vpn-1&ts=225";
                 break;
             case "Jwgl":
-                url = "captcha/image.action";
+                // 使用绝对 URL，确保在 WebVPN 环境下也能正确解析
+                url = new URL("captcha/image.action", window.location.href).href;
                 break;
             case "TuanWei":
                 url = "https://tuanwei.nxu.edu.cn/system/resource/js/filedownload/createimage.jsp";
                 break;
             default:
-                return;
+                return Promise.reject(new Error("不支持的验证码类型"));
         }
         MyConsole(url);
         return new Promise(function (resolve, reject) {
-            Tesseract.recognize(
+            // 使用 unsafeWindow.Tesseract（在页面上下文中）
+            unsafeWindow.Tesseract.recognize(
                 url,
                 'eng',
-                { logger: m => LoadMessage[m.status] ? (MyConsole(LoadMessage[m.status])) : (null) }
+                {
+                    // 使用国内可访问的 traineddata CDN，避免被墙导致卡死
+                    langPath: 'https://cdn.bootcdn.net/ajax/libs/tesseract.js-data/4.0.0/',
+                    logger: m => LoadMessage[m.status] ? (MyConsole(LoadMessage[m.status])) : (null)
+                }
             ).then(({ data: { text } }) => {
-                MyConsole(text.replace(/\s+/g, ''));
+                MyConsole('识别结果: ' + text.replace(/\s+/g, ''));
                 resolve(text.replace(/\s+/g, ''));
-            })
+            }).catch(err => {
+                MyConsole('验证码识别失败: ' + err.message);
+                reject(err);
+            });
         });
     }
 
@@ -486,12 +496,30 @@ TuanWei:
     return;
 
     async function weixinLogin() {
-        while (!document.querySelector('.js_quick_login') && !document.querySelector('.js_quick_login').innerHTML) {
+        // 添加超时保护，避免元素不存在时无限循环
+        let retryCount = 0;
+        const maxRetries = 60; // 最多等待 18 秒
+
+        while (retryCount < maxRetries &&
+               (!document.querySelector('.js_quick_login') || !document.querySelector('.js_quick_login').innerHTML)) {
             await WaitTime(300);
+            retryCount++;
         }
-        while (document.querySelector('.js_quick_login').style.display == 'none') {
+        if (retryCount >= maxRetries) {
+            MyConsole("未找到微信快速登录按钮，可能页面结构已变化");
+            return;
+        }
+
+        retryCount = 0;
+        while (retryCount < maxRetries && document.querySelector('.js_quick_login').style.display == 'none') {
             await WaitTime(300);
+            retryCount++;
         }
+        if (retryCount >= maxRetries) {
+            MyConsole("微信快速登录按钮未显示");
+            return;
+        }
+
         document.querySelector('.js_quick_login').querySelector('button').click()
     }
 
@@ -537,11 +565,22 @@ TuanWei:
         const password = GM_getValue("WebVPN.password");
         document.querySelector("input#rememberMe").click();
         // 确保填充，有时候执行太快会出现未填充登录失败的情况
-        while (document.querySelector('input#username').value != username || document.querySelector('input#password').value != password || document.querySelector("input#rememberMe").value != 'true') {
+        // 添加最大重试次数，避免无限循环
+        let retryCount = 0;
+        const maxRetries = 50; // 最多重试 5 秒
+        while (retryCount < maxRetries &&
+               (document.querySelector('input#username').value != username ||
+                document.querySelector('input#password').value != password ||
+                document.querySelector("input#rememberMe").value != 'true')) {
             document.querySelector('input#username').value = GM_getValue("WebVPN.username");
             document.querySelector('input#password').value = GM_getValue("WebVPN.password");
             document.querySelector("input#rememberMe").value = true;
             await WaitTime(100);
+            retryCount++;
+        }
+        if (retryCount >= maxRetries) {
+            createToast("error", "表单填充超时，请手动登录");
+            return;
         }
         // return;
         if (document.querySelector('button[type=submit]')) {
@@ -569,8 +608,10 @@ TuanWei:
     }
 
     async function idsReLogin() {
-        if (!document.querySelector("#welcome.warn") && !document.querySelector("#welcome.warn").innerHTML && document.querySelector("#welcome.warn").innerHTML.indexOf("授权失败") == -1) {
-            return
+        const welcomeEl = document.querySelector("#welcome.warn");
+        // 修正逻辑：只有当元素存在、有内容、且包含"授权失败"时才执行跳转
+        if (!welcomeEl || !welcomeEl.innerHTML || welcomeEl.innerHTML.indexOf("授权失败") === -1) {
+            return;
         }
         createToast("info", `请稍候...`);
         createToast("info", `尝试跳转至正确页面`);
@@ -597,12 +638,19 @@ TuanWei:
             }
         }
         // 可能是网络问题，部分时候下载很慢
-        createToast("info", `下载识别模型可能需要花费一些时间，请耐心等待...`, 0);
-        var verification = await GetVerificationCode("Jwgl");
-        document.getElementsByName("loginForm.name")[0].value = GM_getValue("Jwgl.username");
-        document.getElementsByName("loginForm.password")[0].value = GM_getValue("Jwgl.password");
-        document.getElementsByName("loginForm.captcha")[0].value = verification;
-        document.querySelector("input#loginSubmit").click();
+        const toastId = createToast("info", `正在识别验证码，首次使用需下载识别模型（约 4MB），请耐心等待...`, 0);
+        try {
+            var verification = await GetVerificationCode("Jwgl");
+            removeToast(toastId);
+            document.getElementsByName("loginForm.name")[0].value = GM_getValue("Jwgl.username");
+            document.getElementsByName("loginForm.password")[0].value = GM_getValue("Jwgl.password");
+            document.getElementsByName("loginForm.captcha")[0].value = verification;
+            document.querySelector("input#loginSubmit").click();
+        } catch (err) {
+            removeToast(toastId);
+            createToast("error", `验证码识别失败: ${err.message}，请手动输入`, 0);
+            MyConsole('验证码识别错误详情:', err);
+        }
     }
 
     async function webvpnMain() {
@@ -845,7 +893,7 @@ TuanWei:
                 MyConsole(menuCourseManage)
                 const menuDdMyGrade = menuCourseManage[menu].querySelectorAll('dd.menu-dd')[menu_dd];
                 var menu_dd_all_grade = document.createElement('dd');
-                menu_dd_all_grade.class = 'menu-dd';
+                menu_dd_all_grade.className = 'menu-dd'; // 修复：应该用 className 而不是 class
                 menu_dd_all_grade.innerHTML = `
                     <a href="javascript:this.top.vpn_inject_script(this);vpn_eval((function () { ; }).toString().slice(14, -2))" layuimini-href="${href}" target="_self">
                         <i class="fa fa-file-text-o"></i>
@@ -855,11 +903,27 @@ TuanWei:
                 menuCourseManage[menu].querySelector("dl").insertBefore(menu_dd_all_grade, menuDdMyGrade);
             }
 
-            while (!document.querySelector('div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li')) {
+            // 添加超时保护
+            let retryCount = 0;
+            const maxRetries = 40; // 最多等待 20 秒
+
+            while (retryCount < maxRetries && !document.querySelector('div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li')) {
                 await WaitTime(500);
+                retryCount++;
             }
-            while (!document.querySelector('div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li').innerHTML) {
+            if (retryCount >= maxRetries) {
+                MyConsole("教务系统菜单加载超时，无法添加自定义菜单");
+                return;
+            }
+
+            retryCount = 0;
+            while (retryCount < maxRetries && !document.querySelector('div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li').innerHTML) {
                 await WaitTime(500);
+                retryCount++;
+            }
+            if (retryCount >= maxRetries) {
+                MyConsole("教务系统菜单内容加载超时");
+                return;
             }
             if (jwglCustomMenu.indexOf('全部学期成绩') != -1) {
                 addMenu(1, 4, 'personGrade.action?method=historyCourseGrade', '全部学期成绩');
@@ -870,9 +934,24 @@ TuanWei:
     async function jwglCourseIframe() {
         // 获取 iframe 元素
         var iframe = document.querySelector("#contentListFrame");
-        while (iframe.contentWindow && iframe.contentWindow.courseBeautify != true) {
+
+        // 添加超时保护，避免无限等待
+        // 注意：如果用户关闭了课表美化功能，courseBeautify 永远不会变成 true
+        let retryCount = 0;
+        const maxRetries = 60; // 最多等待 30 秒
+
+        while (retryCount < maxRetries &&
+               iframe.contentWindow &&
+               iframe.contentWindow.courseBeautify != true) {
             await WaitTime(500, 0, true, "iframe");
+            retryCount++;
         }
+
+        if (retryCount >= maxRetries) {
+            MyConsole("iframe 课表加载超时，可能是课表美化功能未启用或页面加载失败");
+            // 即使超时也尝试设置高度
+        }
+
         // 等待 iframe 中的内容加载完成后获取内容高度并设置 iframe 高度（首次）
         var iframeDocument = iframe.contentWindow.document;
         if (!iframeDocument.querySelector("table")) {
