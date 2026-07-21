@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      1.0.2
-// @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）- Bug 修复版
+// @version      1.2.0
+// @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）- WebVPN 协议适配 / 学生体验增强
 // @author       H
 // @run-at       document-idle
 // @storageName  h.nxu
@@ -138,35 +138,63 @@ TuanWei:
     'use strict';
 
     // ==Basic==
-    // 添加 Vue 和 Vant 组件到页面
+    let _vantReady = false;
+    let _tesseractReady = false;
+    let _basicReady = false;
+
+    // 添加 Vue 和 Vant 组件到页面（按需）
     function AddVant() {
-        unsafeWindow.Vue = Vue;
-        GM_addStyle(GM_getResourceText("vant-css"));
-        unsafeWindow.eval(GM_getResourceText("vant-js"));
-        unsafeWindow.vant = vant;
+        if (_vantReady) return;
+        try {
+            if (typeof Vue !== "undefined") unsafeWindow.Vue = Vue;
+            GM_addStyle(GM_getResourceText("vant-css"));
+            if (typeof vant === "undefined") {
+                unsafeWindow.eval(GM_getResourceText("vant-js"));
+            }
+            unsafeWindow.vant = typeof vant !== "undefined" ? vant : unsafeWindow.vant;
+            _vantReady = true;
+        } catch (e) {
+            MyConsole("AddVant 失败: " + (e && e.message));
+        }
     }
 
     function AddTesseract() {
-        unsafeWindow.eval(GM_getResourceText("tesseract-js"));
-        // 注意：不要覆盖 unsafeWindow.Tesseract，eval 执行后它已经在 unsafeWindow 上了
-        // unsafeWindow.Tesseract = Tesseract; // ← 删除这行，Tesseract 在沙箱里不存在，会把正确的值覆盖成 undefined
+        if (_tesseractReady && typeof unsafeWindow.Tesseract !== "undefined") return;
+        MyConsole("开始加载 Tesseract.js...");
+        try {
+            const tesseractCode = GM_getResourceText("tesseract-js");
+            if (!tesseractCode) {
+                MyConsole("错误：无法获取 tesseract-js 资源");
+                return;
+            }
+            MyConsole("Tesseract.js 代码长度: " + tesseractCode.length + " 字符");
+            unsafeWindow.eval(tesseractCode);
+            if (typeof unsafeWindow.Tesseract !== "undefined") {
+                MyConsole("✓ Tesseract 加载成功");
+                _tesseractReady = true;
+            } else {
+                MyConsole("✗ Tesseract 加载失败");
+            }
+        } catch (err) {
+            MyConsole("加载 Tesseract 时出错: " + err.message);
+        }
     }
 
-    function Basic() {
-        // 添加Notification组件
-        // 添加组件
-        addToast();
-        //createToast("success", "测试消息", 0);
-        // 添加css样式
-        GM_addStyle(ToastCss);
-        GM_addStyle(GM_getResourceText("svg-logo").replace(/\.\.\/webfonts/g, "https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.1/webfonts"));
-        //绑定Toast事件
-        unsafeWindow.createToast = createToast;
-        unsafeWindow.removeToast = removeToast;
-        // 绑定事件
-        unsafeWindow.CAT_userConfig = CAT_userConfig;
-        // UI
-        AddVant();
+    /** @param {{vant?: boolean}} opts 登录页只需 Toast，门户/设置/课表再开 Vant */
+    function Basic(opts = {}) {
+        if (!_basicReady) {
+            addToast();
+            GM_addStyle(ToastCss);
+            try {
+                GM_addStyle(GM_getResourceText("svg-logo").replace(/\.\.\/webfonts/g, "https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.1/webfonts"));
+            } catch (e) { /* ignore */ }
+            unsafeWindow.createToast = createToast;
+            unsafeWindow.removeToast = removeToast;
+            unsafeWindow.CAT_userConfig = CAT_userConfig;
+            _basicReady = true;
+        }
+        // 默认不加载 Vant（登录页更轻）；门户/设置/工具/课表传 { vant: true }
+        if (opts.vant === true) AddVant();
     }
     // /==Basic==
 
@@ -180,16 +208,183 @@ TuanWei:
     const LoadMessage = { "loading tesseract core": "核心加载", "initializing tesseract": "初始化", "loading language traineddata": "加载语言训练数据", "initializing api": "初始化接口", "recognizing text": "识别验证码" };
     const Version = Info.script.version;
     // 配置版本，增加即可使用户弹出更新窗口
-    const ConfigVersion = 5;
+    const ConfigVersion = 7;
+
+    // WebVPN 主机 token 表（AES-CFB key=iv=wrdvpnisthebest! 预计算结果，便于路由与拼链接）
+    const VPN_HOST_TOKEN = {
+        "ids.nxu.edu.cn": "77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b",
+        "jwgl.nxu.edu.cn": "77726476706e69737468656265737421fae04690693e7045300d8db9d6562d",
+        "202.201.128.234": "77726476706e69737468656265737421a2a713d27560391e2f5ad1e2ca0677",
+        "xsfw.nxu.edu.cn": "77726476706e69737468656265737421e8e4478b693e7045300d8db9d6562d",
+        "eip.nxu.edu.cn": "77726476706e69737468656265737421f5fe51d229287d1e7b0c9ce29b5b",
+        "www.cnki.net": "77726476706e69737468656265737421e7e056d2243e635930068cb8",
+        "kns.cnki.net": "77726476706e69737468656265737421fbf952d2243e635930068cb8",
+        "www.wanfangdata.com.cn": "77726476706e69737468656265737421e7e056d2303166567f068ea89941227bfcd3ca21bd0c",
+        "f.wanfangdata.com.cn": "77726476706e69737468656265737421f6b9569d2936695e790c88b8991b203a6ed9f11f",
+        "open.weixin.qq.com": "77726476706e69737468656265737421ffe7449269276d59660187e289446d36a8d6",
+    };
+    const VPN_TOKEN_HOST = Object.fromEntries(Object.entries(VPN_HOST_TOKEN).map(([h, t]) => [t, h]));
+    const VPN_BASE = "https://webvpn.nxu.edu.cn";
+
+    /** 解析当前是否经 WebVPN，以及真实业务 host/path */
+    function parseVpnContext() {
+        const path = location.pathname;
+        // /https/TOKEN/rest  或  /https-443/TOKEN/rest  或  /http-8080/TOKEN/rest
+        const m = path.match(/^\/(https?)(?:-(\d+))?\/([0-9a-fA-F]{40,})(\/.*)?$/i);
+        if (m) {
+            const token = m[3].toLowerCase();
+            return {
+                viaVpn: true,
+                scheme: m[1],
+                port: m[2] || "",
+                token,
+                realHost: VPN_TOKEN_HOST[token] || null,
+                realPath: m[4] || "/",
+                path,
+                host: location.hostname,
+                url: location.href,
+            };
+        }
+        return {
+            viaVpn: false,
+            scheme: location.protocol.replace(":", ""),
+            port: location.port || "",
+            token: null,
+            realHost: location.hostname,
+            realPath: path,
+            path,
+            host: location.hostname,
+            url: location.href,
+        };
+    }
+
+    /** 真实 URL / host+path → WebVPN 链接 */
+    function toWebvpnUrl(realUrlOrHost, maybePath = "/") {
+        let scheme = "https", host = "", port = "", path = "/", query = "";
+        if (/^https?:\/\//i.test(realUrlOrHost)) {
+            const u = new URL(realUrlOrHost);
+            scheme = u.protocol.replace(":", "");
+            host = u.hostname;
+            port = u.port || "";
+            path = u.pathname || "/";
+            query = u.search || "";
+        } else {
+            host = realUrlOrHost;
+            path = maybePath.startsWith("/") ? maybePath : "/" + maybePath;
+        }
+        const token = VPN_HOST_TOKEN[host];
+        if (!token) {
+            MyConsole("未知主机，无法生成 WebVPN 链接: " + host);
+            return null;
+        }
+        const portSeg = port && port !== "80" && port !== "443" ? `-${port}` : (port === "443" ? "-443" : "");
+        // 默认端口不写 -443，与门户多数链接一致；特殊端口写 /http-8080/TOKEN/
+        let prefix;
+        if (port && port !== "80" && port !== "443") {
+            prefix = `/${scheme}-${port}/${token}`;
+        } else {
+            prefix = `/${scheme}/${token}`;
+        }
+        return `${VPN_BASE}${prefix}${path}${query}`;
+    }
+
+    function isRealHost(ctx, name) {
+        return ctx.realHost === name || (ctx.token && VPN_HOST_TOKEN[name] === ctx.token);
+    }
+
+    function pathIncludes(ctx, frag) {
+        return (ctx.realPath && ctx.realPath.indexOf(frag) !== -1) || ctx.url.indexOf(frag) !== -1;
+    }
     // /==Constant==
 
     // ==Function==
-    // 识别验证码
+    /** 等待选择器出现（带超时），替代无上限 while+sleep */
+    function waitFor(selector, { timeout = 20000, root = document, interval = 200 } = {}) {
+        return new Promise((resolve, reject) => {
+            const hit = root.querySelector(selector);
+            if (hit) return resolve(hit);
+            const t0 = Date.now();
+            const timer = setInterval(() => {
+                const el = root.querySelector(selector);
+                if (el) {
+                    clearInterval(timer);
+                    resolve(el);
+                    return;
+                }
+                if (Date.now() - t0 >= timeout) {
+                    clearInterval(timer);
+                    reject(new Error("waitFor timeout: " + selector));
+                }
+            }, interval);
+        });
+    }
+
+    /** 填充受控输入框，并触发 input/change 以便页面脚本感知 */
+    function fillInput(el, value) {
+        if (!el) return false;
+        el.removeAttribute("readonly");
+        el.focus();
+        el.value = value;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+    }
+
+    /** 读取统一认证页错误文案 */
+    function getAuthErrorText() {
+        const oldErr = document.querySelector("span#msg.auth_error");
+        if (oldErr && oldErr.textContent && oldErr.textContent.trim()) {
+            return oldErr.textContent.trim();
+        }
+        const tip = document.querySelector("#showErrorTip span, #showErrorTip, .form-error, #showErrorTip .form-error");
+        if (tip && tip.textContent && tip.textContent.trim()) {
+            return tip.textContent.trim();
+        }
+        return "";
+    }
+
+    /**
+     * 统一认证密码加密（金智 encrypt.js 同款）
+     * AES-CBC, key=Utf8(salt), data=random64+pwd, Base64(ct)
+     * 优先调用页面已有 encryptPassword；否则本地复现。
+     */
+    function encryptPasswordLocal(password, salt) {
+        if (typeof unsafeWindow.encryptPassword === "function") {
+            try {
+                return unsafeWindow.encryptPassword(password, salt);
+            } catch (e) {
+                MyConsole("页面 encryptPassword 调用失败，改用本地实现");
+            }
+        }
+        if (!salt) return password;
+        // CryptoJS 在页面 encrypt.js 中；若未加载则无法本地 AES，直接返回明文让用户手动
+        if (typeof unsafeWindow.CryptoJS === "undefined") {
+            MyConsole("CryptoJS 未加载，无法加密密码");
+            return password;
+        }
+        const chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
+        const rand = (n) => {
+            let s = "";
+            for (let i = 0; i < n; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+            return s;
+        };
+        const data = rand(64) + password;
+        const key = unsafeWindow.CryptoJS.enc.Utf8.parse(salt);
+        const iv = unsafeWindow.CryptoJS.enc.Utf8.parse(rand(16));
+        return unsafeWindow.CryptoJS.AES.encrypt(data, key, {
+            iv,
+            mode: unsafeWindow.CryptoJS.mode.CBC,
+            padding: unsafeWindow.CryptoJS.pad.Pkcs7,
+        }).toString();
+    }
+
+    // 识别验证码（仅教务等仍使用图形码的场景；统一认证已改为滑块，不再走此路径）
     function GetVerificationCode(web) {
         var url = "";
         switch (web) {
             case "WebVPN":
-                url = "https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b/authserver/captcha.html?vpn-1&ts=225";
+                // 旧图形码接口，统一认证 captchaSwitch=2 时不会用到
+                url = "https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f9f352d229287d1e7b0c9ce29b5b/authserver/getCaptcha.htl?vpn-1&ts=" + Date.now();
                 break;
             case "Jwgl":
                 // 使用绝对 URL，确保在 WebVPN 环境下也能正确解析
@@ -201,22 +396,35 @@ TuanWei:
             default:
                 return Promise.reject(new Error("不支持的验证码类型"));
         }
-        MyConsole(url);
+        MyConsole("验证码 URL: " + url);
+
+        // 检查 Tesseract 是否已加载
+        if (typeof unsafeWindow.Tesseract === 'undefined') {
+            return Promise.reject(new Error("Tesseract 未正确加载，请检查 @resource tesseract-js 配置"));
+        }
+
+        MyConsole("开始识别验证码（使用最简单的 recognize 方法）...");
+
         return new Promise(function (resolve, reject) {
-            // 使用 unsafeWindow.Tesseract（在页面上下文中）
+            // 使用 Tesseract v5 最基础的 recognize 方法
+            // 不使用 createWorker，让 Tesseract 自己决定如何运行
             unsafeWindow.Tesseract.recognize(
                 url,
                 'eng',
                 {
-                    // 使用国内可访问的 traineddata CDN，避免被墙导致卡死
-                    langPath: 'https://cdn.bootcdn.net/ajax/libs/tesseract.js-data/4.0.0/',
-                    logger: m => LoadMessage[m.status] ? (MyConsole(LoadMessage[m.status])) : (null)
+                    logger: m => {
+                        if (m.status && LoadMessage[m.status]) {
+                            MyConsole(LoadMessage[m.status] + (m.progress ? ` (${Math.round(m.progress * 100)}%)` : ''));
+                        }
+                    }
                 }
-            ).then(({ data: { text } }) => {
-                MyConsole('识别结果: ' + text.replace(/\s+/g, ''));
-                resolve(text.replace(/\s+/g, ''));
+            ).then(result => {
+                const text = result.data.text.replace(/\s+/g, '');
+                MyConsole('识别结果: ' + text);
+                resolve(text);
             }).catch(err => {
-                MyConsole('验证码识别失败: ' + err.message);
+                MyConsole('验证码识别失败详情:');
+                MyConsole(err);
                 reject(err);
             });
         });
@@ -317,277 +525,340 @@ TuanWei:
     }
     // /==Function==
 
-    MyConsole(`开始运行`);
-    // 配置信息
+    MyConsole(`开始运行 v${Version}`);
     MyConsole(Info);
-    // MyConsole(`预判断...`);
-    // switch (Host) {
-    //     default:
-    //         break;
-    // }
-    // MyConsole(`预判断未匹配`);
-    // 确保页面完全加载
+
+    // 暴露工具给控制台 / 小工具页（学生自用）
+    unsafeWindow.BetterNXU = {
+        version: Version,
+        parseVpnContext,
+        toWebvpnUrl,
+        VPN_HOST_TOKEN,
+        waitFor,
+        fillInput,
+    };
+
     MyConsole(`等待页面加载完毕...`);
-    while (document.readyState != "complete") {
-        await WaitTime(500);
+    if (document.readyState !== "complete") {
+        await new Promise((r) => window.addEventListener("load", r, { once: true }));
     }
+
+    const ctx = parseVpnContext();
+    MyConsole(`路由上下文: viaVpn=${ctx.viaVpn} realHost=${ctx.realHost} realPath=${ctx.realPath}`);
+
+    // ---- 路由：按真实业务 host/path，不再死磕 token 长串 ----
+    async function routeJwgl(c) {
+        MyConsole("这里是 - 教务系统");
+        const p = c.realPath || c.path || "";
+        if (p.indexOf("index.action") !== -1 || p.indexOf("login.action") !== -1 || p === "/index.action" || p === "/login.action") {
+            MyConsole("正在 - 登录页");
+            AddTesseract();
+            Basic();
+            jwglLogin();
+        } else if (p.indexOf("cas.action") !== -1 || p.indexOf("home.action") !== -1) {
+            MyConsole("正在 - 主页");
+            Basic();
+            jwglMain();
+        } else if (p.indexOf("courseTableForStd.action") !== -1 && GetQuery("method") === "stdHome") {
+            MyConsole("正在 - 课表 iframe 壳");
+            Basic();
+            jwglCourseIframe();
+        } else if (p.indexOf("courseTableForStd.action") !== -1 && GetQuery("method") === "courseTable") {
+            MyConsole("正在 - 课表内容");
+            Basic({ vant: true });
+            jwglCourseBeautify();
+        }
+    }
+
+    async function routeAuthLogin() {
+        MyConsole("这里是 - 统一认证登录页");
+        Basic(); // 不加载 Vant/OCR
+        // 未开自动登录时，仍提供「一键填入」浮动按钮，方便手点
+        webvpnLogin();
+        if (!GM_getValue("WebVPN.autoLogin", false)) {
+            injectAuthFillHelper();
+        }
+    }
+
     MyConsole(`判断页面...`);
-    switch (Host) {
-        case 'open.weixin.qq.com':
-            MyConsole("欢迎使用微信登录");
-            weixinLogin();
-            break;
-        case 'webvpn.nxu.edu.cn':
-            MyConsole("欢迎使用 webvpn");
-            if (Url.indexOf('/77726476706e69737468656265737421fae04690693e7045300d8db9d6562d/') != -1 || Url.indexOf('/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2ca0677/') != -1) {
-                MyConsole("这里是 - 教务系统");
-                if (Url.indexOf('index.action') != -1 || Url.indexOf('login.action') != -1) {
-                    MyConsole("正在 - 登录页");
-                    AddTesseract();
-                    Basic();
-                    jwglLogin();
-                } else if (Url.indexOf('cas.action') != -1 || Url.indexOf('home.action') != -1) {
-                    MyConsole("正在 - 主页");
-                    Basic();
-                    jwglMain();
-                } else if (Url.indexOf('courseTableForStd.action') != -1 && GetQuery('method') == 'stdHome') {
-                    MyConsole("正在 - 课表");
-                    Basic();
-                    jwglCourseIframe();
-                } else if (Url.indexOf('courseTableForStd.action') != -1 && GetQuery('method') == 'courseTable') {
-                    MyConsole("正在 - 课表");
-                    AddVant();
-                    jwglCourseBeautify();
-                }
-            } else if ((Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") != -1 || Url.indexOf('/authserver/login') != -1 || Url.indexOf('login') != -1) && (Url.indexOf('nonlogin') == -1 && Url.indexOf('connect/qrconnect') == -1 && Url.indexOf('reAuthCheck') == -1)) {
-                MyConsole("这里是 - 登录页");
-                AddTesseract();
+
+    if (Host === "open.weixin.qq.com") {
+        MyConsole("欢迎使用微信登录");
+        weixinLogin();
+    } else if (Host === "jsfzyjxzlxt.nxu.edu.cn") {
+        MyConsole("欢迎使用评教系统");
+        if (Path === "/quality/student/evaluate/item_tasks") qualityChoose();
+        else if (Path === "/quality/student/evaluate/item_tasks_text") qualityText();
+    } else if (
+        Host === "jwgl.nxu.edu.cn" ||
+        Host.indexOf("202.201.128.234") !== -1 ||
+        isRealHost(ctx, "jwgl.nxu.edu.cn") ||
+        isRealHost(ctx, "202.201.128.234")
+    ) {
+        await routeJwgl(ctx);
+    } else if (Host === "ids.nxu.edu.cn" || isRealHost(ctx, "ids.nxu.edu.cn")) {
+        MyConsole("欢迎使用统一身份认证系统");
+        if ((ctx.realPath || Path).indexOf("/authserver/login") !== -1 || Path === "/authserver/login") {
+            await routeAuthLogin();
+        } else if ((ctx.realPath || Path).indexOf("/authserver/callback") !== -1 || Path === "/authserver/callback") {
+            Basic();
+            idsReLogin();
+        } else if ((ctx.realPath || Path).indexOf("/authserver/reAuthCheck") !== -1) {
+            Basic();
+            webvpnCheck();
+        }
+    } else if (Host === "webvpn.nxu.edu.cn") {
+        MyConsole("欢迎使用 webvpn");
+        const isAuthLogin =
+            (Url.indexOf("service=https%3A%2F%2Fwebvpn.nxu.edu.cn%2Flogin%3Fcas_login%3Dtrue") !== -1 ||
+                Url.indexOf("/authserver/login") !== -1 ||
+                Path === "/login" ||
+                Path.endsWith("/login")) &&
+            Url.indexOf("nonlogin") === -1 &&
+            Url.indexOf("connect/qrconnect") === -1 &&
+            Url.indexOf("reAuthCheck") === -1;
+
+        if (isRealHost(ctx, "jwgl.nxu.edu.cn") || isRealHost(ctx, "202.201.128.234")) {
+            await routeJwgl(ctx);
+        } else if (isAuthLogin || (isRealHost(ctx, "ids.nxu.edu.cn") && pathIncludes(ctx, "/authserver/login"))) {
+            await routeAuthLogin();
+        } else if (Url.indexOf("/authserver/reAuthCheck/") !== -1 || pathIncludes(ctx, "/authserver/reAuthCheck")) {
+            Basic();
+            webvpnCheck();
+        } else if (isRealHost(ctx, "open.weixin.qq.com") || Url.indexOf(VPN_HOST_TOKEN["open.weixin.qq.com"] + "/connect/qrconnect") !== -1) {
+            Basic();
+            webvpnReLogin();
+        } else if (Url === "https://webvpn.nxu.edu.cn/" || Path === "/") {
+            Basic({ vant: true });
+            webvpnMain();
+        } else if (isRealHost(ctx, "kns.cnki.net") || isRealHost(ctx, "www.cnki.net")) {
+            if (pathIncludes(ctx, "/xmlRead/trialRead")) {
                 Basic();
-                webvpnLogin();
-            } else if (Url.indexOf('/authserver/reAuthCheck/') != -1) {
-                MyConsole("这里是 - 确认页");
-                Basic();
-                webvpnCheck();
-            } else if (Url.indexOf('/77726476706e69737468656265737421ffe7449269276d59660187e289446d36a8d6/connect/qrconnect') != -1) {
-                MyConsole("这里是 - 扫码页");
-                Basic();
-                webvpnReLogin();
-            } else if (Url == 'https://webvpn.nxu.edu.cn/' || Path == "/") {
-                MyConsole("这里是 - 主页");
-                Basic();
-                webvpnMain();
-            } else if (Url.indexOf('xsfw/sys/xggzptapp/*default/index.do') != -1) {
-                MyConsole("这里是 - 学工系统");
-            } else if (Url.indexOf('/77726476706e69737468656265737421fbf952d2243e635930068cb8') != -1 || Url.indexOf('/77726476706e69737468656265737421e7e056d2243e635930068cb8') != -1) {
-                MyConsole("这里是 - 中国知网");
-                if (Url.indexOf('/xmlRead/trialRead') != -1) {
-                    Basic();
-                    MyConsole("正在 - html阅读");
-                    webvpnCnkiHtml();
-                }
-            } else if (Url.indexOf('/77726476706e69737468656265737421f6b9569d2936695e790c88b8991b203a6ed9f11f/online/pc/periodical_html') != -1) {
-                Basic();
-                MyConsole("这里是 - 万方阅读页");
                 webvpnCnkiHtml();
-            } else if (Path == '/wengine-vpn/failed') {
-                if (document.body.innerHTML.indexOf('地址：/h/tools') != -1) {
-                    MyConsole("正在 - 小工具");
-                    Basic();
-                    webvpnHTools();
-                } else if (document.body.innerHTML.indexOf('地址：/h/settings') != -1) {
-                    MyConsole("正在 - 脚本设置");
-                    Basic();
-                    webvpnHSettings();
-                } else if (document.body.innerHTML.indexOf('地址：/h/about') != -1) {
-                    MyConsole("正在 - 关于脚本");
-                    Basic();
-                    webvpnHAbout();
-                } else {
-                    MyConsole("正在 - 错误页");
-                    errorHtml();
-                }
+            }
+        } else if (isRealHost(ctx, "f.wanfangdata.com.cn") || pathIncludes(ctx, "periodical_html")) {
+            Basic();
+            webvpnCnkiHtml();
+        } else if (Path === "/wengine-vpn/failed") {
+            const bodyHtml = document.body ? document.body.innerHTML : "";
+            if (bodyHtml.indexOf("地址：/h/tools") !== -1) {
+                Basic({ vant: true });
+                webvpnHTools();
+            } else if (bodyHtml.indexOf("地址：/h/settings") !== -1) {
+                Basic({ vant: true });
+                webvpnHSettings();
+            } else if (bodyHtml.indexOf("地址：/h/about") !== -1) {
+                Basic({ vant: true });
+                webvpnHAbout();
             } else {
-                if (document.querySelector("h1") && (document.querySelector("h1").innerHTML == `404页面不存在`)) {
-                    errorHtml();
-                }
+                errorHtml();
             }
-            break;
-        case 'jsfzyjxzlxt.nxu.edu.cn':
-            MyConsole("欢迎使用评教系统");
-            if (Path == "/quality/student/evaluate/item_tasks") {
-                MyConsole("这里是 - 选择页");
-                qualityChoose();
-            } else if (Path == "/quality/student/evaluate/item_tasks_text") {
-                MyConsole("这里是 - 填写页");
-                qualityText();
-            }
-            break;
-        case 'jwgl.nxu.edu.cn':
-            MyConsole("欢迎使用教务系统");
-            if (Path == '/index.action' || Path == '/login.action') {
-                MyConsole("这里是 - 登录页");
-                AddTesseract();
-                Basic();
-                jwglLogin();
-            } else if (Url.indexOf('cas.action') != -1 || Url.indexOf('home.action') != -1) {
-                MyConsole("正在 - 主页");
-                Basic();
-                jwglMain();
-            } else if (Url.indexOf('courseTableForStd.action') != -1 && GetQuery('method') == 'stdHome') {
-                MyConsole("正在 - 课表");
-                Basic();
-                jwglCourseIframe();
-            } else if (Url.indexOf('courseTableForStd.action') != -1 && GetQuery('method') == 'courseTable') {
-                MyConsole("正在 - 课表");
-                AddVant();
-                jwglCourseBeautify();
-            }
-            break;
-        case 'ids.nxu.edu.cn':
-            MyConsole("欢迎使用统一身份认证系统");
-            if (Path == "/authserver/login") {
-                MyConsole("这里是 - 登录页");
-                AddTesseract();
-                Basic();
-                webvpnLogin();
-            } else if (Path == ('/authserver/callback')) {
-                MyConsole("正在 - 微信认证页");
-                Basic();
-                idsReLogin();
-            }
-            break;
-        // case 'tuanwei.nxu.edu.cn':
-        //     MyConsole("欢迎使用团委");
-        //     if (Path == '/system/_content/download.jsp') {
-        //         MyConsole("这里是 - 附件下载页");
-        //         unsafeWindow.eval(GM_getResourceText("tesseract-webvpn").replace(/^vpn_eval\(\(function\(\)\{/, '').replace(/\}[\n\r]*\)\.toString\(\)\.slice\(12\,[\s]*\-2\)\,\"\"\)\;$/, ''));
-        //         Tesseract = unsafeWindow.Tesseract;
-        //         Basic();
-        //         tuanweiDownload();
-        //     // } else if (Path == '/info/1003/1022.htm') {
-        //     } else {
-        //         tuanweiDownloadBridge();
-        //     }
-        //     break;
-        default:
-            if (Host.indexOf('202.201.128.234') != -1) {
-                MyConsole("欢迎使用教务系统");
-                if (Path == '/index.action' || Path == '/login.action') {
-                    MyConsole("这里是 - 登录页");
-                    AddTesseract();
-                    Basic();
-                    jwglLogin();
-                } else if (Url.indexOf('cas.action') != -1 || Url.indexOf('home.action') != -1) {
-                    MyConsole("正在 - 主页");
-                    Basic();
-                    jwglMain();
-                } else if (Url.indexOf('courseTableForStd.action') != -1 && GetQuery('method') == 'stdHome') {
-                    MyConsole("正在 - 课表");
-                    Basic();
-                    jwglCourseIframe();
-                } else if (Url.indexOf('courseTableForStd.action') != -1 && GetQuery('method') == 'courseTable') {
-                    MyConsole("正在 - 课表");
-                    AddVant();
-                    jwglCourseBeautify();
-                }
-            }
-            return;
+        } else if (document.querySelector("h1") && document.querySelector("h1").innerHTML === "404页面不存在") {
+            errorHtml();
+        }
     }
+
     return;
 
-    async function weixinLogin() {
-        // 添加超时保护，避免元素不存在时无限循环
-        let retryCount = 0;
-        const maxRetries = 60; // 最多等待 18 秒
+    /** 统一认证页：未开自动登录时，注入「填入已存账号」按钮 */
+    function injectAuthFillHelper() {
+        const user = GM_getValue("WebVPN.username", "");
+        const pass = GM_getValue("WebVPN.password", "");
+        if (!user || !pass) return;
+        if (document.getElementById("bnxu-fill-btn")) return;
 
-        while (retryCount < maxRetries &&
-               (!document.querySelector('.js_quick_login') || !document.querySelector('.js_quick_login').innerHTML)) {
-            await WaitTime(300);
-            retryCount++;
-        }
-        if (retryCount >= maxRetries) {
-            MyConsole("未找到微信快速登录按钮，可能页面结构已变化");
-            return;
-        }
-
-        retryCount = 0;
-        while (retryCount < maxRetries && document.querySelector('.js_quick_login').style.display == 'none') {
-            await WaitTime(300);
-            retryCount++;
-        }
-        if (retryCount >= maxRetries) {
-            MyConsole("微信快速登录按钮未显示");
-            return;
-        }
-
-        document.querySelector('.js_quick_login').querySelector('button').click()
+        const btn = document.createElement("button");
+        btn.id = "bnxu-fill-btn";
+        btn.type = "button";
+        btn.textContent = "Better NXU · 填入账号";
+        btn.style.cssText =
+            "position:fixed;right:16px;bottom:24px;z-index:99999;padding:10px 14px;border:none;border-radius:8px;background:#3a8bff;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2);";
+        btn.onclick = async () => {
+            try {
+                const userInput = document.querySelector("#pwdFromId #username, .login-main .m-account #username, input#username");
+                const passInput = document.querySelector("#pwdFromId #password, .login-main .m-account #password, input#password");
+                if (!userInput || !passInput) {
+                    createToast("error", "未找到登录框", 3);
+                    return;
+                }
+                fillInput(userInput, user);
+                passInput.removeAttribute("readonly");
+                fillInput(passInput, pass);
+                const saltEl = document.querySelector("#pwdEncryptSalt");
+                const saltPasswordEl = document.querySelector("#saltPassword, input[name=password][type=hidden]");
+                if (saltEl && saltEl.value && saltPasswordEl) {
+                    saltPasswordEl.value = encryptPasswordLocal(pass, saltEl.value);
+                }
+                createToast("success", "已填入，请点击登录（有滑块请手动完成）", 4);
+            } catch (e) {
+                createToast("error", "填入失败: " + e.message, 4);
+            }
+        };
+        document.body.appendChild(btn);
     }
 
+    async function weixinLogin() {
+        try {
+            const box = await waitFor(".js_quick_login", { timeout: 18000 });
+            const t0 = Date.now();
+            while (box.style.display === "none" && Date.now() - t0 < 18000) {
+                await WaitTime(300, 0, false);
+            }
+            if (box.style.display === "none") {
+                MyConsole("微信快速登录按钮未显示");
+                return;
+            }
+            const btn = box.querySelector("button");
+            if (btn) btn.click();
+            else MyConsole("未找到微信快速登录 button");
+        } catch (e) {
+            MyConsole("未找到微信快速登录按钮，可能页面结构已变化");
+        }
+    }
+
+    /**
+     * 统一认证自动登录（ids / webvpn 登录页）
+     * 适配金智 authserver：
+     *  - 明文框 name=passwordText (#password)
+     *  - 提交字段 name=password (#saltPassword) = encryptPassword(pwd, #pwdEncryptSalt)
+     *  - captchaSwitch=2 时为滑块，不走 OCR；滑块需用户手动完成
+     */
     async function webvpnLogin() {
         if (!GM_getValue("WebVPN.autoLogin", false)) {
             return;
         }
-        // if (document.body.innerHTML.indexOf("7天免登录") != -1) {
-        //     newWebvpnLogin();
-        //     return;
-        // }
         createToast("info", `自动登录...`);
         if (!CheckUsernameAndSecret("WebVPN")) {
             return;
         }
-        if (document.querySelector('span#msg.auth_error') && document.querySelector('span#msg.auth_error').innerHTML && document.querySelector('span#msg.auth_error').innerHTML == '您提供的用户名或者密码有误') {
-            createToast("error", `
-                <p style="margin-bottom:0.5em;margin-top: 0">账号密码配置错误<br>请前往配置相关信息</p>
-                <a href="javascript:void(0)" onclick="CAT_userConfig()" style="font-weight:bold;font-size:small">> 前往配置 <</a>
-            `);
+
+        // 等待登录表单就绪
+        let userInput, passInput;
+        try {
+            userInput = await waitFor("#pwdFromId #username, .login-main .m-account #username, input#username", { timeout: 12000 });
+            passInput = document.querySelector("#pwdFromId #password, .login-main .m-account #password, input#password");
+        } catch (e) {
+            createToast("error", "未找到登录表单，请手动登录", 5);
+            MyConsole(e);
             return;
-        } else if (document.querySelector('span#showErrorTip') && document.querySelector('span#showErrorTip').querySelector("span") && document.querySelector('span#showErrorTip').querySelector("span").innerHTML) {
-            if (document.querySelector('span#showErrorTip').querySelector("span").innerHTML == '您提供的用户名或者密码有误') {
+        }
+        if (!passInput) {
+            createToast("error", "未找到密码框，请手动登录", 5);
+            return;
+        }
+
+        const errText = getAuthErrorText();
+        if (errText) {
+            if (errText.indexOf("用户名或者密码有误") !== -1 || errText.indexOf("密码有误") !== -1) {
                 createToast("error", `
                     <p style="margin-bottom:0.5em;margin-top: 0">账号密码配置错误<br>请前往配置相关信息</p>
                     <a href="javascript:void(0)" onclick="CAT_userConfig()" style="font-weight:bold;font-size:small">> 前往配置 <</a>
                 `);
-                return;
+            } else {
+                createToast("error", `
+                    <p style="margin-bottom:0.5em;margin-top: 0">${errText}<br>请检查登录信息</p>
+                `);
             }
-            createToast("error", `
-                <p style="margin-bottom:0.5em;margin-top: 0">${document.querySelector('span#showErrorTip').querySelector("span").innerHTML}<br>请检查登录信息</p>
-            `);
             return;
         }
-        // 多次登录失败会需要验证码，一般不会出现
-        if (document.querySelector("p#cpatchaDiv") && document.querySelector("p#cpatchaDiv").innerHTML && document.querySelector("p#cpatchaDiv").innerHTML.replace(/\s/g, '') != '') {
-            // var verification = await GetVerificationCode("WebVPN");
-            // document.querySelector('input#captchaResponse').value = verification;
-            createToast("warning", `请手动输入验证码登录`, 0);
-            return;
+
+        // 旧版图形验证码容器（极少见）；新版是滑块，这里只提示
+        const oldCaptcha = document.querySelector("p#cpatchaDiv, #captchaDiv:not(.hide)");
+        if (oldCaptcha && oldCaptcha.offsetParent !== null && window.getComputedStyle(oldCaptcha).display !== "none") {
+            // captchaSwitch==1 的图形码场景：仍提示手动，避免错误 OCR
+            const captchaVisible = !oldCaptcha.classList.contains("hide");
+            if (captchaVisible && document.querySelector("#captchaImg") && document.querySelector("#captchaImg").offsetParent !== null) {
+                createToast("warning", `请手动输入图形验证码后登录`, 0);
+                // 仍填充账号密码，方便用户只补验证码
+            }
         }
+
         const username = GM_getValue("WebVPN.username");
         const password = GM_getValue("WebVPN.password");
-        document.querySelector("input#rememberMe").click();
-        // 确保填充，有时候执行太快会出现未填充登录失败的情况
-        // 添加最大重试次数，避免无限循环
-        let retryCount = 0;
-        const maxRetries = 50; // 最多重试 5 秒
-        while (retryCount < maxRetries &&
-               (document.querySelector('input#username').value != username ||
-                document.querySelector('input#password').value != password ||
-                document.querySelector("input#rememberMe").value != 'true')) {
-            document.querySelector('input#username').value = GM_getValue("WebVPN.username");
-            document.querySelector('input#password').value = GM_getValue("WebVPN.password");
-            document.querySelector("input#rememberMe").value = true;
-            await WaitTime(100);
-            retryCount++;
+
+        // 7 天免登录
+        const remember =
+            document.querySelector("input#rememberMe") ||
+            document.querySelector("input#myRememberMe") ||
+            document.querySelector("input[name=rememberMe]");
+        if (remember) {
+            remember.checked = true;
+            remember.value = "true";
+            remember.dispatchEvent(new Event("change", { bubbles: true }));
         }
-        if (retryCount >= maxRetries) {
-            createToast("error", "表单填充超时，请手动登录");
+
+        // 填充账号密码（触发页面事件）
+        fillInput(userInput, username);
+        // 密码框可能带 readonly 防自动填充
+        passInput.removeAttribute("readonly");
+        fillInput(passInput, password);
+
+        // 若页面已提供 encryptPassword + salt，预填 #saltPassword（startLogin/checkForm 也会再算一遍）
+        const saltEl = document.querySelector("#pwdEncryptSalt, input[id=pwdEncryptSalt]");
+        const saltPasswordEl = document.querySelector("#saltPassword, input[name=password][type=hidden]");
+        if (saltEl && saltEl.value && saltPasswordEl) {
+            try {
+                saltPasswordEl.value = encryptPasswordLocal(password, saltEl.value);
+                MyConsole("已预填 saltPassword（AES）");
+            } catch (e) {
+                MyConsole("预填 saltPassword 失败，交由页面 checkForm 处理");
+            }
+        }
+
+        // 校验填充结果
+        let ok = false;
+        for (let i = 0; i < 30; i++) {
+            if (userInput.value === username && passInput.value === password) {
+                ok = true;
+                break;
+            }
+            fillInput(userInput, username);
+            fillInput(passInput, password);
+            await WaitTime(100, 0, false);
+        }
+        if (!ok) {
+            createToast("error", "表单填充超时，请手动登录", 5);
             return;
         }
-        // return;
-        if (document.querySelector('button[type=submit]')) {
-            document.querySelector('button[type=submit]').click();
+
+        // 触发登录：优先走页面 startLogin（内部 checkForm → encrypt → 滑块/submit）
+        const submitBtn =
+            document.querySelector("a#login_submit") ||
+            document.querySelector("#pwdFromId a.login-btn") ||
+            document.querySelector("button[type=submit]");
+
+        if (typeof unsafeWindow.startLogin === "function" && submitBtn) {
+            MyConsole("调用页面 startLogin()");
+            try {
+                unsafeWindow.startLogin(submitBtn);
+            } catch (e) {
+                MyConsole(e);
+                submitBtn.click();
+            }
+        } else if (submitBtn) {
+            submitBtn.click();
+        } else if (typeof unsafeWindow.checkForm === "function") {
+            // 兜底：手动 checkForm + submit
+            if (unsafeWindow.checkForm()) {
+                const form = document.querySelector("#pwdFromId, .login-main .loginFromClass");
+                if (form) form.submit();
+            }
         } else {
-            document.querySelector('a#login_submit').click();
+            createToast("error", "未找到登录按钮", 5);
+            return;
         }
+
+        // 滑块出现后提示人工（协议层无法也不应自动过）
+        setTimeout(() => {
+            const slider =
+                document.querySelector("#captcha-id") ||
+                document.querySelector("#sliderCaptchaDiv") ||
+                document.querySelector("#sliderDiv") ||
+                document.querySelector(".slidercaptcha");
+            if (slider && slider.offsetParent !== null) {
+                createToast("warning", `请手动完成滑块验证（统一认证已改为滑块，不再自动识别）`, 0);
+            }
+        }, 800);
     }
 
     async function webvpnCheck() {
@@ -654,12 +925,16 @@ TuanWei:
     }
 
     async function webvpnMain() {
-        // 页面有渲染时间，确保元素渲染完成
-        while (!document.querySelector("div[title=教务管理平台]")) {
-            await WaitTime(500);
-        }
-        while (!document.querySelector("div[title=教务管理平台]").innerHTML) {
-            await WaitTime(500);
+        // 页面有渲染时间，确保元素渲染完成（带超时，避免门户改版后死等）
+        try {
+            await waitFor("div[title=教务管理平台]", { timeout: 25000 });
+            let spins = 0;
+            while (spins < 40 && !document.querySelector("div[title=教务管理平台]").innerHTML) {
+                await WaitTime(500, 0, false);
+                spins++;
+            }
+        } catch (e) {
+            MyConsole("门户主页关键卡片未出现，仍尝试注入自定义区块");
         }
 
         const firstSet = GM_getValue('firstSet', 0);
@@ -797,18 +1072,20 @@ TuanWei:
                 );
             }
             for (let i = 0; i <= 3; i++) {
+                const vpnLink = toWebvpnUrl(`http://202.201.128.234:${8080 + i}/index.action`) ||
+                    `https://webvpn.nxu.edu.cn/http-${8080 + i}/${VPN_HOST_TOKEN["202.201.128.234"]}/index.action`;
                 classesDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/http-${8080 + i}/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2ca0677/index.action`,
+                    vpnLink,
                     '<div class="block-group__item__logo" style="background-color: rgb(80, 135, 229);">抢</div>',
                     `备用${i + 5}`, "校外可用")
                 );
             }
         }
 
-        //自定义工具
+        //自定义工具（data-id 必须唯一，勿与自定义卡片共用 custom）
         if (GM_getValue('WebVPN.customTool', false)) {
-            mainDiv.prepend(titleCard("H - 小工具", "custom"));
-            const customDiv = document.querySelector('div[data-id=custom] div.block-group__content');
+            mainDiv.prepend(titleCard("H - 小工具", "h-tools"));
+            const customDiv = document.querySelector('div[data-id=h-tools] div.block-group__content');
             customDiv.appendChild(divCard(
                 `https://webvpn.nxu.edu.cn/h/tools`,
                 '<div class="block-group__item__logo" style="background-color: #4472c4;">工</div>',
@@ -829,39 +1106,39 @@ TuanWei:
         //自定义卡片
         const webVPNCustomCard = GM_getValue("WebVPN.customCard", ['教务管理', '学工系统', '信息门户', '中国知网', '万方数据', 'H小工具', '大先生']);
         if (webVPNCustomCard.length != 0) {
-            mainDiv.prepend(titleCard("自定义", "custom"));
-            const customDiv = document.querySelector('div[data-id=custom] div.block-group__content');
+            mainDiv.prepend(titleCard("自定义", "custom-cards"));
+            const customDiv = document.querySelector('div[data-id=custom-cards] div.block-group__content');
             if (webVPNCustomCard.indexOf('教务管理') != -1) {
                 customDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/https-443/77726476706e69737468656265737421fae04690693e7045300d8db9d6562d/cas.action`,
+                    toWebvpnUrl("https://jwgl.nxu.edu.cn/cas.action"),
                     '<div class="block-group__item__logo" style="background-color: rgb(235, 94, 94);">教</div>',
                     `教务平台`, "教务管理平台")
                 );
             }
             if (webVPNCustomCard.indexOf('学工系统') != -1) {
                 customDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421e8e4478b693e7045300d8db9d6562d/`,
+                    toWebvpnUrl("https://xsfw.nxu.edu.cn/"),
                     '<div class="block-group__item__logo" style="background-color: #95c2fb;">学</div>',
                     `学工系统`, "学工平台")
                 );
             }
             if (webVPNCustomCard.indexOf('信息门户') != -1) {
                 customDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421f5fe51d229287d1e7b0c9ce29b5b/`,
+                    toWebvpnUrl("https://eip.nxu.edu.cn/"),
                     '<div class="block-group__item__logo" style="background-color: #0966b5;">信</div>',
                     `信息门户（旧）`, "综合信息服务门户")
                 );
             }
             if (webVPNCustomCard.indexOf('中国知网') != -1) {
                 customDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421e7e056d2243e635930068cb8/`,
+                    toWebvpnUrl("https://www.cnki.net/"),
                     '<div class="block-group__item__logo" style="background-color: #1b66e6;">知</div>',
                     `中国知网`, "中国期刊全文数据库")
                 );
             }
             if (webVPNCustomCard.indexOf('万方数据') != -1) {
                 customDiv.appendChild(divCard(
-                    `https://webvpn.nxu.edu.cn/https/77726476706e69737468656265737421e7e056d2303166567f068ea89941227bfcd3ca21bd0c/`,
+                    toWebvpnUrl("https://www.wanfangdata.com.cn/"),
                     '<div class="block-group__item__logo" style="background-color: #00417e;">万</div>',
                     `万方数据`, "万方数据知识服务平台")
                 );

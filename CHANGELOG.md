@@ -6,6 +6,60 @@
 
 本项目的更新日志记录如下：
 
+## 1.2.0 - 2026-07-21
+
+学生体验增强：WebVPN 协议工具、智能路由、按需加载 UI、一键填账号。
+
+### Added
+- `parseVpnContext()` / `toWebvpnUrl()`：解析 WebVPN 路径中的真实主机，生成代理链接（基于网瑞达 host token 表）
+- 控制台全局 `BetterNXU` 对象：版本、URL 工具、waitFor、fillInput（方便调试与扩展）
+- 统一认证登录页（未开自动登录时）右下角 **「Better NXU · 填入账号」** 按钮：一键填入已存账号并预填 AES 密文，滑块仍需手动
+- 教务备用入口 token 纳入路由表，与 jwgl 域名统一处理
+
+### Changed
+- 路由改为按 **真实业务 host + path** 匹配，不再依赖 `Url.indexOf(超长 token)` 散落判断
+- `Basic({ vant: true })` 按需加载 Vant：登录页只加载 Toast，门户/设置/工具/课表才加载 Vue UI
+- 门户自定义卡片链接改为 `toWebvpnUrl('https://jwgl...')` 生成，主机变更时只改 token 表
+- `ConfigVersion` → `7`
+- 版本号 **1.2.0**
+
+### Security / 边界
+- 统一认证 **不自动过滑块**（有意为之）
+- 仅使用用户本人在脚本设置中保存的账号，不做未授权访问
+
+### Tips
+1. 重装/刷新脚本后确认版本 **1.2.0**
+2. 控制台应看到：`开始运行 v1.2.0` 与 `路由上下文: viaVpn=... realHost=...`
+3. 未开自动登录时，登录页右下角可点「填入账号」
+4. 开启自动登录时：自动填表 + startLogin；有滑块请手动完成
+5. 调试：`BetterNXU.toWebvpnUrl('https://jwgl.nxu.edu.cn/cas.action')`
+
+## 1.1.0 - 2026-07-21
+
+适配统一身份认证（金智 authserver）当前协议：AES 密码加密 + 滑块验证；并修复主页卡片 id 冲突。
+
+### Changed
+- **统一认证自动登录**重写：填充账号/密码后优先调用页面 `startLogin()`，由页面 `checkForm` 完成 `encryptPassword` 与提交流程
+- 预填 `#saltPassword`（AES-CBC，salt 来自 `#pwdEncryptSalt`），兼容页面已有 `encryptPassword` / CryptoJS
+- 统一认证登录页 **不再加载 Tesseract**（线上 `captchaSwitch=2` 为滑块，OCR 无效）
+- 出现滑块时 Toast 提示用户手动完成，**不自动过滑块**
+- `ConfigVersion` → `6`（会触发一次版本更新配置弹窗）
+- `rememberMe` 改为设置 `checked` + `change` 事件，不再只写 `.value`
+
+### Fixed
+- 主页「H - 小工具」与「自定义」共用 `data-id=custom` 导致卡片插错区块 → 拆为 `h-tools` / `custom-cards`
+- `weixinLogin` 改用 `waitFor`，避免重复 query 与空指针
+- 门户主页等待「教务管理平台」卡片增加超时，避免改版后死等
+
+### Tips（测试建议）
+1. 脚本猫/油猴重新安装或刷新 `Better NXU.user.js`，确认版本为 **1.1.0**
+2. 设置里打开 **WebVPN 自动登录**，填好账号密码
+3. 打开 `https://webvpn.nxu.edu.cn/` 或 `https://ids.nxu.edu.cn/authserver/login`
+4. 预期：自动填表并点登录；若弹出滑块，**手动拖完**即可进入
+5. 控制台应出现 `Better NXU` 日志：`调用页面 startLogin()` 或 `已预填 saltPassword`
+6. 主页同时开启「小工具」与「自定义卡片」时，两块应分别显示、互不覆盖
+7. 教务系统自动登录（图形码 OCR）行为与 1.0.2 相同，未改逻辑
+
 ## 1.0.2 - 2026-07-02
 
 重要的 Bug 修复版本，解决了验证码识别卡死和多处无限循环导致页面卡死的问题。
