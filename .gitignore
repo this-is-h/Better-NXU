@@ -1,0 +1,77 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build, coverage, and tool caches
+dist/
+dist-ssr/
+coverage/
+.nyc_output/
+.vite/
+*.tsbuildinfo
+test-results/
+playwright-report/
+blob-report/
+
+# Environment variables and machine-local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Private keys and credential exports
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.kdbx
+id_rsa
+id_ed25519
+credentials.json
+secrets.json
+
+# Editors and IDEs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.vs/
+.fleet/
+.history/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary and backup files
+*.bak
+*.orig
+*.temp
+*.tmp
+*~
+/backup/
+/backups/
+
+# Local project data and generated root-level userscript copies
+/schedule/
+/captcha/
+/codex/
+# /*.user.js

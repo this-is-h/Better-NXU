@@ -1,0 +1,9 @@
+dist
+node_modules
+coverage
+pnpm-lock.yaml
+*.user.js
+src/libraries
+schedule
+captcha
+CHANGELOG.md

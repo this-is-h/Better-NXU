@@ -1,0 +1,139 @@
+# Better NXU 2.0 校验与自动发布
+# 用途：pull request 和 main push 均先执行 `pnpm check`；只有 main 校验成功后才构建
+#      发布产物，并把 dist/better-nxu.user.js / dist/better-nxu.meta.js 用 `git add -f`
+#      强制提交回仓库。校验任务只有只读权限，发布任务才拥有 contents: write。
+#
+# 触发路径（paths 过滤）：源码、测试、文档、协作模板、构建配置或依赖清单变化时校验。
+#  - CI 自身提交只改 `dist/**`，不在 paths 内，不会再次触发（防循环）；
+#  - commit message 另带 `[skip ci]` 作双保险（GitHub 对含该标记的提交跳过 Actions）。
+#
+# 依赖说明：
+#  - 包管理器：pnpm（本项目构建统一用 pnpm；lock 文件为 pnpm-lock.yaml，须入库）。
+#  - 首次使用前：仓库需含 pnpm-lock.yaml，否则 `--frozen-lockfile` 会失败。
+#  - Node 22：vite 8 要求 node ^20.19 || >=22.12。
+#
+# 产物去向：构建产物提交回 main 分支（github-actions[bot] 作者）。若 main 有分支保护
+#      规则拒绝 bot 推送，请在规则中放行该提交或改用 Releases/Artifact 方式分发。
+
+name: Build Better NXU 2.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'AGENTS.md'
+      - '.gitignore'
+      - 'test/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'AGENTS.md'
+      - '.gitignore'
+      - 'test/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.github/workflows/build.yml'
+
+# 同一分支有新提交时取消旧任务，避免过期校验和多个 dist 发布相互冲突。
+concurrency:
+  group: build-better-nxu-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint（ESLint 静态检查）
+        run: pnpm lint
+
+      - name: Unit tests + coverage gate（行覆盖率 ≥ 80%）
+        run: pnpm test:coverage
+
+      - name: Dependency security audit（安全扫描）
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Check and build
+        run: pnpm check
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build verified commit
+        run: pnpm build && node scripts/verify-meta.mjs
+
+      - name: Commit dist back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # dist 被 .gitignore 忽略，须 -f 强制加入（产物永久跟踪，供线上安装/更新）。
+          git add -f dist
+          if git diff --cached --quiet; then
+            echo "dist 无变化，跳过提交"
+          else
+            git commit -m "build: 自动构建 dist 产物 [skip ci]"
+            git push
+          fi

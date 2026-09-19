@@ -1,0 +1,75 @@
+/*
+ * app-page.css — 独立 H 页面共享框架样式（settings/about 两页共有的 Vant 文档色板 + 滚动条 + box-sizing）
+ * 对应 1.x：Better NXU.user.js 行 3769-3814（webvpnHSettings GM_addStyle 首段）、4474-4519（webvpnHAbout 首段）
+ * 依赖：vite-plugin-monkey `?style` 模块（由 use-app-page 调用方按路由挂载）
+ * 入口/被谁调用：sites/sslvpn/pages/settings.page.js 与 sites/sslvpn/pages/about.page.js 的 extraSetup 内
+ *               先挂 appPageStyle 再挂各页专属 css（B2 复用改造，settings/about 两页共用本骨架）。
+ *
+ * 抽取动机（01 §8.2-7）：
+ *  1.x settings 与 about 两页的 GM_addStyle 各粘贴一份"Vant 文档色变量(:root --van-doc-*) + 美化滚动条(webkit+ Firefox)
+ *  + box-sizing: border-box"开篇段，一字不差（行 3769-3814 与 4474-4519）。2.0 抽到本文件，settings/about 两页的
+ *  page.js 复用注入（settings.css/about.css 不再各自复制公共段，只保留各自 #<id> 专属）。
+ *
+ * 注意（与 1.x 差异不破坏行为）：
+ *  - tools 页（行 4915+）开篇不含此段（它用 #main .schedule-manager 局部 box-sizing + Vant 组件自带样式），
+ *    故本文件只服务 settings/about 两页；tools 页样式由 B7 工具 SFC <style scoped> 自决。
+ *  - color 变量逐字保留 1.x 数值（不改动 Vant 文档约定色板，C5 行为等价）。
+ *  - `html,body,#<id>` 段的 #<id> 在原 1.x 是 `#settings`/`#about` 各异，故本文件只固化 html/body 全局部分，
+ *    具体容器 #<id> 的 width/height/background 与 padding/flex 由各页专属 css（settings.css/about.css）补
+ *    （避免把两页不同 id 写死进公共文件）。
+ */
+
+:root {
+  --van-doc-black: #000;
+  --van-doc-white: #fff;
+  --van-doc-gray-1: #f7f8fa;
+  --van-doc-gray-2: #f2f3f5;
+  --van-doc-gray-3: #ebedf0;
+  --van-doc-gray-4: #dcdee0;
+  --van-doc-gray-5: #c8c9cc;
+  --van-doc-gray-6: #969799;
+  --van-doc-gray-7: #646566;
+  --van-doc-gray-8: #323233;
+  --van-doc-blue: #1989fa;
+  --van-doc-green: #07c160;
+  --van-doc-purple: #8e69d3;
+  --van-doc-background: #eff2f5;
+}
+
+/* 美化滚动条 */
+*::-webkit-scrollbar {
+  width: 4px;
+}
+
+*::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
+
+*::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 100px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 100px;
+}
+
+/* Firefox 滚动条样式 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* html/body 全局布局：占满视口、Vant 文档背景色、隐藏溢出（容器 #<id> 的 padding/flex 由各页 SFC 自补）。 */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--van-doc-background);
+  overflow: hidden;
+}

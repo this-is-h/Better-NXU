@@ -1,0 +1,2 @@
+# 提交前自动格式化 + 静态检查（lint-staged 只检查暂存文件，秒级完成）。
+pnpm exec lint-staged

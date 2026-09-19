@@ -1,0 +1,3 @@
+# Conventional Commits 校验：type(scope): subject 格式、type 枚举、标题长度。
+# 规则见 commitlint.config.js；不符合的提交会被直接拒绝。
+pnpm exec commitlint --edit "$1"

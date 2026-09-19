@@ -1,0 +1,132 @@
+/*
+ * settings.css — 设置页 #settings 容器样式
+ * 对应 1.x：Better NXU.user.js 行 3769-3939（webvpnHSettings 内 GM_addStyle 块）
+ * 依赖：vite-plugin-monkey `?style` 模块（settings.page.js 挂载生成的 style 元素）；
+ *       公共骨架（:root --van-doc-* / 滚动条 / box-sizing / html,body）由 composables/app-page.css 提供，
+ *       经 settings.page.js 先挂 appPageStyle 再挂本文件（顺序保证覆盖一致，与 1.x 单块等价）。
+ * 入口/被谁调用：sites/sslvpn/pages/settings.page.js 的 extraSetup
+ *
+ * 1.x 行 3769-3939 的公共首段（:root/滚动条/box-sizing/html,body）已抽到 composables/app-page.css（B2 复用改造，
+ * 渲染等价）；本文件只保留 settings 专属：#settings 容器布局 / .settings-function-* / .settings-groups /
+ *  .group / .group-content / .group h2/h3 / .login-setting-disabled / 响应式 @media。
+ */
+
+#settings {
+  width: 100%;
+  height: 100%;
+  background-color: var(--van-doc-background);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.settings-function-area {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--van-doc-gray-3);
+  border-radius: 8px;
+  background-color: var(--van-doc-white);
+}
+
+.settings-function-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settings-function-title {
+  color: var(--van-doc-gray-8);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.settings-function-description {
+  color: var(--van-doc-gray-6);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.settings-function-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-groups {
+  flex: 1;
+  display: flex;
+  gap: 1em;
+  min-height: 0;
+  overflow-x: auto;
+  scrollbar-width: auto;
+}
+
+.group {
+  flex-shrink: 0;
+  width: 400px;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: var(--van-doc-gray-1);
+  scrollbar-width: auto;
+}
+
+.group-content {
+  width: 100%;
+  height: calc(100% - 46px);
+  overflow: hidden;
+  overflow-y: auto;
+  padding-bottom: 32px;
+}
+
+.group h2 {
+  color: var(--van-doc-gray-6);
+  margin: 0;
+  padding: 32px 16px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.group h3 {
+  color: var(--van-doc-gray-6);
+  margin: 0;
+  padding: 16px 32px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 14px;
+}
+
+.login-setting-disabled {
+  --van-cell-label-color: var(--van-doc-gray-6);
+}
+
+@media (max-width: 640px) {
+  #settings {
+    padding: 12px;
+  }
+
+  .settings-function-area {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-function-actions {
+    justify-content: flex-start;
+  }
+
+  .group {
+    width: calc(100vw - 24px);
+  }
+}
