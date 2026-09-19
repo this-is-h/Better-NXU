@@ -134,6 +134,9 @@ jobs:
           if git diff --cached --quiet; then
             echo "dist 无变化，跳过提交"
           else
-            git commit -m "build: 自动构建 dist 产物 [skip ci]"
+            # 产物由本任务刚构建并经 verify-meta 校验，钩子（lint-staged 会改写 dist 里的 .js）
+            # 对 bot 提交无意义且会破坏产物一致性；按 github-workflow.md §7.8 走 --no-verify，
+            # CI 门禁（check job）已完整兜底。
+            git commit --no-verify -m "build: 自动构建 dist 产物 [skip ci]"
             git push
           fi
