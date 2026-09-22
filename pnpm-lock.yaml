@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      captcha-recognizer-js:
+        specifier: 1.0.4
+        version: 1.0.4
       vant:
         specifier: 4.9.21
         version: 4.9.21(vue@3.5.22(typescript@7.0.2))
@@ -736,6 +739,9 @@ packages:
   callsites@3.1.0:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
+
+  captcha-recognizer-js@1.0.4:
+    resolution: {integrity: sha512-clSSfyGRsicZAQYwh/WLrmzzkCfu1pg8DOO0R88MCA2eIjiaDc8vfEthwTp/7XKCiwiwd11Nvq9vD5kCKF2xKw==}
 
   cliui@9.0.1:
     resolution: {integrity: sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w==}
@@ -2037,6 +2043,8 @@ snapshots:
       qified: 0.10.1
 
   callsites@3.1.0: {}
+
+  captcha-recognizer-js@1.0.4: {}
 
   cliui@9.0.1:
     dependencies:

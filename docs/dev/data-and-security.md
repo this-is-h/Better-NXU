@@ -115,14 +115,15 @@ header 的 Base64URL 文本同时作为 AES-GCM AAD，因此篡改 header、密�
 
 ### 远程请求
 
-| 目标                           | 目的                    | 数据                                         |
-| ------------------------------ | ----------------------- | -------------------------------------------- |
-| `portal.nxu.edu.cn/cal/<id>`   | 获取 ICS 课表           | 课表分享 ID、现有登录 cookie                 |
-| 门户 `execCardMethod`          | 获取当前账号课表分享 ID | 固定卡片参数、现有登录 cookie                |
-| 学工 `getStuBaseInfo.do`       | 验证导出者身份          | 用户确认的学号、现有登录 cookie              |
-| 教师查询代理接口               | 查询工号                | 教师姓名关键词、页码                         |
-| `v1.hitokoto.cn`               | 点击版本号显示一言      | 不发送业务凭证                               |
-| Tesseract worker/core/lang CDN | OCR 运行时              | 下载静态资源；验证码图片仍由当前教务页面读取 |
+| 目标                           | 目的                        | 数据                                                                      |
+| ------------------------------ | --------------------------- | ------------------------------------------------------------------------- |
+| `portal.nxu.edu.cn/cal/<id>`   | 获取 ICS 课表               | 课表分享 ID、现有登录 cookie                                              |
+| 门户 `execCardMethod`          | 获取当前账号课表分享 ID     | 固定卡片参数、现有登录 cookie                                             |
+| 学工 `getStuBaseInfo.do`       | 验证导出者身份              | 用户确认的学号、现有登录 cookie                                           |
+| 教师查询代理接口               | 查询工号                    | 教师姓名关键词、页码                                                      |
+| `v1.hitokoto.cn`               | 点击版本号显示一言          | 不发送业务凭证                                                            |
+| Tesseract worker/core/lang CDN | OCR 运行时                  | 下载静态资源；验证码图片仍由当前教务页面读取                              |
+| `cdn.jsdelivr.net`             | IDS 滑块 ORT/WASM/ONNX 模型 | GM 匿名下载固定版本静态资源并校验 SHA384；不发送账号、cookie 或验证码图片 |
 
 工具页会在后台打开信息门户和学工系统代理页并在约 5 秒后尝试关闭，用于建立所需登录态。该动作不绕过学校认证。
 
@@ -131,7 +132,7 @@ header 的 Base64URL 文本同时作为 AES-GCM AAD，因此篡改 header、密�
 - `GM_getValue` / `GM.setValue` / `GM.setValues`：配置、凭证、课表 ID、密钥；旧式写 API 仅作兼容回退。
 - `GM_getResourceText` / `GM_addElement` / `GM_addStyle`：读取固定资源、把可执行资源注入真实页面、注入样式；GM 注入路径可绕过 CSP。
 - `GM_openInTab` / `window.close`：设置页、后台预热和失败页关闭。
-- `GM.xmlHttpRequest`：ICS/一言等受权限控制的请求。
+- `GM.xmlHttpRequest`：ICS/一言及滑块静态资源等受权限控制的请求；滑块资源显式使用 `anonymous: true`。
 - 原生 `<a download>`：下载运行时生成的课表 Blob URL，并在完成后回收 Object URL。
 - `GM_setClipboard`：教师工号、知网/万方选区、密钥复制。
 - `GM_info`：版本信息。

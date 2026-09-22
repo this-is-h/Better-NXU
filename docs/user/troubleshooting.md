@@ -47,11 +47,19 @@
 
 - 你关闭了自动登录，只使用了右下角填充按钮；
 - 页面出现旧式图形验证码，需要手动输入；
-- 页面出现滑块验证，需要手动完成；
+- 页面出现滑块验证，自动识别失败或被判定为异常，需要手动完成；
 - 学校页面没有加载提交按钮或登录函数；
 - 页面已有认证错误，脚本停止避免循环登录。
 
 完成验证后手动点击登录即可。
+
+IDS 滑块若出现 `ort.min.js` 的 MIME 类型为 `text/html` 的错误，请更新脚本后刷新 WebVPN 登录页。新版通过 ScriptCat 后台下载并校验滑块资源，不再经 WebVPN 代理 CDN。首次下载较大；若提示下载或完整性校验失败，可刷新后重试或手动拖动滑块。
+
+若报 `Unexpected identifier 'ArrayBuffer'`，也是 WebVPN 兼容问题：旧版创建 JavaScript Blob 时未先将二进制解码为文本。更新后需刷新整个登录页，使旧 Worker 和页面模块重新加载；使用 `pnpm dev` 调试时也需要刷新页面。
+
+若出现 `Unexpected token` 或 `Failed to fetch dynamically imported module: blob:https://ids.nxu.edu.cn/...`，说明 WebVPN 改写了本地模块或其 Blob 来源。更新后的脚本会保留模块内容并还原真实 Blob 地址；请完整刷新登录页后重试。
+
+开发者排查此类问题请看[WebVPN 资源加载排障](../dev/webvpn-resource-loading.md)，其中记录了完整修复方法和复现步骤。
 
 ## 6. 教务验证码识别很慢或失败
 

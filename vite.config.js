@@ -17,6 +17,13 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import monkey, { util } from 'vite-plugin-monkey';
 import { USER_CONFIG_BLOCK } from './src/config/user-config.js';
+import { readFileSync } from 'node:fs';
+
+// 小型滑块算法静态打包后，必须随单文件产物保留上游 MIT 许可。
+const SLIDER_LICENSE = readFileSync(
+  new URL('./node_modules/captcha-recognizer-js/LICENSE', import.meta.url),
+  'utf8'
+);
 
 // h.notification.js 桥接脚本（@require 顺序紧跟在 h.notification.js 之后执行）。
 //  【为何需要 2026-07-30】ScriptCat 把整个脚本（@require 代码 + vite 产物 IIFE）包在同一 sandbox 包装函数内
@@ -69,12 +76,12 @@ export default defineConfig({
       // vite-plugin-monkey 官方 generate 钩子可扩展最终元数据文本。ScriptCat 的 ==UserConfig==
       // 不是标准 userscript 键，故对 serve/build/meta 三种产物统一追加完整配置块。
       generate({ userscript }) {
-        return `${userscript}\n\n${USER_CONFIG_BLOCK}`;
+        return `${userscript}\n\n${USER_CONFIG_BLOCK}\n\n/*! captcha-recognizer-js@1.0.4\n${SLIDER_LICENSE}\n*/`;
       },
       userscript: {
         name: 'Better NXU',
         namespace: 'https://thisish.com/',
-        version: '2.0.0', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 7（见 src/config/config-version.js）。
+        version: '2.0.1', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 7（见 src/config/config-version.js）。
         description: '这是一个提高各种 NXU 网站体验的用户脚本（Userscript）',
         author: 'H',
         'run-at': 'document-idle',
@@ -130,8 +137,9 @@ export default defineConfig({
           'about-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/README.md',
           'update-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md',
         },
-        // connect 逐字取自 1.x 头部行 43-45。一言 v1.hitokoto.cn 走 GM.xmlHttpRequest（02 §6.1）。
-        connect: ['webvpn.nxu.edu.cn', 'portal.nxu.edu.cn', 'v1.hitokoto.cn'],
+        // cdn.jsdelivr.net 用于滑块 ORT/WASM/模型的 GM 后台下载；固定版本与摘要见
+        // libraries/slider-resources.js。Worker 只使用本地资源，避免 WebVPN 改写外链。
+        connect: ['webvpn.nxu.edu.cn', 'portal.nxu.edu.cn', 'v1.hitokoto.cn', 'cdn.jsdelivr.net'],
         // @storageName ScriptCat 专有经 $extra 透传（§6.1 源码核验：直接 userscript.storageName 会被静默忽略）。
         $extra: { storageName: 'h.nxu' },
         // 标准 GM API 全部通过 #gm 静态导入，由 autoGrant 精确收集。CAT_userConfig 是 ScriptCat

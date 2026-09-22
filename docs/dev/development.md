@@ -89,6 +89,22 @@ vite-plugin-monkey 官方支持动态 import，但会改用 SystemJS 构建。�
 
 README/CHANGELOG 是经消毒的非执行内容，允许使用 `main` 无摘要 URL。不要把这一例外扩展到 JS 或 CSS。
 
+### IDS 滑块资源
+
+WebVPN 的外链、Blob 和 Worker 兼容方案已集中记录在[WebVPN 资源加载排障](webvpn-resource-loading.md)，包括错误对照、嵌套 Blob 与来源还原示例、依赖升级和完整网关脚本验证步骤。
+
+`captcha-recognizer-js@1.0.4/src/core.js`（MIT）的小型算法静态编入脚本。上游只开放模型 URL，ORT JavaScript 和 WASM 路径写死在 Worker；`libraries/slider-recognizer.js` 校验并替换这两处加载点，升级依赖时必须重新核对。原 IIFE `@resource` 已移除。
+
+`libraries/slider-resources.js` 在首次使用时经 `GM.xmlHttpRequest` 匿名下载 ORT 1.20.1 的 `ort.min.js`、`ort-wasm-simd-threaded.mjs`、`ort-wasm-simd-threaded.wasm` 和识别器 1.0.4 的模型，逐一校验 SHA384。ORT 摘要由 CDN 原始文件计算，模型摘要取自同版本 npm 包内文件。所有文件都在已有 `@connect cdn.jsdelivr.net` 范围内。不要将页面 `fetch` 或远程 `importScripts` 作为回退，否则 WebVPN 会再次重写地址。
+
+Worker 只收到本地 Blob URL 与模型 `Uint8Array`，保持单线程 WASM 和原展示坐标映射。单次下载超时为 60 秒，整个初始化上限 90 秒，识别上限 30 秒；同页并发初始化复用同一个 Promise。失败、显式释放及 `pagehide` 会中止请求、拒绝等待中的任务、终止 Worker 并回收 Blob URL，随后允许重试。
+
+发布前在 ScriptCat 安装构建产物，分别验证 IDS 直连与 WebVPN：首次下载及再次识别、背景图尺寸大于展示尺寸、无缺口、断网/下载失败、初始化超时后的手动回退。检查资源下载未进入 WebVPN 的 `/https/<token>/npm/` 路径，且不再出现 JavaScript 收到登录 HTML 的 MIME 错误。Node 测试与本地真实 WASM 加载不能替代这两条登录流程的实测。
+
+`ids/auth/slider-retry.js` 管理最多三次尝试（首次 + 两次重试）。学校成功时设置 `.sliderContainer_success` 并提交表单，失败约一秒后更新 `#slider-img1/2` 并清空、重画 Canvas。仅当图片来源或画布节点变化（无源图片时检测背景像素变化）才重试；两幅画布均有内容且稳定 400 ms 后才能识别。新图绘制最多等待 8 秒，推理中换图则丢弃旧结果。拖动后的等待不设失败倒计时，成功标记、关闭验证或 `pagehide` 结束监测；延迟跳转不会触发额外拖动。识别模型在循环外加载，同页并发调用共用一个流程。回归应包含连续三次失败、前两次失败第三次成功、超过一分钟的响应延迟、慢速重绘、节点替换和离开页面的清理。
+
+`ids/auth/slider-drag.js` 是项目自有的 IDS 拖动实现，仅派发学校组件使用的 `mousedown`、`mousemove`、`mouseup`。终点使用识别出的展示距离，拖动范围不超过轨道可用宽度；5 秒超时、页面离开或控件隐藏/移除时停止后续事件。取消时在按下原点释放，避免提交未完成轨迹。旧的来源不明通用拖动脚本不进入发布分支；新轨迹需在 ScriptCat 实际登录中回归。
+
 ## 6. Vue、Vant 与 DOM
 
 - Vue SFC 内按需 import Vant 组件和函数式 API，不调用全局整包 `vant`。
@@ -150,7 +166,7 @@ README/CHANGELOG 是经消毒的非执行内容，允许使用 `main` 无摘要 
 每次发布至少覆盖与改动相关的行；大范围重构应覆盖全部：
 
 - IDS 直连登录、WebVPN 代理 IDS 登录、自动登录关闭时的填充按钮。
-- 凭证缺失/错误、旧图形验证码、滑块验证和页面 DOM 缺失。
+- 凭证缺失/错误、旧图形验证码、滑块验证（含自动识别成功与失败回退）和页面 DOM 缺失。
 - 微信 `fast_login=0 -> 1`、二次认证、授权失败回跳。
 - 教务域名、IP 和 WebVPN 三种形态；OCR 成功、超时、资源失败、手动降级。
 - 教务首页菜单、课表美化、父 iframe 高度、图片/JSON/Excel 导出。

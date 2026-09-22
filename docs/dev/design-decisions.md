@@ -146,6 +146,12 @@ RSA 不适合直接加密几 MB JSON。每个文件生成随机 AES-256-GCM 密�
 - 门户常量卡片仍用字符串模板；若未来数据来自接口/GM，必须改为节点构建。
 - 远程 CDN 和校园网络可用性仍是外部依赖，降级路径必须长期保留。
 
+## 20. WebVPN 为什么需要同时保护 Blob 内容与来源
+
+WebVPN 会包装外部请求、`Blob`、`URL.createObjectURL()` 和 Worker。GM 后台下载只能解决外链改写；JavaScript 还需按 UTF-8 解码，再使用嵌套 Blob 保留源码，并将网关伪装成 IDS 来源的 Blob URL 还原后交给动态模块加载器。少一层都会重新出现已遇到的报错。
+
+实现位于 `libraries/slider-resources.js` 和 `libraries/slider-recognizer.js`。具体错误对照、复用示例及为何普通浏览器测试不足，见[WebVPN 资源加载排障](webvpn-resource-loading.md)。升级运行时或网关后按该文档复查完整加载链。
+
 ## 官方参考
 
 - [vite-plugin-monkey GM API usage](https://github.com/lisonge/vite-plugin-monkey#gm_api-usage)
