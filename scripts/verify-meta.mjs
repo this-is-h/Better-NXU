@@ -67,7 +67,12 @@ assert.equal(one('run-at'), 'document-idle');
 assert.equal(one('storageName'), 'h.nxu');
 assert.deepEqual(values('match'), expectedMatches);
 assert.deepEqual(values('grant').sort(), expectedGrants.sort());
-assert.deepEqual(values('connect'), ['webvpn.nxu.edu.cn', 'portal.nxu.edu.cn', 'v1.hitokoto.cn']);
+assert.deepEqual(values('connect'), [
+  'webvpn.nxu.edu.cn',
+  'portal.nxu.edu.cn',
+  'v1.hitokoto.cn',
+  'cdn.jsdelivr.net',
+]);
 
 const requires = values('require');
 const resources = values('resource');

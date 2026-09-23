@@ -42,6 +42,8 @@ export const MENU_TARGET_MISSING = 'MENU_TARGET_MISSING';
 export const WAIT_TIMEOUT = 'WAIT_TIMEOUT';
 /** WebVPN 代理 URL 构建失败（1.x 无显式抛错，buildWebVpnUrl 仅返回 null；2.0 新增供调用点显式报错用）。 */
 export const WEBVPN_URL_BUILD_FAILED = 'WEBVPN_URL_BUILD_FAILED';
+/** IDS 滑块识别运行时（GM 下载的 ORT/WASM/模型及本地 Worker）加载失败。 */
+export const SLIDER_RECOGNIZER_UNAVAILABLE = 'SLIDER_RECOGNIZER_UNAVAILABLE';
 
 // === 课表文件解析错误码（1.x 经 scheduleOperationError 产出，属“文件解析”非“加密原语”，归此处而非 crypto/errors）===
 /** 课表文件不是有效 JSON（1.x 行 1832 scheduleOperationError("INVALID_JSON", ...)）。 */

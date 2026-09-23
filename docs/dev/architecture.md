@@ -10,7 +10,7 @@ Better NXU 同时增强 WebVPN、统一身份认证、教务系统、信息门�
 - 安装脚本必须保持单文件，不含 SystemJS 或动态 chunk。
 - 依赖 ScriptCat `@run-at document-idle` 的“所有内容加载完成”保证，入口不再重复等待 `readyState`。
 - 运行在 ScriptCat `@inject-into page` 模型下，共享存储域为 `h.nxu`。
-- 当前元数据固定为 10 个 `@match`、15 个 `@grant`、7 个 `@require`、8 个 `@resource`、3 个 `@connect`，并包含完整 `==UserConfig==`。
+- 当前元数据固定为 10 个 `@match`、15 个 `@grant`、7 个 `@require`、8 个 `@resource`、4 个 `@connect`，并包含完整 `==UserConfig==`。
 
 ## 2. 启动与分发
 
@@ -127,7 +127,7 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 2. `idsLogin()` 再调用 `isTrustedIdsContext()` 做防御性校验。
 3. 自动登录关闭时，仅在已保存凭证的情况下显示“填入已保存账号”按钮，不自动提交。
 4. 自动登录开启时，检查页面错误、等待输入框、填充账号密码、勾选记住我。
-5. 遇到旧式图形验证码或滑块时回退用户手动操作。
+5. 遇到旧式图形验证码回退用户手动操作；提交后出现的滑块由 `ids/auth/slide-captcha.js` 自动识别（本地 ONNX Worker 缺口检测 + 人类滑动模拟，失败回退手动提示）。`libraries/slider-resources.js` 通过 GM 后台下载固定版本和 SHA384 的 ORT、WASM 与模型；Worker 仅加载 Blob URL 和模型二进制，避免 WebVPN 重写外链。
 6. 二次认证和微信回调由独立 page 处理，避免登录主干承担所有 URL 变体。
 
 ### 教务登录与课表

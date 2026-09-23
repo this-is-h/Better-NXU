@@ -4,7 +4,8 @@
  * 依赖：config/gm-store（getGMValue 读 WebVPN 凭证与 autoLogin 开关）、utils/dom（waitForElement /
  *       fillControlledInput）、utils/auth-form（getAuthErrorText / hasLegacyAuthCaptcha + 文案判定）、
  *       composables/use-credentials-toast（requireCredentials / notifyCredentialsProblem）、
- *       utils/errors（AUTH_SUBMIT_MISSING + scheduleOperationError）、libraries/notification（toast）、utils/console
+ *       utils/errors（AUTH_SUBMIT_MISSING + scheduleOperationError）、libraries/notification（toast）、utils/console、
+ *       auth/slide-captcha（滑块自动识别，2.0 起）
  * 入口/被谁调用：sites/ids/pages/login.page.js（启用 autoLogin 时调）；将来 webvpn 代理 ids 登录页（B7）复用同形
  *
  * 抽取边界（02 §3 / 01 §8.2-6 与 B2 风险对策）：
@@ -25,7 +26,9 @@
  *  - hasLegacyAuthCaptcha → "账号已填入，请手动输入图形验证码后登录" warning 0 秒常驻（1.x 行 2654-2657）
  *  - 提交分支：unsafeWindow.startLogin(submitButton) > submitButton.click() > unsafeWindow.checkForm()+form.requestSubmit()
  *    > 否则抛 AUTH_SUBMIT_MISSING（1.x 行 2659-2680）
- *  - 800ms 后检测滑块弹 "请手动完成滑块验证" warning 常驻（1.x 行 2682-2689）
+ *  - 800ms 后检测滑块：1.x 弹 "请手动完成滑块验证" warning 常驻（1.x 行 2682-2689）；
+ *    2.0 起改为自动识别（ids/auth/slide-captcha.solveIdsSliderCaptcha，captcha-recognizer-js
+ *    ONNX 缺口检测 + slider-drag 原生鼠标拖动，纯前端无服务端），失败仍回退手动提示
  *  - 错误兜底：authLoginSubmitting=false + "统一认证自动登录失败，请手动操作" error 5 秒（1.x 行 2690-2694）
  *
  * 1.x 直接调 createToast；2.0 经 libraries/notification.toast（page 模型 unsafeWindow===window，行为等价）。
@@ -37,6 +40,7 @@ import { waitForElement, fillControlledInput } from '../../../utils/dom.js';
 import { getAuthErrorText, hasLegacyAuthCaptcha, isCredentialsErrorText } from '../../../utils/auth-form.js';
 import { escapeHtml } from '../../../utils/file.js';
 import { requireCredentials, notifyCredentialsProblem } from '../../../composables/use-credentials-toast.js';
+import { solveIdsSliderCaptcha } from './slide-captcha.js';
 import { AUTH_SUBMIT_MISSING, scheduleOperationError } from '../../../utils/errors.js';
 import { toast, installNotification } from '../../../libraries/notification.js';
 import { unsafeWindow as grantedUnsafeWindow } from '#gm';
@@ -145,12 +149,12 @@ export async function idsLogin() {
       throw scheduleOperationError(AUTH_SUBMIT_MISSING, '统一认证登录按钮尚未加载');
     }
 
-    // 1.x 行 2682-2689：800ms 后若出现滑块提示用户手动完成。
+    // 1.x 行 2682-2689：800ms 后若出现滑块 → 2.0 改为自动识别（feat/slider-captcha-autosolve）。
+    // solveIdsSliderCaptcha 内部处理成功/失败 toast，不向外抛错（失败回退手动操作提示）。
     setTimeout(() => {
-      const slider = document.querySelector('#captcha-id, #sliderCaptchaDiv, #sliderDiv, .slidercaptcha');
-      if (slider && slider.offsetParent !== null && slider.innerHTML !== '') {
-        toast('warning', '请手动完成滑块验证', 0);
-      }
+      solveIdsSliderCaptcha().catch((err) => {
+        console('滑块自动识别流程异常', err, 'error');
+      });
     }, 800);
   } catch (error) {
     // 1.x 行 2690-2694：错误兜底。
