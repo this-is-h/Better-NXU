@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      2.0.0
+// @version      2.0.1
 // @author       H
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match        *://webvpn.nxu.edu.cn/*
@@ -32,6 +32,7 @@
 // @connect      webvpn.nxu.edu.cn
 // @connect      portal.nxu.edu.cn
 // @connect      v1.hitokoto.cn
+// @connect      cdn.jsdelivr.net
 // @grant        CAT_userConfig
 // @grant        GM.setValue
 // @grant        GM.setValues
@@ -142,6 +143,40 @@ TuanWei:
         type: checkbox
         default: false
  ==/UserConfig== */
+
+/*! captcha-recognizer-js@1.0.4
+MIT License
+
+Copyright (c) 2026 slider-captcha-gap contributors
+
+Inference/postprocess logic is a JavaScript port of captcha-recognizer
+(https://github.com/chenwei-zhao/captcha-recognizer), MIT License,
+Copyright 2024 Zhao Chenwei. The quantized ONNX model
+(model/slider.onnx.q8.onnx) is derived from that project's
+captcha_recognizer/models/slider.onnx and remains subject to its MIT license.
+
+This package bundles no third-party code at runtime; ONNX Runtime Web
+(MIT, © Microsoft Corporation) is loaded from jsDelivr at runtime.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
 
 (async function(vue) {
 	"use strict";
@@ -322,12 +357,12 @@ TuanWei:
 		_GM_addStyle?.(css.replace(/\.\.\/webfonts/g, FONT_AWESOME_WEBFONTS_URL));
 		installed$2 = true;
 	}
-	var console$39 = MyConsole("[notification]");
+	var console$40 = MyConsole("[notification]");
 	var global$1 = _unsafeWindow ?? window;
 	var installed$1 = false;
 	function installNotification() {
 		if (typeof global$1.addToast === "function") global$1.addToast();
-		else console$39("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
+		else console$40("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
 		if (!installed$1 && typeof global$1.ToastCss === "string") _GM_addStyle?.(global$1.ToastCss);
 		if (!installed$1) installFontAwesome();
 		installed$1 = true;
@@ -354,7 +389,7 @@ TuanWei:
 	function toast(type, message, duration) {
 		const impl = global$1.createToast;
 		if (typeof impl === "function") return impl(type, message, duration);
-		console$39("createToast 全局未就绪，降级记日志", {
+		console$40("createToast 全局未就绪，降级记日志", {
 			type,
 			message
 		}, "warn");
@@ -464,6 +499,7 @@ TuanWei:
 	var EXPORT_CANCELLED = "EXPORT_CANCELLED";
 	var AUTH_SUBMIT_MISSING = "AUTH_SUBMIT_MISSING";
 	var WAIT_TIMEOUT = "WAIT_TIMEOUT";
+	var SLIDER_RECOGNIZER_UNAVAILABLE = "SLIDER_RECOGNIZER_UNAVAILABLE";
 	var INVALID_JSON = "INVALID_JSON";
 	var INVALID_SCHEDULE = "INVALID_SCHEDULE";
 	var INVALID_DECRYPTED_SCHEDULE = "INVALID_DECRYPTED_SCHEDULE";
@@ -473,7 +509,7 @@ TuanWei:
 		error.code = code;
 		return error;
 	}
-	var console$38 = MyConsole("[wait]");
+	var console$39 = MyConsole("[wait]");
 	function Random(min, max) {
 		return parseInt(Math.random() * (max - min + 1) + min, 10);
 	}
@@ -488,13 +524,13 @@ TuanWei:
 		}
 		return new Promise(function(resolve) {
 			setTimeout(function() {
-				if (log) console$38("[等待] 定时任务完成", waitmsg.replace(/ /g, ""), "debug");
+				if (log) console$39("[等待] 定时任务完成", waitmsg.replace(/ /g, ""), "debug");
 				resolve();
 			}, waittime);
 		});
 	}
 	var unsafeWindow$1 = _unsafeWindow ?? window;
-	var console$37 = MyConsole("[dom]");
+	var console$38 = MyConsole("[dom]");
 	function simulateClick(el, needScroll = false) {
 		if (!el) return;
 		if (needScroll) el.scrollIntoView({
@@ -530,7 +566,7 @@ TuanWei:
 			if (element && predicate(element)) return element;
 			await WaitTime(interval, 0, false);
 		}
-		console$37("[DOM 等待] 目标元素等待超时", {
+		console$38("[DOM 等待] 目标元素等待超时", {
 			selector,
 			timeoutMs: timeout
 		}, "warn");
@@ -614,7 +650,7 @@ TuanWei:
 		const link = opener === "openConfig" ? "<a href=\"javascript:void(0)\" onclick=\"CAT_userConfig()\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>" : "<a href=\"https://sslvpn.nxu.edu.cn/h/settings\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>";
 		return [`<p style="margin-bottom:0.5em;margin-top: 0">${escapeHtml$1(headline)}<br>请前往配置相关信息</p>`, link].join("");
 	}
-	var console$36 = MyConsole("[credentials]");
+	var console$37 = MyConsole("[credentials]");
 	function resolveOpener(host) {
 		return host === "Jwgl" ? "openConfig" : "settingsPage";
 	}
@@ -622,7 +658,7 @@ TuanWei:
 		const username = getGMValue(`${host}.username`);
 		const password = getGMValue(`${host}.password`);
 		if (username && password) return true;
-		console$36(`[${host}] 未配置登录账号或密码`, "请前往 Better NXU 设置页面补充", "warn");
+		console$37(`[${host}] 未配置登录账号或密码`, "请前往 Better NXU 设置页面补充", "warn");
 		installNotification();
 		toast("error", buildCredentialsErrorToast({
 			missing: true,
@@ -636,6 +672,648 @@ TuanWei:
 			missing: false,
 			opener: resolveOpener(host)
 		}), duration);
+	}
+	var CONF_THRESHOLD = .5;
+	var IOU_THRESHOLD = .8;
+	var Y_IOU_THRESHOLD = .85;
+	var NC = 1;
+	var MASK_DIM = 32;
+	var ORT_BASE$2 = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+	function buildWorkerSource() {
+		return `/* slider-captcha-gap worker (generated) */
+/* global ort, importScripts, self */
+const CONF_THRESHOLD = ${CONF_THRESHOLD};
+const IOU_THRESHOLD = ${IOU_THRESHOLD};
+const Y_IOU_THRESHOLD = ${Y_IOU_THRESHOLD};
+const IMGSZ = 640;
+const NC = ${NC};
+const MASK_DIM = ${MASK_DIM};
+
+let session = null;
+
+async function init(modelUrl) {
+  if (typeof ort === 'undefined') {
+    importScripts(${JSON.stringify(ORT_BASE$2 + "ort.min.js")});
+  }
+  ort.env.wasm.numThreads = 1; // page contexts are usually not crossOriginIsolated
+  ort.env.wasm.simd = true;
+  ort.env.wasm.wasmPaths = ${JSON.stringify(ORT_BASE$2)};
+  session = await ort.InferenceSession.create(modelUrl, {
+    executionProviders: ['wasm'],
+    graphOptimizationLevel: 'all',
+  });
+  // Prewarm: first session.run() JIT-compiles the graph and allocates arena
+  // buffers (~1-2s in WASM). Do it here so the first user call is as fast as
+  // later ones.
+  const dummy = new ort.Tensor('float32', new Float32Array(3 * IMGSZ * IMGSZ), [1, 3, IMGSZ, IMGSZ]);
+  await session.run({ [session.inputNames[0]]: dummy });
+  self.postMessage({ type: 'ready' });
+}
+
+function letterboxTensor(source, srcW, srcH) {
+  const canvas = new OffscreenCanvas(IMGSZ, IMGSZ);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = 'rgb(114,114,114)';
+  ctx.fillRect(0, 0, IMGSZ, IMGSZ);
+  const r = Math.min(IMGSZ / srcH, IMGSZ / srcW);
+  const nw = Math.max(1, Math.min(Math.round(srcW * r), IMGSZ));
+  const nh = Math.max(1, Math.min(Math.round(srcH * r), IMGSZ));
+  const left = Math.round((IMGSZ - nw) / 2);
+  const top = Math.round((IMGSZ - nh) / 2);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'medium';
+  ctx.drawImage(source, 0, 0, srcW, srcH, left, top, nw, nh);
+  const rgba = ctx.getImageData(0, 0, IMGSZ, IMGSZ).data;
+  const n = IMGSZ * IMGSZ;
+  const chw = new Float32Array(3 * n);
+  for (let i = 0; i < n; i++) {
+    const b = rgba[i * 4 + 2], g = rgba[i * 4 + 1], r8 = rgba[i * 4];
+    chw[i] = b / 255;
+    chw[n + i] = g / 255;
+    chw[2 * n + i] = r8 / 255;
+  }
+  return chw;
+}
+
+async function identify(source, srcW, srcH) {
+  const tensor = new ort.Tensor('float32', letterboxTensor(source, srcW, srcH), [1, 3, IMGSZ, IMGSZ]);
+  const feeds = { [session.inputNames[0]]: tensor };
+  const results = await session.run(feeds);
+  const pred = results[session.outputNames[0]]; // [1, 4+nc+32, 8400]
+  const det = nonMaxSuppression(pred, CONF_THRESHOLD, IOU_THRESHOLD, NC)[0];
+  if (!det.length) return { box: [], confidence: 0 };
+  return pickBest(det, [srcH, srcW]);
+}
+
+function nonMaxSuppression(pred, confThres, iouThres, nc) {
+  const [, , anchors] = pred.dims;
+  const all = [];
+  for (let a = 0; a < anchors; a++) {
+    let best = -1;
+    for (let c = 4; c < 4 + nc; c++) {
+      const v = pred.data[c * anchors + a];
+      if (v > best) best = v;
+    }
+    if (best > confThres) {
+      const cx = pred.data[0 * anchors + a];
+      const cy = pred.data[1 * anchors + a];
+      const w = pred.data[2 * anchors + a];
+      const h = pred.data[3 * anchors + a];
+      all.push({ x1: cx - w/2, y1: cy - h/2, x2: cx + w/2, y2: cy + h/2, conf: best });
+    }
+  }
+  if (!all.length) return [[]];
+  all.sort((p, q) => q.conf - p.conf);
+  const keep = [];
+  for (const cand of all) {
+    if (keep.every(k => iouRect(k, cand) <= iouThres)) keep.push(cand);
+  }
+  return [keep];
+}
+
+function iouRect(a, b) {
+  const xx1 = Math.max(a.x1, b.x1), yy1 = Math.max(a.y1, b.y1);
+  const xx2 = Math.min(a.x2, b.x2), yy2 = Math.min(a.y2, b.y2);
+  const w = Math.max(0, xx2 - xx1), h = Math.max(0, yy2 - yy1);
+  const inter = w * h;
+  const uni = (a.x2 - a.x1) * (a.y2 - a.y1) + (b.x2 - b.x1) * (b.y2 - b.y1) - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+
+function pickOutMask(cands) {
+  if (cands.length === 1) return cands[0];
+  const sorted = [...cands].sort((a, b) => a.x1 - b.x1);
+  const slider = sorted[0];
+  const rest = sorted.slice(1);
+  const yFiltered = rest.filter(b => yIou([slider.y1, slider.y2], [b.y1, b.y2]) > Y_IOU_THRESHOLD);
+  const pool = yFiltered.length ? yFiltered : rest;
+  if (pool.length === 1) return pool[0];
+  let best = pool[0], bestScore = -1;
+  for (const cand of pool) {
+    const sc = iouRect(slider, cand);
+    if (sc > bestScore) { bestScore = sc; best = cand; }
+  }
+  return best;
+}
+
+function yIou([ay1, ay2], [by1, by2]) {
+  const inter = Math.max(0, Math.min(ay2, by2) - Math.max(ay1, by1));
+  const uni = (ay2 - ay1) + (by2 - by1) - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+
+function scaleBoxes(boxes, origShape) {
+  const [oh, ow] = origShape;
+  const gain = Math.min(IMGSZ / oh, IMGSZ / ow);
+  const padX = Math.round((IMGSZ - ow * gain) / 2);
+  const padY = Math.round((IMGSZ - oh * gain) / 2);
+  for (const b of boxes) {
+    b.x1 = clamp((b.x1 - padX) / gain, 0, ow);
+    b.y1 = clamp((b.y1 - padY) / gain, 0, oh);
+    b.x2 = clamp((b.x2 - padX) / gain, 0, ow);
+    b.y2 = clamp((b.y2 - padY) / gain, 0, oh);
+  }
+  return boxes;
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function pickBest(cands, origShape) {
+  const scaled = scaleBoxes(cands, origShape);
+  const best = pickOutMask(scaled);
+  return { box: [best.x1, best.y1, best.x2, best.y2], confidence: best.conf };
+}
+
+self.onmessage = async (e) => {
+  const msg = e.data;
+  try {
+    if (msg.type === 'init') {
+      await init(msg.modelUrl);
+      return;
+    }
+    if (msg.type === 'identify') {
+      if (!session) throw new Error('worker not initialized');
+      const res = await identify(msg.bitmap, msg.bitmap.width, msg.bitmap.height);
+      if (msg.bitmap) msg.bitmap.close();
+      self.postMessage({ id: msg.id, ...res });
+    } else if (msg.type === 'identifyData') {
+      if (!session) throw new Error('worker not initialized');
+      const c = new OffscreenCanvas(msg.width, msg.height);
+      c.getContext('2d').putImageData(new ImageData(msg.data, msg.width, msg.height), 0, 0);
+      const res = await identify(c, msg.width, msg.height);
+      self.postMessage({ id: msg.id, ...res });
+    }
+  } catch (err) {
+    self.postMessage({ id: msg.id, error: String((err && err.stack) || err) });
+  }
+};
+`;
+	}
+	var ORT_BASE$1 = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+	var SLIDER_ASSETS = {
+		runtime: {
+			url: `${ORT_BASE$1}ort.min.js`,
+			sha384: "RPL/K8tc0JVaNWsunkEmCzLeieefvFX2UCRLKLmLVChCI6P+CTKhzqF7VIeCc3Zp"
+		},
+		module: {
+			url: `${ORT_BASE$1}ort-wasm-simd-threaded.mjs`,
+			sha384: "SyfqCcawqO3udRV2twBwYuuR4Wh7Nj/yfAxyfN6UltDOh5VTrJH4aT9HfEvthS02"
+		},
+		wasm: {
+			url: `${ORT_BASE$1}ort-wasm-simd-threaded.wasm`,
+			sha384: "t24pimTffN4djMKJaYLDupLzilNBHTgwqbjacQNJObCC4RrMH4UjfZgDkwHEU04k"
+		},
+		model: {
+			url: "https://cdn.jsdelivr.net/npm/captcha-recognizer-js@1.0.4/model/slider.onnx.q8.onnx",
+			sha384: "6bKNnUGtWRYJcsM4Mvh3wqs0Dapp+uJhJJqScnfAw6LQwpgbJB24w9oasthHB26N"
+		}
+	};
+	async function fetchSliderAsset({ url, sha384 }, signal) {
+		signal.throwIfAborted();
+		if (typeof _GM?.xmlHttpRequest !== "function") throw new Error("GM.xmlHttpRequest 不可用");
+		const request = _GM.xmlHttpRequest({
+			method: "GET",
+			url,
+			responseType: "arraybuffer",
+			anonymous: true,
+			timeout: 6e4
+		});
+		let abort;
+		const aborted = new Promise((_, reject) => {
+			abort = () => {
+				reject(signal.reason);
+				request.abort?.();
+			};
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) abort();
+		});
+		try {
+			const response = await Promise.race([request, aborted]);
+			signal.throwIfAborted();
+			if (response.status !== 200) throw new Error(`滑块资源下载失败（HTTP ${response.status}）`);
+			if (/^content-type:\s*(?:text\/html|application\/xhtml\+xml)/im.test(response.responseHeaders || "")) throw new Error("滑块资源返回了 HTML 页面");
+			const bytes = response.response;
+			if (Object.prototype.toString.call(bytes) !== "[object ArrayBuffer]" || !bytes.byteLength) throw new Error("滑块资源不是有效的二进制文件");
+			const digest = await crypto.subtle.digest("SHA-384", bytes);
+			signal.throwIfAborted();
+			if (btoa(String.fromCharCode(...new Uint8Array(digest))) !== sha384) throw new Error("滑块资源完整性校验失败");
+			return bytes;
+		} finally {
+			signal.removeEventListener("abort", abort);
+		}
+	}
+	async function loadSliderAssets(signal) {
+		const entries = await Promise.all(Object.entries(SLIDER_ASSETS).map(async ([name, asset]) => [name, await fetchSliderAsset(asset, signal)]));
+		return Object.fromEntries(entries);
+	}
+	var MIN_CONFIDENCE = CONF_THRESHOLD;
+	var ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+	var INIT_TIMEOUT_MS = 9e4;
+	var DETECT_TIMEOUT_MS = 3e4;
+	var active = null;
+	function buildLocalSliderWorker({ runtimeUrl, moduleUrl, wasmUrl }) {
+		let source = buildWorkerSource();
+		const replacements = [[`importScripts(${JSON.stringify(`${ORT_BASE}ort.min.js`)});`, `importScripts(${JSON.stringify(runtimeUrl)});`], [`ort.env.wasm.wasmPaths = ${JSON.stringify(ORT_BASE)};`, `ort.env.wasm.wasmPaths = ${JSON.stringify({
+			mjs: moduleUrl,
+			wasm: wasmUrl
+		})};`]];
+		for (const [from, to] of replacements) {
+			if (source.split(from).length !== 2) throw new Error("滑块 Worker 加载接口已变化");
+			source = source.replace(from, () => to);
+		}
+		return source;
+	}
+	function getSliderRecognizer() {
+		if (active) return active.ready;
+		const state = {
+			controller: new AbortController(),
+			worker: null,
+			urls: [],
+			pending: new Map(),
+			nextId: 0
+		};
+		state.onPageHide = () => stop(state, new Error("滑块识别页面已离开"));
+		window.addEventListener("pagehide", state.onPageHide, { once: true });
+		active = state;
+		state.ready = initialize(state).catch((error) => {
+			stop(state, error);
+			throw scheduleOperationError(SLIDER_RECOGNIZER_UNAVAILABLE, `滑块识别组件加载失败：${error?.message || error}，请手动完成验证`);
+		});
+		return state.ready;
+	}
+	async function initialize(state) {
+		const timer = setTimeout(() => stop(state, new Error("滑块识别组件加载超时")), INIT_TIMEOUT_MS);
+		try {
+			const assets = await loadSliderAssets(state.controller.signal);
+			state.controller.signal.throwIfAborted();
+			const objectUrl = (bytes, type) => {
+				const blob = new Blob([new Blob([bytes])], { type });
+				const url = URL.createObjectURL(blob);
+				state.urls.push(url);
+				return typeof window.vpn_rewrite_url === "function" ? window.vpn_rewrite_url(url) : url;
+			};
+			const decoder = new TextDecoder("utf-8", { fatal: true });
+			const source = buildLocalSliderWorker({
+				runtimeUrl: objectUrl(decoder.decode(assets.runtime), "text/javascript"),
+				moduleUrl: objectUrl(decoder.decode(assets.module), "text/javascript"),
+				wasmUrl: objectUrl(assets.wasm, "application/wasm")
+			});
+			state.worker = new Worker(objectUrl(source, "text/javascript"));
+			state.worker.onmessage = ({ data }) => {
+				const id = data.type === "ready" ? 0 : data.id;
+				const pending = state.pending.get(id);
+				if (!pending) return;
+				state.pending.delete(id);
+				data.error ? pending.reject(new Error(data.error)) : pending.resolve(data);
+			};
+			state.worker.onerror = () => stop(state, new Error("滑块识别 Worker 执行失败"));
+			state.worker.onmessageerror = () => stop(state, new Error("滑块识别 Worker 消息读取失败"));
+			await send(state, {
+				type: "init",
+				modelUrl: new Uint8Array(assets.model)
+			}, [assets.model], 0);
+			return {
+				detect: (source, options) => detect(state, source, options),
+				dispose: () => stop(state, new Error("滑块识别器已释放"))
+			};
+		} finally {
+			clearTimeout(timer);
+		}
+	}
+	function send(state, message, transfer = [], id = ++state.nextId) {
+		return new Promise((resolve, reject) => {
+			state.controller.signal.throwIfAborted();
+			state.pending.set(id, {
+				resolve,
+				reject
+			});
+			try {
+				state.worker.postMessage({
+					...message,
+					id
+				}, transfer);
+			} catch (error) {
+				state.pending.delete(id);
+				reject(error);
+			}
+		});
+	}
+	async function detect(state, source, { displayWidth, displayHeight } = {}) {
+		state.controller.signal.throwIfAborted();
+		const timer = setTimeout(() => stop(state, new Error("滑块识别超时，请手动完成验证")), DETECT_TIMEOUT_MS);
+		let rejectOnAbort;
+		const aborted = new Promise((_, reject) => {
+			rejectOnAbort = () => reject(state.controller.signal.reason);
+			state.controller.signal.addEventListener("abort", rejectOnAbort, { once: true });
+		});
+		try {
+			return await Promise.race([detectImage(state, source, displayWidth, displayHeight), aborted]);
+		} finally {
+			clearTimeout(timer);
+			state.controller.signal.removeEventListener("abort", rejectOnAbort);
+		}
+	}
+	async function detectImage(state, source, displayWidth, displayHeight) {
+		let naturalWidth, naturalHeight, result;
+		if (source?.data && source.width && source.height) {
+			naturalWidth = source.width;
+			naturalHeight = source.height;
+			result = await send(state, {
+				type: "identifyData",
+				data: source.data,
+				width: naturalWidth,
+				height: naturalHeight
+			});
+		} else {
+			const bitmap = await createImageBitmap(source);
+			try {
+				naturalWidth = bitmap.width;
+				naturalHeight = bitmap.height;
+				result = await send(state, {
+					type: "identify",
+					bitmap
+				}, [bitmap]);
+			} finally {
+				bitmap.close();
+			}
+		}
+		const scaleX = (displayWidth ?? naturalWidth) / naturalWidth;
+		const scaleY = (displayHeight ?? naturalHeight) / naturalHeight;
+		return {
+			box: result.box.map((value, index) => value * (index % 2 ? scaleY : scaleX)),
+			confidence: result.confidence,
+			naturalWidth,
+			naturalHeight
+		};
+	}
+	function stop(state, error) {
+		if (state.controller.signal.aborted) return;
+		state.controller.abort(error);
+		window.removeEventListener("pagehide", state.onPageHide);
+		state.worker?.terminate();
+		for (const pending of state.pending.values()) pending.reject(error);
+		state.pending.clear();
+		for (const url of state.urls) URL.revokeObjectURL(url);
+		state.urls.length = 0;
+		if (active === state) active = null;
+	}
+	function dragIdsSlider(slider, distance, { signal, timeoutMs = 5e3 } = {}) {
+		return new Promise((resolve, reject) => {
+			signal?.throwIfAborted();
+			const doc = slider?.ownerDocument;
+			const view = doc?.defaultView;
+			const container = slider?.closest(".sliderContainer");
+			if (!doc || !view || !container || !slider.isConnected || !slider.getClientRects().length) throw new Error("滑块控件不可用");
+			const rect = slider.getBoundingClientRect();
+			const maxDistance = container.getBoundingClientRect().width - rect.width;
+			if (!Number.isFinite(distance) || distance <= 0 || distance > maxDistance) throw new Error("滑块距离超出有效范围");
+			const startX = rect.left + rect.width * (.4 + Math.random() * .2);
+			const startY = rect.top + rect.height * (.4 + Math.random() * .2);
+			const durationMs = Math.min(700, Math.max(420, 320 + distance * 1.4) + Math.random() * 40);
+			const verticalOffset = (Math.random() < .5 ? -1 : 1) * (1 + Math.random() * 2);
+			const startedAt = view.performance.now();
+			let lastMoveAt = startedAt;
+			let animationFrame;
+			let pressed = false;
+			let finished = false;
+			const emit = (target, type, x, y, buttons) => target.dispatchEvent(new view.MouseEvent(type, {
+				bubbles: true,
+				cancelable: true,
+				view,
+				button: 0,
+				buttons,
+				clientX: x,
+				clientY: y
+			}));
+			const finish = (error) => {
+				if (finished) return;
+				finished = true;
+				view.cancelAnimationFrame(animationFrame);
+				clearTimeout(deadline);
+				signal?.removeEventListener("abort", abort);
+				if (error && pressed) try {
+					emit(doc, "mouseup", startX, startY, 0);
+				} catch {}
+				error ? reject(error) : resolve();
+			};
+			const abort = () => finish(signal.reason ?? new Error("滑块拖动已取消"));
+			const tick = (now) => {
+				if (finished) return;
+				try {
+					signal?.throwIfAborted();
+					if (!slider.isConnected) throw new Error("滑块控件已移除或隐藏");
+					const progress = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
+					if (progress < 1 && now - lastMoveAt < 20) {
+						animationFrame = view.requestAnimationFrame(tick);
+						return;
+					}
+					if (!slider.getClientRects().length) throw new Error("滑块控件已移除或隐藏");
+					const eased = progress * progress * (3 - 2 * progress);
+					emit(doc, "mousemove", startX + distance * eased, startY + Math.sin(progress * Math.PI) * verticalOffset, 1);
+					lastMoveAt = now;
+					if (finished) return;
+					if (progress === 1) {
+						pressed = false;
+						emit(doc, "mouseup", startX + distance, startY, 0);
+						finish();
+					} else animationFrame = view.requestAnimationFrame(tick);
+				} catch (error) {
+					finish(error);
+				}
+			};
+			const deadline = setTimeout(() => finish(new Error("滑块拖动超时，请手动完成验证")), timeoutMs);
+			signal?.addEventListener("abort", abort, { once: true });
+			try {
+				pressed = true;
+				emit(slider, "mousedown", startX, startY, 1);
+				if (!finished) animationFrame = view.requestAnimationFrame(tick);
+			} catch (error) {
+				finish(error);
+			}
+		});
+	}
+	var POLL_MS = 200;
+	var FRAME_POLL_MS = 60;
+	var FRAME_TIMEOUT_MS = 8e3;
+	var FRAME_STABLE_MS = 120;
+	function getSliderElements() {
+		const canvases = document.querySelectorAll("#sliderDiv > canvas");
+		return {
+			bgImg: canvases[0] ?? null,
+			pieceImg: canvases[1] ?? null,
+			slider: document.querySelector("#sliderDiv > div.sliderContainer > div.sliderMask > div.slider")
+		};
+	}
+	function isSliderCaptchaPresent() {
+		const slider = document.querySelector("#sliderDiv, #sliderCaptchaDiv, #captcha-id");
+		return Boolean(slider && slider.offsetParent !== null && slider.innerHTML !== "");
+	}
+	function challengeSource() {
+		return ["#slider-img1", "#slider-img2"].map((selector) => document.querySelector(selector)?.getAttribute("src") ?? "").join("\n");
+	}
+	function canvasFingerprint(canvas) {
+		if (!canvas?.width || !canvas.height) return null;
+		const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+		let hash = 2166136261;
+		let painted = false;
+		for (let i = 0; i < pixels.length; i++) {
+			hash = Math.imul(hash ^ pixels[i], 16777619);
+			if (i % 4 === 3 && pixels[i] !== 0) painted = true;
+		}
+		return painted ? `${canvas.width}:${canvas.height}:${hash >>> 0}` : null;
+	}
+	function readSliderFrame() {
+		const elements = getSliderElements();
+		if (!elements.bgImg || !elements.pieceImg || !elements.slider) return null;
+		const background = canvasFingerprint(elements.bgImg);
+		const piece = canvasFingerprint(elements.pieceImg);
+		if (!background || !piece) return null;
+		return {
+			...elements,
+			source: challengeSource(),
+			background,
+			piece
+		};
+	}
+	function isSameSliderFrame(left, right) {
+		return Boolean(left && right && left.bgImg === right.bgImg && left.pieceImg === right.pieceImg && left.slider === right.slider && left.source === right.source && left.background === right.background && left.piece === right.piece);
+	}
+	function sleep(signal, delayMs = POLL_MS) {
+		return new Promise((resolve, reject) => {
+			signal?.throwIfAborted();
+			const abort = () => {
+				clearTimeout(timer);
+				reject(signal.reason);
+			};
+			const timer = setTimeout(() => {
+				signal?.removeEventListener("abort", abort);
+				resolve();
+			}, delayMs);
+			signal?.addEventListener("abort", abort, { once: true });
+		});
+	}
+	async function waitForReadyFrame(signal) {
+		const deadline = Date.now() + FRAME_TIMEOUT_MS;
+		let candidate = null;
+		let stableSince = Date.now();
+		while (Date.now() < deadline) {
+			signal?.throwIfAborted();
+			if (document.querySelector("#sliderDiv > .sliderContainer_success") || !isSliderCaptchaPresent()) return null;
+			const frame = readSliderFrame();
+			if (!isSameSliderFrame(candidate, frame)) {
+				candidate = frame;
+				stableSince = Date.now();
+			} else if (Date.now() - stableSince >= FRAME_STABLE_MS) return frame;
+			await sleep(signal, FRAME_POLL_MS);
+		}
+		throw new Error("滑块图片加载超时，请手动完成验证");
+	}
+	async function waitForRefresh(frame, signal) {
+		while (true) {
+			signal?.throwIfAborted();
+			if (document.querySelector("#sliderDiv > .sliderContainer_success") || !isSliderCaptchaPresent()) return false;
+			const elements = getSliderElements();
+			if (challengeSource() !== frame.source || elements.bgImg !== frame.bgImg || elements.pieceImg !== frame.pieceImg) return true;
+			if (frame.source === "\n") {
+				const current = readSliderFrame();
+				if (current && current.background !== frame.background) return true;
+			}
+			await sleep(signal);
+		}
+	}
+	async function runSliderAttempts(attempt, { signal, onRetry = () => {} } = {}) {
+		for (let count = 1; count <= 3; count++) {
+			const frame = await waitForReadyFrame(signal);
+			if (!frame) return "closed";
+			const outcome = await attempt(frame, count);
+			if (outcome === "closed") return "closed";
+			if (outcome === "manual") return "manual";
+			if (outcome === "submitted" && !await waitForRefresh(frame, signal)) return "submitted";
+			if (count < 3) onRetry(count + 1);
+		}
+		return "exhausted";
+	}
+	var console$36 = MyConsole("[ids.slider]");
+	var solving = null;
+	async function waitForSliderElements(timeoutMs = 8e3) {
+		const interval = 200;
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			const els = getSliderElements();
+			if (els.bgImg && els.pieceImg && els.slider) return els;
+			await new Promise((r) => setTimeout(r, interval));
+		}
+		throw new Error("滑块验证码元素等待超时");
+	}
+	function solveIdsSliderCaptcha() {
+		if (!solving) solving = solve().finally(() => {
+			solving = null;
+		});
+		return solving;
+	}
+	async function solve() {
+		if (!isSliderCaptchaPresent()) {
+			console$36("滑块验证码未出现，跳过");
+			return false;
+		}
+		let toastHandle = toast("info", "正在识别滑块验证…", 0);
+		const controller = new AbortController();
+		const onPageHide = () => controller.abort(new Error("页面已离开"));
+		window.addEventListener("pagehide", onPageHide, { once: true });
+		const showProgress = (message) => {
+			if (toastHandle) removeToastHandle(toastHandle);
+			toastHandle = toast("info", message, 0);
+		};
+		console$36("发现滑块验证码，开始自动识别");
+		try {
+			const { pieceImg } = await waitForSliderElements();
+			if (!pieceImg.width || !pieceImg.height) throw new Error("展示位图 canvas 尺寸无效，无法确定滑动坐标系");
+			controller.signal.throwIfAborted();
+			const rec = await getSliderRecognizer();
+			let manualMessage = "滑块验证无法自动完成，请手动操作";
+			const result = await runSliderAttempts(async (frame, attempt) => {
+				const { bgImg, pieceImg, slider } = frame;
+				const { box, confidence } = await rec.detect(bgImg, {
+					displayWidth: pieceImg.width,
+					displayHeight: pieceImg.height
+				});
+				controller.signal.throwIfAborted();
+				if (!isSliderCaptchaPresent() || document.querySelector("#sliderDiv > .sliderContainer_success")) return "closed";
+				if (!isSameSliderFrame(frame, readSliderFrame())) return "refreshed";
+				if (!box || box.length !== 4 || !box.every(Number.isFinite)) return "manual";
+				if (!Number.isFinite(confidence) || confidence < MIN_CONFIDENCE) {
+					manualMessage = "滑块验证识别置信度过低，请手动操作";
+					return "manual";
+				}
+				const distance = Math.round(box[0]);
+				console$36(`第 ${attempt}/3 次滑块拖动，距离: ${distance}px`);
+				await dragIdsSlider(slider, distance, { signal: controller.signal });
+				controller.signal.throwIfAborted();
+				showProgress("滑块已拖动，等待验证与跳转…");
+				return "submitted";
+			}, {
+				signal: controller.signal,
+				onRetry: (attempt) => showProgress(`验证码已刷新，正在重试（${attempt}/3）…`)
+			});
+			if (result === "exhausted" || result === "manual") {
+				removeToastHandle(toastHandle);
+				toastHandle = null;
+				toast("warning", result === "exhausted" ? "滑块自动验证已尝试 3 次，请手动完成验证" : manualMessage, 0);
+				return false;
+			}
+			return result === "submitted";
+		} catch (err) {
+			if (controller.signal.aborted) return false;
+			const isScheduleError = err?.code === SLIDER_RECOGNIZER_UNAVAILABLE;
+			console$36("滑块验证识别异常", err, "error");
+			removeToastHandle(toastHandle);
+			toastHandle = null;
+			toast("error", isScheduleError ? err.message : "滑块验证识别失败，请手动操作", 5);
+			return false;
+		} finally {
+			if (toastHandle) removeToastHandle(toastHandle);
+			window.removeEventListener("pagehide", onPageHide);
+		}
 	}
 	function isTrustedIdsContext(ctx) {
 		if (!ctx) return false;
@@ -703,8 +1381,9 @@ TuanWei:
 				form.requestSubmit();
 			} else throw scheduleOperationError(AUTH_SUBMIT_MISSING, "统一认证登录按钮尚未加载");
 			setTimeout(() => {
-				const slider = document.querySelector("#captcha-id, #sliderCaptchaDiv, #sliderDiv, .slidercaptcha");
-				if (slider && slider.offsetParent !== null && slider.innerHTML !== "") toast("warning", "请手动完成滑块验证", 0);
+				solveIdsSliderCaptcha().catch((err) => {
+					console$35("滑块自动识别流程异常", err, "error");
+				});
 			}, 800);
 		} catch (error) {
 			authLoginSubmitting = false;
