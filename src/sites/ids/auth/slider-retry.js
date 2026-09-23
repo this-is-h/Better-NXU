@@ -1,8 +1,9 @@
 /** IDS 滑块换图监测：只对新题重试，不把跳转延迟视为失败。 */
 export const MAX_SLIDER_ATTEMPTS = 3;
 const POLL_MS = 200;
+const FRAME_POLL_MS = 60;
 const FRAME_TIMEOUT_MS = 8000;
-const FRAME_STABLE_MS = 400;
+const FRAME_STABLE_MS = 120;
 
 export function getSliderElements() {
   const canvases = document.querySelectorAll('#sliderDiv > canvas');
@@ -59,7 +60,7 @@ export function isSameSliderFrame(left, right) {
   );
 }
 
-function sleep(signal) {
+function sleep(signal, delayMs = POLL_MS) {
   return new Promise((resolve, reject) => {
     signal?.throwIfAborted();
     const abort = () => {
@@ -69,7 +70,7 @@ function sleep(signal) {
     const timer = setTimeout(() => {
       signal?.removeEventListener('abort', abort);
       resolve();
-    }, POLL_MS);
+    }, delayMs);
     signal?.addEventListener('abort', abort, { once: true });
   });
 }
@@ -89,7 +90,7 @@ async function waitForReadyFrame(signal) {
     } else if (Date.now() - stableSince >= FRAME_STABLE_MS) {
       return frame;
     }
-    await sleep(signal);
+    await sleep(signal, FRAME_POLL_MS);
   }
   throw new Error('滑块图片加载超时，请手动完成验证');
 }

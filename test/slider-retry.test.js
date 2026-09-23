@@ -86,7 +86,8 @@ test('failed challenges refresh twice, wait for painting, then succeed on the th
   );
   assert.deepEqual(retries, [2, 3]);
   assert.equal(new Set(attempts.map(({ source }) => source)).size, 3);
-  assert.ok(attempts[1].time - attempts[0].time >= 3000);
+  // 不能早于失败反馈 + 慢速绘制完成，而不依赖旧实现固定的 400ms 等待。
+  assert.ok(attempts[1].time - attempts[0].time >= 2600);
 });
 
 test('three failed challenges stop without a fourth attempt', async (t) => {
@@ -245,4 +246,43 @@ test('frames detect changes during inference and discard the old result', async 
   await advance(t, 2000);
   assert.equal(await result, 'submitted');
   assert.equal(attempts, 2);
+});
+
+test('ready canvases begin identification after a short stability check', async (t) => {
+  let startedAt;
+  const result = runSliderAttempts(async () => {
+    startedAt = Date.now();
+    return 'manual';
+  });
+  const before = Date.now();
+  for (let i = 0; i < 2; i++) {
+    t.mock.timers.tick(60);
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  assert.equal(await result, 'manual');
+  assert.equal(startedAt - before, 120);
+});
+
+test('a partial redraw must settle again before identification', async (t) => {
+  let attempts = 0;
+  const result = runSliderAttempts(async () => {
+    attempts++;
+    return 'manual';
+  });
+  t.mock.timers.tick(60);
+  await new Promise((resolve) => setImmediate(resolve));
+  world.piece.painted = false;
+  t.mock.timers.tick(60);
+  await new Promise((resolve) => setImmediate(resolve));
+  world.piece.painted = true;
+  world.piece.color++;
+  for (let i = 0; i < 2; i++) {
+    t.mock.timers.tick(60);
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  assert.equal(attempts, 0);
+  t.mock.timers.tick(60);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(await result, 'manual');
+  assert.equal(attempts, 1);
 });

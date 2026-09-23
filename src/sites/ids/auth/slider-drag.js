@@ -12,11 +12,13 @@ export function dragIdsSlider(slider, distance, { signal, timeoutMs = 5000 } = {
     if (!Number.isFinite(distance) || distance <= 0 || distance > maxDistance) {
       throw new Error('滑块距离超出有效范围');
     }
-    const startX = rect.left + rect.width / 2;
-    const startY = rect.top + rect.height / 2;
-    const steps = 48;
-    let step = 0;
-    let timer;
+    const startX = rect.left + rect.width * (0.4 + Math.random() * 0.2);
+    const startY = rect.top + rect.height * (0.4 + Math.random() * 0.2);
+    const durationMs = Math.min(700, Math.max(420, 320 + distance * 1.4) + Math.random() * 40);
+    const verticalOffset = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 2);
+    const startedAt = view.performance.now();
+    let lastMoveAt = startedAt;
+    let animationFrame;
     let pressed = false;
     let finished = false;
 
@@ -35,7 +37,7 @@ export function dragIdsSlider(slider, distance, { signal, timeoutMs = 5000 } = {
     const finish = (error) => {
       if (finished) return;
       finished = true;
-      clearTimeout(timer);
+      view.cancelAnimationFrame(animationFrame);
       clearTimeout(deadline);
       signal?.removeEventListener('abort', abort);
       if (error && pressed) {
@@ -49,23 +51,35 @@ export function dragIdsSlider(slider, distance, { signal, timeoutMs = 5000 } = {
       error ? reject(error) : resolve();
     };
     const abort = () => finish(signal.reason ?? new Error('滑块拖动已取消'));
-    const tick = () => {
+    const tick = (now) => {
       if (finished) return;
       try {
         signal?.throwIfAborted();
-        if (!slider.isConnected || !slider.getClientRects().length) throw new Error('滑块控件已移除或隐藏');
-        step++;
-        const progress = step / steps;
+        if (!slider.isConnected) throw new Error('滑块控件已移除或隐藏');
+        const progress = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
+        // 学校只采集间隔至少 20ms 的移动点；高刷新率屏幕无需每帧派发事件。
+        if (progress < 1 && now - lastMoveAt < 20) {
+          animationFrame = view.requestAnimationFrame(tick);
+          return;
+        }
+        if (!slider.getClientRects().length) throw new Error('滑块控件已移除或隐藏');
         const eased = progress * progress * (3 - 2 * progress);
-        // 固定终点与平滑速度曲线；少量纵向位移保证轨迹不退化为单一坐标。
-        emit(doc, 'mousemove', startX + distance * eased, startY + Math.sin(progress * Math.PI) * 3, 1);
+        // 按实际经过的时间推进，避免逐点 setTimeout 的延迟累计；保持准确终点。
+        emit(
+          doc,
+          'mousemove',
+          startX + distance * eased,
+          startY + Math.sin(progress * Math.PI) * verticalOffset,
+          1
+        );
+        lastMoveAt = now;
         if (finished) return;
-        if (step === steps) {
+        if (progress === 1) {
           pressed = false;
           emit(doc, 'mouseup', startX + distance, startY, 0);
           finish();
         } else {
-          timer = setTimeout(tick, 24 + Math.round(Math.random() * 8));
+          animationFrame = view.requestAnimationFrame(tick);
         }
       } catch (error) {
         finish(error);
@@ -76,7 +90,7 @@ export function dragIdsSlider(slider, distance, { signal, timeoutMs = 5000 } = {
     try {
       pressed = true;
       emit(slider, 'mousedown', startX, startY, 1);
-      if (!finished) timer = setTimeout(tick, 24);
+      if (!finished) animationFrame = view.requestAnimationFrame(tick);
     } catch (error) {
       finish(error);
     }
