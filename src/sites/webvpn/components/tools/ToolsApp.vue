@@ -94,11 +94,16 @@
                 icon="down"
                 type="primary"
                 plain
-                :disabled="!canExportPersonalJson"
+                :disabled="!canExportPersonalJson || personalLoading || personalExportPending"
                 @click="exportPersonalJson"
                 >导出 JSON</van-button
               >
-              <van-button size="small" icon="photo-o" type="primary" @click="exportPersonalImage"
+              <van-button
+                size="small"
+                icon="photo-o"
+                type="primary"
+                :disabled="!personalSchedule || personalLoading || personalExportPending"
+                @click="exportPersonalImage"
                 >导出图片</van-button
               >
             </div>
@@ -541,6 +546,12 @@ import { prepareScheduleExport } from '../../../../composables/use-schedule-expo
 import { searchTeachers } from './teacher-search.js';
 import { getIcsId, getStudentOwner } from './ics-id.js';
 import { parseScheduleFileContent } from './schedule-file.js';
+import {
+  personalScheduleFilename,
+  prepareCurrentScheduleExport,
+  prepareCurrentScheduleImageExport,
+  selectImageExportName,
+} from './schedule-export.js';
 
 const console = MyConsole('[小工具]');
 const setClipboard = GM_setClipboard;
@@ -971,6 +982,17 @@ const requestStudentId = async (initialValue = '') => {
   }
 };
 
+const lookupStudentOwner = async (studentId) => {
+  ownerRequestController?.abort();
+  const controller = new AbortController();
+  ownerRequestController = controller;
+  try {
+    return await getStudentOwner(studentId, { signal: controller.signal });
+  } finally {
+    if (ownerRequestController === controller) ownerRequestController = null;
+  }
+};
+
 const getVerifiedStudentOwner = async () => {
   const existingOwner = personalSchedule.value?.owner;
   if (existingOwner?.id && existingOwner?.name) return existingOwner;
@@ -998,14 +1020,7 @@ const getVerifiedStudentOwner = async () => {
       throw error;
     }
     try {
-      ownerRequestController?.abort();
-      const controller = new AbortController();
-      ownerRequestController = controller;
-      try {
-        return await getStudentOwner(studentId, { signal: controller.signal });
-      } finally {
-        if (ownerRequestController === controller) ownerRequestController = null;
-      }
+      return await lookupStudentOwner(studentId);
     } catch (error) {
       if (error.code !== 'STUDENT_ID_MISMATCH') throw error;
       toast('warning', `${error.message}，请重新输入学号`, 4);
@@ -1015,16 +1030,80 @@ const getVerifiedStudentOwner = async () => {
 };
 
 // ===== 导出（1.x 行 6557-6611） =====
-const getPersonalExportFilename = (extension) => {
-  const ownerName = (personalSchedule.value?.owner?.name || '未命名用户').replace(/[\\/:*?"<>|]/g, '_');
-  return `${ownerName} - 课表.${extension}`;
+const requestImageName = async (initialName = '') => {
+  const name = ref(String(initialName));
+  try {
+    await showConfirmDialog({
+      title: '填写图片姓名',
+      messageAlign: 'left',
+      confirmButtonText: '导出图片',
+      cancelButtonText: '取消',
+      closeOnClickOverlay: false,
+      message: () =>
+        h('div', null, [
+          h(
+            'p',
+            { style: 'padding:0 16px;font-size:13px;' },
+            '请输入真实姓名，用于图片文件名，无需提供学号。'
+          ),
+          h(Field, {
+            modelValue: name.value,
+            label: '姓名',
+            placeholder: '请输入真实姓名',
+            clearable: true,
+            autocomplete: 'off',
+            'onUpdate:modelValue': (value) => (name.value = String(value || '')),
+          }),
+        ]),
+      beforeClose(action) {
+        if (action === 'confirm' && !name.value.trim()) {
+          showToast('请输入姓名');
+          return false;
+        }
+        return true;
+      },
+    });
+    return name.value.trim();
+  } catch {
+    return '';
+  }
 };
 
+const getImageExportName = (schedule) =>
+  selectImageExportName({
+    studentId: getGMValue('WebVPN.username'),
+    owner: schedule.owner,
+    async confirmAccountName(studentId, owner) {
+      const knownName = owner?.id === studentId ? owner.name : '';
+      try {
+        await showConfirmDialog({
+          title: '确认图片姓名',
+          message: knownName
+            ? `是否使用学号 ${studentId} 对应的姓名“${knownName}”命名图片？也可自行填写姓名。`
+            : `是否使用当前学号 ${studentId} 对应的姓名命名图片？确认后将查询当前 WebVPN 账号的姓名，也可自行填写姓名。`,
+          messageAlign: 'left',
+          confirmButtonText: '使用当前姓名',
+          cancelButtonText: '填写姓名',
+          closeOnClickOverlay: false,
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    requestName: requestImageName,
+    getOwner: lookupStudentOwner,
+    onLookupError: () => showToast('获取姓名失败，请直接填写姓名'),
+  });
+
+const personalExportPending = ref(false);
 const exportPersonalJson = async () => {
+  if (personalExportPending.value || personalLoading.value) return;
   if (!canExportPersonalJson.value) {
     toast('warning', '只能导出当前登录账号本人的课表', 3);
     return;
   }
+  personalExportPending.value = true;
   console(
     '开始导出',
     {
@@ -1034,38 +1113,53 @@ const exportPersonalJson = async () => {
     'info'
   );
   try {
-    const owner = await getVerifiedStudentOwner();
-    const data = normalize({ ...personalSchedule.value, owner });
+    const { data, result } = await prepareCurrentScheduleExport({
+      getSchedule: () => personalSchedule.value,
+      getOwner: getVerifiedStudentOwner,
+      prepareExport: prepareScheduleExport,
+    });
     personalSchedule.value = data;
-    const result = await prepareScheduleExport(data);
-    await downloadTextFile(result.content, getPersonalExportFilename('json'));
+    await downloadTextFile(result.content, personalScheduleFilename(data.owner?.name, 'json'));
     console('导出完成', { encrypted: result.encrypted }, 'info');
     toast('success', result.encrypted ? '加密课表已导出' : '课表 JSON 已导出', 2);
   } catch (error) {
+    if (error.code === 'SCHEDULE_CHANGED') {
+      toast('warning', error.message, 4);
+      return;
+    }
     if (error.code === 'EXPORT_CANCELLED' || error?.name === 'AbortError') {
       console('用户取消导出', '', 'info');
       return;
     }
     console('导出失败', error, 'error');
     toast('error', error.message || '课表导出失败', 4);
+  } finally {
+    personalExportPending.value = false;
   }
 };
 
 const exportPersonalImage = async () => {
-  await nextTick();
-  const exportOptions = {
-    overview: personalStatsCapture.value,
-    personal: personalCourseCapture.value,
-    'personal-free': personalFreeCapture.value,
-  };
-  const target = exportOptions[personalTab.value];
-  if (!target) {
-    console('当前 Tab 尚未完成渲染', { tab: personalTab.value }, 'warn');
-    toast('warning', '当前页面尚未完成渲染', 2);
-    return;
-  }
-  console('开始导出', { tab: personalTab.value }, 'info');
+  if (personalExportPending.value || personalLoading.value || !personalSchedule.value) return;
+  personalExportPending.value = true;
   try {
+    const { filename, assertCurrent } = await prepareCurrentScheduleImageExport({
+      getSchedule: () => (personalLoading.value ? null : personalSchedule.value),
+      getViewKey: () =>
+        `${personalRequestVersion}:${personalTab.value}:${selectedCourseWeek.value}:${selectedFreeWeek.value}`,
+      getName: getImageExportName,
+    });
+    await nextTick();
+    assertCurrent();
+    const target = {
+      overview: personalStatsCapture.value,
+      personal: personalCourseCapture.value,
+      'personal-free': personalFreeCapture.value,
+    }[personalTab.value];
+    if (!target) {
+      toast('warning', '当前页面尚未完成渲染', 2);
+      return;
+    }
+    console('开始导出', { tab: personalTab.value }, 'info');
     const progressToast = toast('info', '正在生成课表图片，请稍候', 0);
     try {
       await downloadSnapdomImage({
@@ -1073,7 +1167,7 @@ const exportPersonalImage = async () => {
         target,
         options: {
           format: 'png',
-          filename: getPersonalExportFilename('png'),
+          filename,
           scale: 2.5,
           quality: 1,
         },
@@ -1086,8 +1180,15 @@ const exportPersonalImage = async () => {
     console('导出完成', { tab: personalTab.value }, 'info');
     toast('success', '课表图片已导出', 3);
   } catch (error) {
+    if (error.code === 'EXPORT_CANCELLED' || error?.name === 'AbortError') return;
+    if (error.code === 'SCHEDULE_CHANGED') {
+      toast('warning', error.message, 4);
+      return;
+    }
     console('导出失败', { tab: personalTab.value, error }, 'error');
     toast('error', '导出图片失败，请重试', 3);
+  } finally {
+    personalExportPending.value = false;
   }
 };
 

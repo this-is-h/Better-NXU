@@ -91,9 +91,9 @@ function extractIcsId(payload) {
  */
 export async function getIcsId(options = {}) {
   // 代理 URL 经 buildWebVpnUrl 构造（B2 审计：原硬编码 webvpn token 与 WEBVPN_HOST_TOKENS 表重复，改单一来源）。
-  let response;
+  let responseText;
   try {
-    response = await fetchWithTimeout(
+    responseText = await fetchWithTimeout(
       pageWindow.fetch.bind(pageWindow),
       buildWebVpnUrl('https://portal.nxu.edu.cn/execCardMethod/20284725165199735/SYS_CARD_CALENDAR'),
       {
@@ -111,14 +111,19 @@ export async function getIcsId(options = {}) {
           n: String(Math.random()),
         }),
       },
-      { signal: options.signal, timeoutMs: options.timeoutMs || 15000 }
+      {
+        signal: options.signal,
+        timeoutMs: options.timeoutMs || 15000,
+        consumeResponse(response) {
+          if (!response.ok) throw new Error(`个人课表 ID 获取失败：HTTP ${response.status}`);
+          return response.text();
+        },
+      }
     );
   } catch (error) {
     if (error?.name === 'TimeoutError') throw new Error('个人课表 ID 获取超时，请稍后重试', { cause: error });
     throw error;
   }
-  if (!response.ok) throw new Error(`个人课表 ID 获取失败：HTTP ${response.status}`);
-  const responseText = await response.text();
   let payload = responseText;
   try {
     payload = JSON.parse(responseText);
@@ -127,6 +132,7 @@ export async function getIcsId(options = {}) {
   }
   const icsId = extractIcsId(responseText) || extractIcsId(payload);
   if (!icsId) throw new Error('响应中未找到个人课表 ID，请确认信息门户登录状态');
+  options.signal?.throwIfAborted();
   await setGMValue('icsId', icsId);
   return icsId;
 }
@@ -140,9 +146,9 @@ export async function getIcsId(options = {}) {
 export async function getStudentOwner(studentId, options = {}) {
   const normalizedId = String(studentId || '').trim();
   // 代理 URL 经 buildWebVpnUrl 构造（B2 审计：单一来源，query 参数 vpn-12-o2-xsfw.nxu.edu.cn 原样保留）。
-  let response;
+  let result;
   try {
-    response = await fetchWithTimeout(
+    result = await fetchWithTimeout(
       pageWindow.fetch.bind(pageWindow),
       buildWebVpnUrl(
         'https://xsfw.nxu.edu.cn/xsfw/sys/jbxxapp/modules/infoStudent/getStuBaseInfo.do?vpn-12-o2-xsfw.nxu.edu.cn'
@@ -153,14 +159,19 @@ export async function getStudentOwner(studentId, options = {}) {
         headers: { Accept: 'application/json, text/plain, */*' },
         body: new URLSearchParams({ requestParamStr: JSON.stringify({ XSBH: normalizedId }) }),
       },
-      { signal: options.signal, timeoutMs: options.timeoutMs || 15000 }
+      {
+        signal: options.signal,
+        timeoutMs: options.timeoutMs || 15000,
+        consumeResponse(response) {
+          if (!response.ok) throw new Error(`身份信息获取失败：HTTP ${response.status}`);
+          return response.json();
+        },
+      }
     );
   } catch (error) {
     if (error?.name === 'TimeoutError') throw new Error('身份信息获取超时，请稍后重试', { cause: error });
     throw error;
   }
-  if (!response.ok) throw new Error(`身份信息获取失败：HTTP ${response.status}`);
-  const result = await response.json();
   if (result?.returnCode !== '#E000000000000') {
     const error = new Error(result?.returnMessage || result?.message || '学号与当前登录账号不一致');
     error.code = 'STUDENT_ID_MISMATCH';
