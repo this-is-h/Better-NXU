@@ -75,8 +75,14 @@ function serializeComputedStyle(element, pageWindow, buffer) {
   buffer.cssText = '';
 
   for (const property of CAPTURE_STYLE_PROPERTIES) {
-    const value = computed.getPropertyValue(property);
+    let value = computed.getPropertyValue(property);
     if (!value) continue;
+    // 计算宽度的小数序列化后可能略小于真实布局宽度（如 68.015625 → 68.0156px）。
+    // 再次布局时会向下量化；教室末尾因此换行，而已固定的单行高度会让它覆盖周次。
+    // 向上取整像素宽度，避免多次复制样式累计缩窄；保留字体和原有换行规则。
+    if (property === 'width' && /^\d+(?:\.\d+)?px$/.test(value)) {
+      value = `${Math.ceil(Number.parseFloat(value))}px`;
+    }
     try {
       buffer.setProperty(property, value);
     } catch {
@@ -119,8 +125,6 @@ async function downloadWithWebVpnFix({ snapdom, target, options, pageWindow }) {
   const elements = [target, ...target.querySelectorAll('*')];
   const originalStyles = elements.map((element) => element.getAttribute('style'));
 
-  // 必须先读取全部计算样式，再修改任何节点，避免父节点行内化影响后续子节点的计算结果。
-  const computedStyles = await collectComputedStyles(elements, pageWindow);
   const Serializer = pageWindow.XMLSerializer ?? globalThis.XMLSerializer;
   const serializerPrototype = Serializer?.prototype;
   const originalSerialize = serializerPrototype?.serializeToString;
@@ -134,6 +138,8 @@ async function downloadWithWebVpnFix({ snapdom, target, options, pageWindow }) {
   };
 
   try {
+    // 先读取全部计算样式，再统一行内化，避免父节点尺寸影响后续子节点。
+    const computedStyles = await collectComputedStyles(elements, pageWindow);
     elements.forEach((element, index) => {
       element.style.cssText = computedStyles[index];
     });
@@ -143,6 +149,8 @@ async function downloadWithWebVpnFix({ snapdom, target, options, pageWindow }) {
       ...options,
       // 失败捕获可能已把空样式写入 snapdom 持久缓存，WebVPN 路径每次强制重新计算。
       cache: 'disabled',
+      // v3 新增捕获结果复用；页面 CSS 经 WebVPN hook 后不能复用之前的渲染结果。
+      invalidate: true,
     });
   } finally {
     elements.forEach((element, index) => {
@@ -178,7 +186,11 @@ export function downloadSnapdomImage({
   if (!target || typeof target.querySelectorAll !== 'function') {
     return Promise.reject(new Error('图片导出目标不存在'));
   }
-  if (!fixWebVpn) return snapdom.download(target, options);
+  // v3 默认嵌入字体会新增远程请求；保持既有系统字体导出和加载成本，调用方可显式开启。
+  const captureOptions = { embedFonts: false, ...options };
+  if (!fixWebVpn) return snapdom.download(target, captureOptions);
 
-  return enqueueWebVpnCapture(() => downloadWithWebVpnFix({ snapdom, target, options, pageWindow }));
+  return enqueueWebVpnCapture(() =>
+    downloadWithWebVpnFix({ snapdom, target, options: captureOptions, pageWindow })
+  );
 }

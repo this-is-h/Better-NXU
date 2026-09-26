@@ -89,6 +89,29 @@ const mutableMarkdownResources = {
 };
 assert.equal(requires.length, 7);
 assert.equal(resources.length, 8);
+assert.equal(
+  requires[2],
+  `https://cdnjs.cloudflare.com/ajax/libs/vue/${packageJson.dependencies.vue}/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB`
+);
+assert.ok(resourceMap['vant-css'].includes(`/vant/${packageJson.dependencies.vant}/index.min.css#sha384-`));
+assert.match(requires[0], /\/h\.notification\.js#sha384-/);
+assert.match(requires[1], /^data:/);
+assert.match(requires[3], /\/snapdom\.js#sha384-/);
+assert.equal(
+  requires[3],
+  'https://unpkg.com/@zumer/snapdom@3.1.0/dist/snapdom.js#sha384-WGMhfcLrIwHy2nch3wquBVui5YbAvFGEjpUqtK65dcKwZ+vBMkydMJja61MRE6An'
+);
+assert.equal(
+  resourceMap['tesseract-js'],
+  'https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM'
+);
+assert.match(requires[4], /^data:/);
+assert.match(requires[5], /\/xlsx\.full\.min\.js#sha384-/);
+assert.match(requires[6], /^data:/);
+assert.equal(
+  resourceMap['dompurify-js'],
+  'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.15/purify.min.js#sha384-uUMu9JDY09vBzRf9SPcK2VgUj+W/70J6Soc+Dded5P474ElQ63iv9j5N3DE7Kp3N'
+);
 for (const entry of requires.filter((value) => /^https?:/i.test(value))) {
   assert.match(entry, /#sha384-[A-Za-z0-9+/]+={0,2}$/);
 }

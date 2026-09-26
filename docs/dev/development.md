@@ -8,20 +8,38 @@
 pnpm install --frozen-lockfile
 ```
 
-Node 要求 `^20.19.0 || >=22.12.0`。推荐 Node 22，与 CI 一致。
+Node 要求 `^22.13.0 || >=24.0.0`。推荐 Node 22，与 CI 一致。
 
 常用命令：
 
-| 命令           | 作用                                                           |
-| -------------- | -------------------------------------------------------------- |
-| `pnpm dev`     | 启动 Vite 开发服务器，仅适合构建和公开页面调试                 |
-| `pnpm test`    | 运行 `node --test`                                             |
-| `pnpm build`   | 生成安装脚本和 metadata                                        |
-| `pnpm preview` | 预览 Vite 输出；不能模拟 ScriptCat                             |
-| `pnpm docs`    | 检查 Markdown 本地链接、标题层级、代码围栏、冲突标记和行尾空格 |
-| `pnpm check`   | 文档检查、测试、构建、元数据校验和体积输出的发布前统一入口     |
+| 命令             | 作用                                                           |
+| ---------------- | -------------------------------------------------------------- |
+| `pnpm dev`       | 启动 Vite 开发服务器，仅适合构建和公开页面调试                 |
+| `pnpm dev:build` | 持续构建完整安装脚本，供 zylib 等代理页面使用 ScriptCat 调试   |
+| `pnpm test`      | 运行 `node --test`                                             |
+| `pnpm build`     | 生成安装脚本和 metadata                                        |
+| `pnpm preview`   | 预览 Vite 输出；不能模拟 ScriptCat                             |
+| `pnpm docs`      | 检查 Markdown 本地链接、标题层级、代码围栏、冲突标记和行尾空格 |
+| `pnpm check`     | 文档检查、测试、构建、元数据校验和体积输出的发布前统一入口     |
 
 开发服务器无法准确模拟 GM API、`@require` 包装作用域、`@inject-into page`、校园登录态和 WebVPN 跨域 cookie。涉及这些边界的改动必须安装 `dist/better-nxu.user.js` 回归。
+
+### zylib 阅读页的开发入口 MIME 错误
+
+如果 `__vite-plugin-monkey.entry.js` 报 `text/html`，且 Network 中地址变为 `https://kns.cnki.net/__vite-plugin-monkey.entry.js`、响应来自 Service Worker，说明本地开发入口被 zylib 代理接管。正常入口应为 `http://127.0.0.1:5173/__vite-plugin-monkey.entry.js`（以开发服务器实际端口为准），返回 `application/javascript`，内容导入 `/@vite/client` 和 `/src/main.js`。
+
+2026-09-25 排查确认：zylib 的 [Service Worker](https://zylib.nxu.edu.cn/sw.js) 代理页面资源，其[代理实现](https://zylib.nxu.edu.cn/assets/bundle.c33e24c5.js)在请求返回 500/404/504/502 时还会尝试将请求 origin 替换成阅读平台 origin。这解释了本地入口变成知网地址的现象。HTTP 200 不代表模块有效，仍需核对最终 URL、响应来源和 Content-Type。不能靠修改 Vite 的 MIME/CORS 或阅读路由解决已经被代理接管的加载。
+
+此类页面使用完整构建脚本调试：
+
+1. 运行 `pnpm dev:build`，等待首次构建完成；一次性验证也可运行 `pnpm build`。
+2. 在 ScriptCat 中停用 `server:Better NXU` 开发脚本，安装或更新 `dist/better-nxu.user.js`，仅启用这一份 Better NXU。
+3. 完整刷新原来的 zylib 阅读页，确认不再请求 `__vite-plugin-monkey.entry.js`，并检查“已开启复制”、选区复制及知网滑块。
+4. 修改源码后等待重新构建完成，再将新产物更新到 ScriptCat 并刷新页面。`dev:build` 只监视并构建，不会自动更新 ScriptCat 中的脚本，也不提供 HMR。
+
+保留 zylib 的 Service Worker，它也是正常访问阅读资源的代理组件。构建脚本的主程序为单文件 IIFE，由 ScriptCat 注入，无需页面加载 Vite 模块；原有 `@require`、`@resource` 和 GM 作用域约定保持不变。
+
+本地独立 Chrome 回归使用模拟 Service Worker 和 GM API，复现了开发入口转向知网并返回 HTML 的 MIME 错误；同一受控页面中执行完整构建脚本后，复制提示和真实鼠标事件触发的选区复制均正常，无新增开发模块请求，Service Worker 仍处于控制状态。该验证不代替真实 zylib 登录态与 ScriptCat 回归。
 
 ## 2. 本地工作流
 
@@ -95,15 +113,17 @@ WebVPN 的外链、Blob 和 Worker 兼容方案已集中记录在[WebVPN 资源�
 
 `captcha-recognizer-js@1.0.4/src/core.js`（MIT）的小型算法静态编入脚本。上游只开放模型 URL，ORT JavaScript 和 WASM 路径写死在 Worker；`libraries/slider-recognizer.js` 校验并替换这两处加载点，升级依赖时必须重新核对。原 IIFE `@resource` 已移除。
 
-`libraries/slider-resources.js` 在首次使用时经 `GM.xmlHttpRequest` 匿名下载 ORT 1.20.1 的 `ort.min.js`、`ort-wasm-simd-threaded.mjs`、`ort-wasm-simd-threaded.wasm` 和识别器 1.0.4 的模型，逐一校验 SHA384。ORT 摘要由 CDN 原始文件计算，模型摘要取自同版本 npm 包内文件。所有文件都在已有 `@connect cdn.jsdelivr.net` 范围内。不要将页面 `fetch` 或远程 `importScripts` 作为回退，否则 WebVPN 会再次重写地址。
+`libraries/slider-resources.js` 在首次使用时经 `GM.xmlHttpRequest` 匿名下载 ORT 1.30.0 的 `ort.min.js`、`ort-wasm-simd-threaded.mjs`、`ort-wasm-simd-threaded.wasm` 和识别器 1.0.4 的模型，逐一校验 SHA384。ORT 摘要由 CDN 原始文件计算，模型摘要取自同版本 npm 包内文件。所有文件都在已有 `@connect cdn.jsdelivr.net` 范围内。不要将页面 `fetch` 或远程 `importScripts` 作为回退，否则 WebVPN 会再次重写地址。
 
 Worker 只收到本地 Blob URL 与模型 `Uint8Array`，保持单线程 WASM 和原展示坐标映射。单次下载超时为 60 秒，整个初始化上限 90 秒，识别上限 30 秒；同页并发初始化复用同一个 Promise。失败、显式释放及 `pagehide` 会中止请求、拒绝等待中的任务、终止 Worker 并回收 Blob URL，随后允许重试。
+
+安装版的 Blob、URL、Worker 和 WebVPN 地址转换器统一从 `#gm` 导入的 `unsafeWindow` 获取，避免沙箱 `window` 缺少页面函数时漏掉来源还原。测试必须区分这两个对象，并覆盖 Worker 构造失败后的 URL 回收及再次初始化。Vue 的 `@require` 使用与 npm 同版本的 `vue.global.prod.min.js`，构建门禁同时校验生产文件名和 SHA384。
 
 发布前在 ScriptCat 安装构建产物，分别验证 IDS 直连与 WebVPN：首次下载及再次识别、背景图尺寸大于展示尺寸、无缺口、断网/下载失败、初始化超时后的手动回退。检查资源下载未进入 WebVPN 的 `/https/<token>/npm/` 路径，且不再出现 JavaScript 收到登录 HTML 的 MIME 错误。Node 测试与本地真实 WASM 加载不能替代这两条登录流程的实测。
 
 `ids/auth/slider-retry.js` 管理最多三次尝试（首次 + 两次重试）。学校成功时设置 `.sliderContainer_success` 并提交表单，失败约一秒后更新 `#slider-img1/2` 并清空、重画 Canvas。仅当图片来源或画布节点变化（无源图片时检测背景像素变化）才重试；两幅画布均有内容且稳定 120 ms 后才能识别（每 60 ms 检查一次）。新图绘制最多等待 8 秒，推理中换图则丢弃旧结果。拖动后的等待不设失败倒计时，成功标记、关闭验证或 `pagehide` 结束监测；延迟跳转不会触发额外拖动。识别模型在循环外加载，同页并发调用共用一个流程。回归应包含连续三次失败、前两次失败第三次成功、超过一分钟的响应延迟、慢速重绘、节点替换和离开页面的清理。
 
-`ids/auth/slider-drag.js` 是项目自有的 IDS 拖动实现，仅派发学校组件使用的 `mousedown`、`mousemove`、`mouseup`。终点使用识别出的展示距离，拖动范围不超过轨道可用宽度；5 秒超时、页面离开或控件隐藏/移除时停止后续事件。取消时在按下原点释放，避免提交未完成轨迹。旧的来源不明通用拖动脚本不进入发布分支；新轨迹需在 ScriptCat 实际登录中回归。
+`utils/slider-drag.js` 是项目自有的通用拖动实现，IDS 经 `ids/auth/slider-drag.js` 适配，知网无缺口滑块直接复用，仅派发学校组件使用的 `mousedown`、`mousemove`、`mouseup`。终点使用识别出的展示距离，拖动范围不超过轨道可用宽度；5 秒超时、页面离开或控件隐藏/移除时停止后续事件。取消时在按下原点释放，避免提交未完成轨迹。旧的来源不明通用拖动脚本不进入发布分支；新轨迹需在 ScriptCat 实际登录中回归。
 
 拖动使用 `requestAnimationFrame` 和 `performance.now()` 按实际经过时间推进，目标时长随距离在 420–700 ms 内变化，不累积固定步数的定时器延迟。保留平滑加速/减速、控件内部起点变化和 1–3 像素纵向偏移，终点始终准确。学校组件以鼠标事件采集 `{a, b, c}` 位移/时间轨迹，移动点采样间隔至少 20 ms、位移至少 2 像素；脚本对普通移动事件做 20 ms 节流，末点仍完整发送。它不会移动系统光标，也不能把合成事件变成真实用户输入；服务器是否接受更短轨迹仍需真机确认。
 
@@ -179,8 +199,8 @@ Worker 只收到本地 Blob URL 与模型 `Uint8Array`，保持单线程 WASM �
 - 个人课表自动获取、链接加载、上传明文/加密 JSON、身份验证和导出限制。
 - 多人空课表：混合密钥、取消私钥、删除成员、图片/Excel 导出。
 - 门户直连/代理从 `#/hall` 切出再切回，确保重新注入且不重复。
-- 知网/万方无选区与正常选区复制。
-- WebVPN 工具伪失败页与普通失败页自动关闭设置。
+- 知网/万方直连与 WebVPN 阅读页：无选区、正常选区复制；知网无缺口滑块、异步插入、手动接管、同页三次上限。
+- WebVPN `/h/tools` 直接入口、工具伪失败页与普通失败页自动关闭设置。
 - SSL VPN 设置页读写/两种重置，关于页 Markdown 正常/资源失败降级。
 - 实验室安全平台跳转；评教只提示；团委无副作用。
 

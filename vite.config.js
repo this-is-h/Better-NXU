@@ -113,8 +113,8 @@ export default defineConfig({
         require: [
           'https://scriptcat.org/lib/1405/1.0.7/h.notification.js#sha384-Ef8dnXffgAqEVHA7uHKmtub7Uh4Ji/Yv60yL+Himym+PdTNeb/NAKi+d9qh9olzC',
           NOTIFICATION_BRIDGE_REQUIRE,
-          'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/vue/3.5.22/vue.global.min.js#sha384-qCjGjR+q4j3L6F1d3hI/Tqq5Ry6XGIiJMUdZC+VawNbSWD2eP2RR+laa6A3euDAZ',
-          'https://unpkg.com/@zumer/snapdom@2.16.0/dist/snapdom.js#sha384-XHEQh68myKc3CIe4DhnbAY1QEVszoaGTPQRzEM6JIKCWRg3mnUG3fAt3+UuxqEYE',
+          'https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.43/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB',
+          'https://unpkg.com/@zumer/snapdom@3.1.0/dist/snapdom.js#sha384-WGMhfcLrIwHy2nch3wquBVui5YbAvFGEjpUqtK65dcKwZ+vBMkydMJja61MRE6An',
           SNAPDOM_BRIDGE_REQUIRE,
           'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js#sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT',
           XLSX_BRIDGE_REQUIRE,
@@ -127,15 +127,15 @@ export default defineConfig({
           'svg-logo':
             'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.2.1/css/all.min.css#sha384-twcuYPV86B3vvpwNhWJuaLdUSLF9+ttgM2A6M870UYXrOsxKfER2MKox5cirApyA',
           'github-markdown-css':
-            'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css#sha384-bKf/D9oOhMXM113OMRKT6sKFRT4jT3AulvzsGu563IJ5zmaH5LSA26VfwRJQ8GAR',
+            'https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.9.0/github-markdown.min.css#sha384-dvqix+FXNZkkgkfxRwowYZelxQUSFEjEbDpb1k1mIMw84dsT8M3NM2CJC3xyp2hh',
           'vant-css':
-            'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/vant/4.9.21/index.min.css#sha384-Jb7yH4uJOgDFef++Dmtf9JGETGSXgz9+wrg/jQ7XsqYtJzSClY4imewu/quoIrel',
+            'https://cdnjs.cloudflare.com/ajax/libs/vant/4.10.2/index.min.css#sha384-/emcjTEhfcL99sMjPCGhXaThIpqFm61vsVdjpoJHtfHHJ/mY354KjvR3/POEs56i',
           'tesseract-js':
-            'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/tesseract.js/6.0.1/tesseract.min.js#sha384-r1ru3tcf6FhnCFR4B7pIFG+BhFF9LlFtz/P1y4pblWn3AGs9y3lBx5SKLNf4+rED',
+            'https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM',
           'marked-js':
-            'https://unpkg.com/marked@18.0.6/lib/marked.umd.js#sha384-uGn1eBC40GtuBgao0epc/cz9O4Lo8/flg/10SW+69UjLI5nP31iT4UPc65Xz10Le',
+            'https://unpkg.com/marked@18.0.14/lib/marked.umd.js#sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo',
           'dompurify-js':
-            'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/dompurify/3.2.4/purify.min.js#sha384-eEu5CTj3qGvu9PdJuS+YlkNi7d2XxQROAFYOr59zgObtlcux1ae1Il3u7jvdCSWu',
+            'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.15/purify.min.js#sha384-uUMu9JDY09vBzRf9SPcK2VgUj+W/70J6Soc+Dded5P474ElQ63iv9j5N3DE7Kp3N',
           'about-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/README.md',
           'update-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md',
         },
@@ -155,7 +155,7 @@ export default defineConfig({
         externalGlobals: {
           // vue：纯字符串值 → 仅全局别名 'Vue'，不自动 emit @require（见 §6.1 vue 单一来源约束）。
           // vite 据 globalsPkg2VarName 把 `import { createApp } from 'vue'` 改写为 globalThis.Vue 引用；
-          // 头部 require 先注入 window.Vue 全局（vue.global.min.js 3.5.22）。
+          // 头部 require 提供与 npm 版本一致的 Vue 全局。
           vue: 'Vue',
           // snapdom/xlsx 走头部手动 @require；Vant JS 仍打包；其余低频库由业务代码从 @resource 按需注入。
         },

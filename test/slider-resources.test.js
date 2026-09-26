@@ -15,6 +15,9 @@ const signal = () => new AbortController().signal;
 
 test('slider resources pin all runtime files and the model to versions and SHA384', () => {
   assert.deepEqual(Object.keys(SLIDER_ASSETS), ['runtime', 'module', 'wasm', 'model']);
+  for (const name of ['runtime', 'module', 'wasm']) {
+    assert.ok(SLIDER_ASSETS[name].url.includes('onnxruntime-web@1.30.0/dist/'));
+  }
   for (const descriptor of Object.values(SLIDER_ASSETS)) {
     assert.equal(new URL(descriptor.url).hostname, 'cdn.jsdelivr.net');
     assert.match(descriptor.url, /@\d+\.\d+\.\d+\//);

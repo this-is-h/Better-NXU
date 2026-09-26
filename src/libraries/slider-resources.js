@@ -1,19 +1,19 @@
 /** 固定资源通过 ScriptCat 后台请求，避免 WebVPN 改写外链；不发送页面凭证或验证码。 */
 import { GM } from '#gm';
 
-const ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+const ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/';
 export const SLIDER_ASSETS = {
   runtime: {
     url: `${ORT_BASE}ort.min.js`,
-    sha384: 'RPL/K8tc0JVaNWsunkEmCzLeieefvFX2UCRLKLmLVChCI6P+CTKhzqF7VIeCc3Zp',
+    sha384: 'N94xSNjPDbfBJj4+QINst0nbHpcCm8kc1qNlIP/wA0muqjR3aVyIuDkMeccPrLvQ',
   },
   module: {
     url: `${ORT_BASE}ort-wasm-simd-threaded.mjs`,
-    sha384: 'SyfqCcawqO3udRV2twBwYuuR4Wh7Nj/yfAxyfN6UltDOh5VTrJH4aT9HfEvthS02',
+    sha384: 'XcXA/MtAf0WpB8e023xQH9CM7RIjiugakT7x99DIwpFf7k56BIFFcAPerIF7FDad',
   },
   wasm: {
     url: `${ORT_BASE}ort-wasm-simd-threaded.wasm`,
-    sha384: 't24pimTffN4djMKJaYLDupLzilNBHTgwqbjacQNJObCC4RrMH4UjfZgDkwHEU04k',
+    sha384: 'vjBJ1z7qrhkTyYsNqKeF6c7N+nOJSU94czEo+tvZcu8G75JparGq9kB+kTnEUNVM',
   },
   model: {
     url: 'https://cdn.jsdelivr.net/npm/captcha-recognizer-js@1.0.4/model/slider.onnx.q8.onnx',
