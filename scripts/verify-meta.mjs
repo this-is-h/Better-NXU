@@ -42,6 +42,12 @@ const expectedMatches = [
   '*://tuanwei.nxu.edu.cn/*',
   '*://ids.nxu.edu.cn/*',
   '*://open.weixin.qq.com/*',
+  '*://zylib.nxu.edu.cn/*',
+  '*://kns.cnki.net/reader/xml*',
+  '*://kns.cnki.net/xmlRead/trialRead*',
+  '*://www.cnki.net/reader/xml*',
+  '*://www.cnki.net/xmlRead/trialRead*',
+  '*://f.wanfangdata.com.cn/online/pc/periodical_html*',
 ];
 const expectedGrants = [
   'CAT_userConfig',

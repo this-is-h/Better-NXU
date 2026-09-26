@@ -5,7 +5,7 @@
  *       composables/use-vue-app（mountVueApp 挂 ToolsApp SFC）、#gm（GM_openInTab）、
  *       libraries/notification（removeToastHandle/toast——mounted 等价）、utils/console、
  *       components/tools/ToolsApp.vue、components/tools/tools.css（1.x 行 4915-5799 的页面样式，?style 注入）
- * 入口/被谁调用：router 命中 webvpn '/wengine-vpn/failed' 且 body 含 '地址：/h/tools'（1.x 行 2417-2420）后由
+ * 入口/被谁调用：router 命中 WebVPN /h/tools 或带工具地址标记的旧失败页后由
  *               main 调本 page 的 register
  *
  * 挂载形态：接管重建——清 body + 重建 #tools 容器（1.x 行 4898-4914 逐字等价；与 home 的"原生页叠加注入"相反，
@@ -22,7 +22,7 @@
  *  - 行 7195-7199 mounted 钩子：mountVueApp 完成后同步执行等价——removeToastHandle(deployToast)
  *    （=1.x removeToast(toast)）+ toast('success','小工具部署完毕',2) + toast('info','由于获取课表信息需要…',6)。
  *
- * 路由判定（router JUDGE_TABLE）：'/wengine-vpn/failed' 且 body 含 '地址：/h/tools'（1.x 行 2416-2424 子分支），
+ * 路由判定：/h/tools 直接入口，兼容失败页的工具地址标记；
  *   与 failed page（同 path 但 body 不含该标记）互斥。
  */
 import toolsStyle from '../components/tools/tools.css?style';

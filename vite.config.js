@@ -6,17 +6,18 @@
  *
  * 关键约束见 docs/dev/architecture.md 与 docs/dev/design-decisions.md：
  *  - vue 经 externalGlobals 纯字符串 'Vue' 仅设全局别名，不自动 emit @require；
- *    vue 的唯一 @require 来源是下面 userscript.require 手写的那条（带 1.x 原 sha384）。
+ *    vue 的唯一 @require 来源是下面 userscript.require 手写的生产版（固定版本和 sha384）。
  *  - snapdom / xlsx / h.notification 仍走头部手动 @require（保留 1.x URL + sha384 连字符语法）。
  *  - Vant JS 仍由 npm 构建；Vant CSS、Tesseract、marked、DOMPurify 与关于页文档走固定版本/提交的 @resource。
  *  - @storageName h.nxu 是 ScriptCat 专有非标键，必须经 userscript.$extra 透传
  *    （直接写 userscript.storageName 会被 vite-plugin-monkey 8.x 静默忽略，见 §6.1/§8）。
- *  - 所有 sha384 逐字取自 1.x 头部（连字符 `#sha384-<base64>`，非 Tampermonkey 等号），不手填不截短。
+ *  - sha384 根据对应 CDN 原始文件计算（连字符 `#sha384-<base64>`，非 Tampermonkey 等号），不截短。
  */
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import monkey, { util } from 'vite-plugin-monkey';
 import { USER_CONFIG_BLOCK } from './src/config/user-config.js';
+import { LIBRARY_READER_MATCHES } from './src/utils/library-reader.js';
 import { readFileSync } from 'node:fs';
 
 // 小型滑块算法静态打包后，必须随单文件产物保留上游 MIT 许可。
@@ -90,7 +91,7 @@ export default defineConfig({
         // 显式 page 确保 ScriptCat 走与 1.x 同一注入模型（脚本进 page 上下文、GM_* 在脚本主作用域可见），
         // 从源头对齐 1.x 的 GM_* 取值前提，避免 stub `typeof GM_info` 在 content/边界模型下取不到值。
         'inject-into': 'page',
-        // match 10 项逐字取自 1.x 头部行 9-18，不增不减（C4）。
+        // 校园站点与指定文献阅读路径；zylib 在运行时再次校验目标主机与路径。
         match: [
           '*://webvpn.nxu.edu.cn/*',
           '*://sslvpn.nxu.edu.cn/*',
@@ -102,8 +103,9 @@ export default defineConfig({
           '*://tuanwei.nxu.edu.cn/*',
           '*://ids.nxu.edu.cn/*',
           '*://open.weixin.qq.com/*',
+          ...LIBRARY_READER_MATCHES,
         ],
-        // 头部手动固定 @require，sha384 逐字取自 1.x 头部行 30-33（连字符语法）。
+        // 头部手动固定 @require 的版本和 SHA384，保持运行时与桥接脚本相邻。
         // vue 这条同时是 externalGlobals: { vue: 'Vue' } 指向的全局来源（单一来源，见 §6.1）。
         // 顺序敏感：h.notification.js / snapdom / xlsx 各紧跟一条 data: 桥接脚本（*_BRIDGE_REQUIRE），
         //  把各库在 sandbox 包装函数内的局部/挂错 window 的全局声明桥接到真实 page unsafeWindow——
