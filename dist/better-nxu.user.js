@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      2.0.1
+// @version      2.0.2
 // @author       H
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match        *://webvpn.nxu.edu.cn/*
@@ -14,31 +14,39 @@
 // @match        *://tuanwei.nxu.edu.cn/*
 // @match        *://ids.nxu.edu.cn/*
 // @match        *://open.weixin.qq.com/*
+// @match        *://zylib.nxu.edu.cn/*
+// @match        *://kns.cnki.net/reader/xml*
+// @match        *://kns.cnki.net/xmlRead/trialRead*
+// @match        *://www.cnki.net/reader/xml*
+// @match        *://www.cnki.net/xmlRead/trialRead*
+// @match        *://f.wanfangdata.com.cn/online/pc/periodical_html*
 // @require      https://scriptcat.org/lib/1405/1.0.7/h.notification.js#sha384-Ef8dnXffgAqEVHA7uHKmtub7Uh4Ji/Yv60yL+Himym+PdTNeb/NAKi+d9qh9olzC
 // @require      data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bw.addToast%3DaddToast%3Bw.createToast%3DcreateToast%3Bw.removeToast%3DremoveToast%3Bw.ToastCss%3DToastCss%3Bvar%20c%3D(typeof%20CAT_userConfig!%3D%3D'undefined')%3FCAT_userConfig%3Aundefined%3Bif(c)%7Bw.CAT_userConfig%3Dc%3Bwindow.CAT_userConfig%3Dc%3B%7D%7D)()%3B
-// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/vue/3.5.22/vue.global.min.js#sha384-qCjGjR+q4j3L6F1d3hI/Tqq5Ry6XGIiJMUdZC+VawNbSWD2eP2RR+laa6A3euDAZ
-// @require      https://unpkg.com/@zumer/snapdom@2.16.0/dist/snapdom.js#sha384-XHEQh68myKc3CIe4DhnbAY1QEVszoaGTPQRzEM6JIKCWRg3mnUG3fAt3+UuxqEYE
+// @require      https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.43/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB
+// @require      https://unpkg.com/@zumer/snapdom@3.1.0/dist/snapdom.js#sha384-WGMhfcLrIwHy2nch3wquBVui5YbAvFGEjpUqtK65dcKwZ+vBMkydMJja61MRE6An
 // @require      data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bvar%20s%3D(typeof%20snapdom!%3D%3D'undefined')%3Fsnapdom%3A(typeof%20window!%3D%3D'undefined'%3Fwindow.snapdom%3Aundefined)%3Bif(s)%7Bw.snapdom%3Ds%3Bwindow.snapdom%3Ds%3B%7D%7D)()%3B
 // @require      https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js#sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT
 // @require      data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bvar%20x%3D(typeof%20XLSX!%3D%3D'undefined')%3FXLSX%3A(typeof%20window!%3D%3D'undefined'%3Fwindow.XLSX%3Aundefined)%3Bif(x)%7Bw.XLSX%3Dx%3Bwindow.XLSX%3Dx%3B%7D%7D)()%3B
 // @resource     about-md             https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/README.md
-// @resource     dompurify-js         https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/dompurify/3.2.4/purify.min.js#sha384-eEu5CTj3qGvu9PdJuS+YlkNi7d2XxQROAFYOr59zgObtlcux1ae1Il3u7jvdCSWu
-// @resource     github-markdown-css  https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css#sha384-bKf/D9oOhMXM113OMRKT6sKFRT4jT3AulvzsGu563IJ5zmaH5LSA26VfwRJQ8GAR
-// @resource     marked-js            https://unpkg.com/marked@18.0.6/lib/marked.umd.js#sha384-uGn1eBC40GtuBgao0epc/cz9O4Lo8/flg/10SW+69UjLI5nP31iT4UPc65Xz10Le
+// @resource     dompurify-js         https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.15/purify.min.js#sha384-uUMu9JDY09vBzRf9SPcK2VgUj+W/70J6Soc+Dded5P474ElQ63iv9j5N3DE7Kp3N
+// @resource     github-markdown-css  https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.9.0/github-markdown.min.css#sha384-dvqix+FXNZkkgkfxRwowYZelxQUSFEjEbDpb1k1mIMw84dsT8M3NM2CJC3xyp2hh
+// @resource     marked-js            https://unpkg.com/marked@18.0.14/lib/marked.umd.js#sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo
 // @resource     svg-logo             https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.2.1/css/all.min.css#sha384-twcuYPV86B3vvpwNhWJuaLdUSLF9+ttgM2A6M870UYXrOsxKfER2MKox5cirApyA
-// @resource     tesseract-js         https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/tesseract.js/6.0.1/tesseract.min.js#sha384-r1ru3tcf6FhnCFR4B7pIFG+BhFF9LlFtz/P1y4pblWn3AGs9y3lBx5SKLNf4+rED
+// @resource     tesseract-js         https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM
 // @resource     update-md            https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md
-// @resource     vant-css             https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/vant/4.9.21/index.min.css#sha384-Jb7yH4uJOgDFef++Dmtf9JGETGSXgz9+wrg/jQ7XsqYtJzSClY4imewu/quoIrel
+// @resource     vant-css             https://cdnjs.cloudflare.com/ajax/libs/vant/4.10.2/index.min.css#sha384-/emcjTEhfcL99sMjPCGhXaThIpqFm61vsVdjpoJHtfHHJ/mY354KjvR3/POEs56i
 // @connect      webvpn.nxu.edu.cn
 // @connect      portal.nxu.edu.cn
 // @connect      v1.hitokoto.cn
 // @connect      cdn.jsdelivr.net
+// @connect      unpkg.com
 // @grant        CAT_userConfig
 // @grant        GM.setValue
 // @grant        GM.setValues
 // @grant        GM.xmlHttpRequest
 // @grant        GM_addElement
 // @grant        GM_addStyle
+// @grant        GM_download
 // @grant        GM_getResourceText
 // @grant        GM_getValue
 // @grant        GM_info
@@ -133,13 +141,13 @@ Jwgl:
         values: ['全部学期成绩']
 TuanWei:
     autoDownload:
-        title: 自动下载附件（未实现）
-        description: 是否自动填写二维码并下载附件
+        title: 自动下载附件
+        description: 自动识别团委附件页验证码并下载，失败时保留手动操作
         type: checkbox
         default: false
     autoDownloadClose:
-        title: 自动关闭下载页面（未实现）
-        description: 是否自动下载后自动关闭页面
+        title: 自动关闭下载页面
+        description: 开启自动下载后，收到下载完成回调时关闭附件页面
         type: checkbox
         default: false
  ==/UserConfig== */
@@ -239,6 +247,7 @@ SOFTWARE.
 	var _GM = (() => typeof GM != "undefined" ? GM : void 0)();
 	var _GM_addElement = (() => typeof GM_addElement != "undefined" ? GM_addElement : void 0)();
 	var _GM_addStyle = (() => typeof GM_addStyle != "undefined" ? GM_addStyle : void 0)();
+	var _GM_download = (() => typeof GM_download != "undefined" ? GM_download : void 0)();
 	var _GM_getResourceText = (() => typeof GM_getResourceText != "undefined" ? GM_getResourceText : void 0)();
 	var _GM_getValue = (() => typeof GM_getValue != "undefined" ? GM_getValue : void 0)();
 	var _GM_info = (() => typeof GM_info != "undefined" ? GM_info : void 0)();
@@ -340,7 +349,7 @@ SOFTWARE.
 			isWebvpn: Boolean(vpnContext?.viaVpn),
 			webvpnRealHost: vpnContext?.viaVpn ? vpnContext.realHost : null,
 			isWebvpnHost: Host === "webvpn.nxu.edu.cn",
-			isJwglIp: Host.indexOf("202.201.128.234") !== -1
+			isJwglIp: Host === "202.201.128.234"
 		};
 		return context;
 	}
@@ -357,12 +366,54 @@ SOFTWARE.
 		_GM_addStyle?.(css.replace(/\.\.\/webfonts/g, FONT_AWESOME_WEBFONTS_URL));
 		installed$2 = true;
 	}
-	var console$40 = MyConsole("[notification]");
+	async function downloadTextFile(content, filename, mimeType = "application/json;charset=utf-8") {
+		const blob = new Blob([content], { type: mimeType });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = filename;
+		link.style.display = "none";
+		try {
+			document.body.appendChild(link);
+			link.click();
+		} catch (error) {
+			URL.revokeObjectURL(url);
+			throw error;
+		}
+		setTimeout(() => {
+			link.remove();
+			URL.revokeObjectURL(url);
+		}, 100);
+	}
+	var AMP = "&amp;";
+	var LT = "&lt;";
+	var GT = "&gt;";
+	var QUOT = "&quot;";
+	var APOS = "&#39;";
+	function escapeHtml$1(value) {
+		return String(value || "").replace(/[&<>"']/g, (character) => ({
+			"&": AMP,
+			"<": LT,
+			">": GT,
+			"\"": QUOT,
+			"'": APOS
+		})[character]);
+	}
+	function closeCurrentTab() {
+		try {
+			if (typeof _monkeyWindow?.close !== "function") return false;
+			_monkeyWindow.close();
+			return true;
+		} catch {
+			return false;
+		}
+	}
+	var console$39 = MyConsole("[notification]");
 	var global$1 = _unsafeWindow ?? window;
 	var installed$1 = false;
 	function installNotification() {
 		if (typeof global$1.addToast === "function") global$1.addToast();
-		else console$40("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
+		else console$39("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
 		if (!installed$1 && typeof global$1.ToastCss === "string") _GM_addStyle?.(global$1.ToastCss);
 		if (!installed$1) installFontAwesome();
 		installed$1 = true;
@@ -387,9 +438,12 @@ SOFTWARE.
 		});
 	}
 	function toast(type, message, duration) {
+		return toastTrustedHtml(type, escapeHtml$1(String(message ?? "")), duration);
+	}
+	function toastTrustedHtml(type, message, duration) {
 		const impl = global$1.createToast;
 		if (typeof impl === "function") return impl(type, message, duration);
-		console$40("createToast 全局未就绪，降级记日志", {
+		console$39("createToast 全局未就绪，降级记日志", {
 			type,
 			message
 		}, "warn");
@@ -509,7 +563,7 @@ SOFTWARE.
 		error.code = code;
 		return error;
 	}
-	var console$39 = MyConsole("[wait]");
+	var console$38 = MyConsole("[wait]");
 	function Random(min, max) {
 		return parseInt(Math.random() * (max - min + 1) + min, 10);
 	}
@@ -524,13 +578,13 @@ SOFTWARE.
 		}
 		return new Promise(function(resolve) {
 			setTimeout(function() {
-				if (log) console$39("[等待] 定时任务完成", waitmsg.replace(/ /g, ""), "debug");
+				if (log) console$38("[等待] 定时任务完成", waitmsg.replace(/ /g, ""), "debug");
 				resolve();
 			}, waittime);
 		});
 	}
 	var unsafeWindow$1 = _unsafeWindow ?? window;
-	var console$38 = MyConsole("[dom]");
+	var console$37 = MyConsole("[dom]");
 	function simulateClick(el, needScroll = false) {
 		if (!el) return;
 		if (needScroll) el.scrollIntoView({
@@ -566,7 +620,7 @@ SOFTWARE.
 			if (element && predicate(element)) return element;
 			await WaitTime(interval, 0, false);
 		}
-		console$38("[DOM 等待] 目标元素等待超时", {
+		console$37("[DOM 等待] 目标元素等待超时", {
 			selector,
 			timeoutMs: timeout
 		}, "warn");
@@ -580,48 +634,6 @@ SOFTWARE.
 		input.dispatchEvent(new Event("input", { bubbles: true }));
 		input.dispatchEvent(new Event("change", { bubbles: true }));
 		return true;
-	}
-	async function downloadTextFile(content, filename, mimeType = "application/json;charset=utf-8") {
-		const blob = new Blob([content], { type: mimeType });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = filename;
-		link.style.display = "none";
-		try {
-			document.body.appendChild(link);
-			link.click();
-		} catch (error) {
-			URL.revokeObjectURL(url);
-			throw error;
-		}
-		setTimeout(() => {
-			link.remove();
-			URL.revokeObjectURL(url);
-		}, 100);
-	}
-	var AMP = "&amp;";
-	var LT = "&lt;";
-	var GT = "&gt;";
-	var QUOT = "&quot;";
-	var APOS = "&#39;";
-	function escapeHtml$1(value) {
-		return String(value || "").replace(/[&<>"']/g, (character) => ({
-			"&": AMP,
-			"<": LT,
-			">": GT,
-			"\"": QUOT,
-			"'": APOS
-		})[character]);
-	}
-	function closeCurrentTab() {
-		try {
-			if (typeof _monkeyWindow?.close !== "function") return false;
-			_monkeyWindow.close();
-			return true;
-		} catch {
-			return false;
-		}
 	}
 	function getAuthErrorText() {
 		for (const selector of [
@@ -650,7 +662,7 @@ SOFTWARE.
 		const link = opener === "openConfig" ? "<a href=\"javascript:void(0)\" onclick=\"CAT_userConfig()\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>" : "<a href=\"https://sslvpn.nxu.edu.cn/h/settings\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>";
 		return [`<p style="margin-bottom:0.5em;margin-top: 0">${escapeHtml$1(headline)}<br>请前往配置相关信息</p>`, link].join("");
 	}
-	var console$37 = MyConsole("[credentials]");
+	var console$36 = MyConsole("[credentials]");
 	function resolveOpener(host) {
 		return host === "Jwgl" ? "openConfig" : "settingsPage";
 	}
@@ -658,9 +670,9 @@ SOFTWARE.
 		const username = getGMValue(`${host}.username`);
 		const password = getGMValue(`${host}.password`);
 		if (username && password) return true;
-		console$37(`[${host}] 未配置登录账号或密码`, "请前往 Better NXU 设置页面补充", "warn");
+		console$36(`[${host}] 未配置登录账号或密码`, "请前往 Better NXU 设置页面补充", "warn");
 		installNotification();
-		toast("error", buildCredentialsErrorToast({
+		toastTrustedHtml("error", buildCredentialsErrorToast({
 			missing: true,
 			opener: resolveOpener(host)
 		}), 0);
@@ -668,7 +680,7 @@ SOFTWARE.
 	}
 	function notifyCredentialsProblem(host, duration = 5) {
 		installNotification();
-		toast("error", buildCredentialsErrorToast({
+		toastTrustedHtml("error", buildCredentialsErrorToast({
 			missing: false,
 			opener: resolveOpener(host)
 		}), duration);
@@ -678,7 +690,7 @@ SOFTWARE.
 	var Y_IOU_THRESHOLD = .85;
 	var NC = 1;
 	var MASK_DIM = 32;
-	var ORT_BASE$2 = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+	var ORT_BASE$1 = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
 	function buildWorkerSource() {
 		return `/* slider-captcha-gap worker (generated) */
 /* global ort, importScripts, self */
@@ -693,11 +705,11 @@ let session = null;
 
 async function init(modelUrl) {
   if (typeof ort === 'undefined') {
-    importScripts(${JSON.stringify(ORT_BASE$2 + "ort.min.js")});
+    importScripts(${JSON.stringify(ORT_BASE$1 + "ort.min.js")});
   }
   ort.env.wasm.numThreads = 1; // page contexts are usually not crossOriginIsolated
   ort.env.wasm.simd = true;
-  ort.env.wasm.wasmPaths = ${JSON.stringify(ORT_BASE$2)};
+  ort.env.wasm.wasmPaths = ${JSON.stringify(ORT_BASE$1)};
   session = await ort.InferenceSession.create(modelUrl, {
     executionProviders: ['wasm'],
     graphOptimizationLevel: 'all',
@@ -849,19 +861,19 @@ self.onmessage = async (e) => {
 };
 `;
 	}
-	var ORT_BASE$1 = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+	var ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/";
 	var SLIDER_ASSETS = {
 		runtime: {
-			url: `${ORT_BASE$1}ort.min.js`,
-			sha384: "RPL/K8tc0JVaNWsunkEmCzLeieefvFX2UCRLKLmLVChCI6P+CTKhzqF7VIeCc3Zp"
+			url: `${ORT_BASE}ort.min.js`,
+			sha384: "N94xSNjPDbfBJj4+QINst0nbHpcCm8kc1qNlIP/wA0muqjR3aVyIuDkMeccPrLvQ"
 		},
 		module: {
-			url: `${ORT_BASE$1}ort-wasm-simd-threaded.mjs`,
-			sha384: "SyfqCcawqO3udRV2twBwYuuR4Wh7Nj/yfAxyfN6UltDOh5VTrJH4aT9HfEvthS02"
+			url: `${ORT_BASE}ort-wasm-simd-threaded.mjs`,
+			sha384: "XcXA/MtAf0WpB8e023xQH9CM7RIjiugakT7x99DIwpFf7k56BIFFcAPerIF7FDad"
 		},
 		wasm: {
-			url: `${ORT_BASE$1}ort-wasm-simd-threaded.wasm`,
-			sha384: "t24pimTffN4djMKJaYLDupLzilNBHTgwqbjacQNJObCC4RrMH4UjfZgDkwHEU04k"
+			url: `${ORT_BASE}ort-wasm-simd-threaded.wasm`,
+			sha384: "vjBJ1z7qrhkTyYsNqKeF6c7N+nOJSU94czEo+tvZcu8G75JparGq9kB+kTnEUNVM"
 		},
 		model: {
 			url: "https://cdn.jsdelivr.net/npm/captcha-recognizer-js@1.0.4/model/slider.onnx.q8.onnx",
@@ -907,13 +919,13 @@ self.onmessage = async (e) => {
 		return Object.fromEntries(entries);
 	}
 	var MIN_CONFIDENCE = CONF_THRESHOLD;
-	var ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+	var UPSTREAM_ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
 	var INIT_TIMEOUT_MS = 9e4;
 	var DETECT_TIMEOUT_MS = 3e4;
 	var active = null;
 	function buildLocalSliderWorker({ runtimeUrl, moduleUrl, wasmUrl }) {
 		let source = buildWorkerSource();
-		const replacements = [[`importScripts(${JSON.stringify(`${ORT_BASE}ort.min.js`)});`, `importScripts(${JSON.stringify(runtimeUrl)});`], [`ort.env.wasm.wasmPaths = ${JSON.stringify(ORT_BASE)};`, `ort.env.wasm.wasmPaths = ${JSON.stringify({
+		const replacements = [[`importScripts(${JSON.stringify(`${UPSTREAM_ORT_BASE}ort.min.js`)});`, `importScripts(${JSON.stringify(runtimeUrl)});`], [`ort.env.wasm.wasmPaths = ${JSON.stringify(UPSTREAM_ORT_BASE)};`, `ort.env.wasm.wasmPaths = ${JSON.stringify({
 			mjs: moduleUrl,
 			wasm: wasmUrl
 		})};`]];
@@ -926,6 +938,7 @@ self.onmessage = async (e) => {
 	function getSliderRecognizer() {
 		if (active) return active.ready;
 		const state = {
+			pageWindow: _unsafeWindow ?? window,
 			controller: new AbortController(),
 			worker: null,
 			urls: [],
@@ -933,7 +946,7 @@ self.onmessage = async (e) => {
 			nextId: 0
 		};
 		state.onPageHide = () => stop(state, new Error("滑块识别页面已离开"));
-		window.addEventListener("pagehide", state.onPageHide, { once: true });
+		state.pageWindow.addEventListener("pagehide", state.onPageHide, { once: true });
 		active = state;
 		state.ready = initialize(state).catch((error) => {
 			stop(state, error);
@@ -946,11 +959,12 @@ self.onmessage = async (e) => {
 		try {
 			const assets = await loadSliderAssets(state.controller.signal);
 			state.controller.signal.throwIfAborted();
+			const pageWindow = state.pageWindow;
 			const objectUrl = (bytes, type) => {
-				const blob = new Blob([new Blob([bytes])], { type });
-				const url = URL.createObjectURL(blob);
+				const blob = new pageWindow.Blob([new pageWindow.Blob([bytes])], { type });
+				const url = pageWindow.URL.createObjectURL(blob);
 				state.urls.push(url);
-				return typeof window.vpn_rewrite_url === "function" ? window.vpn_rewrite_url(url) : url;
+				return typeof pageWindow.vpn_rewrite_url === "function" ? pageWindow.vpn_rewrite_url(url) : url;
 			};
 			const decoder = new TextDecoder("utf-8", { fatal: true });
 			const source = buildLocalSliderWorker({
@@ -958,7 +972,7 @@ self.onmessage = async (e) => {
 				moduleUrl: objectUrl(decoder.decode(assets.module), "text/javascript"),
 				wasmUrl: objectUrl(assets.wasm, "application/wasm")
 			});
-			state.worker = new Worker(objectUrl(source, "text/javascript"));
+			state.worker = new pageWindow.Worker(objectUrl(source, "text/javascript"));
 			state.worker.onmessage = ({ data }) => {
 				const id = data.type === "ready" ? 0 : data.id;
 				const pending = state.pending.get(id);
@@ -1049,23 +1063,22 @@ self.onmessage = async (e) => {
 	function stop(state, error) {
 		if (state.controller.signal.aborted) return;
 		state.controller.abort(error);
-		window.removeEventListener("pagehide", state.onPageHide);
+		state.pageWindow.removeEventListener("pagehide", state.onPageHide);
 		state.worker?.terminate();
 		for (const pending of state.pending.values()) pending.reject(error);
 		state.pending.clear();
-		for (const url of state.urls) URL.revokeObjectURL(url);
+		for (const url of state.urls) state.pageWindow.URL.revokeObjectURL(url);
 		state.urls.length = 0;
 		if (active === state) active = null;
 	}
-	function dragIdsSlider(slider, distance, { signal, timeoutMs = 5e3 } = {}) {
+	function dragSlider({ handle, track, distance, eventTarget = handle?.ownerDocument, signal, timeoutMs = 5e3 }) {
 		return new Promise((resolve, reject) => {
 			signal?.throwIfAborted();
-			const doc = slider?.ownerDocument;
+			const doc = handle?.ownerDocument;
 			const view = doc?.defaultView;
-			const container = slider?.closest(".sliderContainer");
-			if (!doc || !view || !container || !slider.isConnected || !slider.getClientRects().length) throw new Error("滑块控件不可用");
-			const rect = slider.getBoundingClientRect();
-			const maxDistance = container.getBoundingClientRect().width - rect.width;
+			if (!doc || !view || !track || !eventTarget || !handle.isConnected || !handle.getClientRects().length) throw new Error("滑块控件不可用");
+			const rect = handle.getBoundingClientRect();
+			const maxDistance = track.getBoundingClientRect().width - rect.width;
 			if (!Number.isFinite(distance) || distance <= 0 || distance > maxDistance) throw new Error("滑块距离超出有效范围");
 			const startX = rect.left + rect.width * (.4 + Math.random() * .2);
 			const startY = rect.top + rect.height * (.4 + Math.random() * .2);
@@ -1092,7 +1105,8 @@ self.onmessage = async (e) => {
 				clearTimeout(deadline);
 				signal?.removeEventListener("abort", abort);
 				if (error && pressed) try {
-					emit(doc, "mouseup", startX, startY, 0);
+					emit(eventTarget, "mousemove", startX, startY, 1);
+					emit(eventTarget, "mouseup", startX, startY, 0);
 				} catch {}
 				error ? reject(error) : resolve();
 			};
@@ -1101,20 +1115,20 @@ self.onmessage = async (e) => {
 				if (finished) return;
 				try {
 					signal?.throwIfAborted();
-					if (!slider.isConnected) throw new Error("滑块控件已移除或隐藏");
+					if (!handle.isConnected) throw new Error("滑块控件已移除或隐藏");
 					const progress = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
 					if (progress < 1 && now - lastMoveAt < 20) {
 						animationFrame = view.requestAnimationFrame(tick);
 						return;
 					}
-					if (!slider.getClientRects().length) throw new Error("滑块控件已移除或隐藏");
+					if (!handle.getClientRects().length) throw new Error("滑块控件已移除或隐藏");
 					const eased = progress * progress * (3 - 2 * progress);
-					emit(doc, "mousemove", startX + distance * eased, startY + Math.sin(progress * Math.PI) * verticalOffset, 1);
+					emit(eventTarget, "mousemove", startX + distance * eased, startY + Math.sin(progress * Math.PI) * verticalOffset, 1);
 					lastMoveAt = now;
 					if (finished) return;
 					if (progress === 1) {
 						pressed = false;
-						emit(doc, "mouseup", startX + distance, startY, 0);
+						emit(eventTarget, "mouseup", startX + distance, startY, 0);
 						finish();
 					} else animationFrame = view.requestAnimationFrame(tick);
 				} catch (error) {
@@ -1125,11 +1139,19 @@ self.onmessage = async (e) => {
 			signal?.addEventListener("abort", abort, { once: true });
 			try {
 				pressed = true;
-				emit(slider, "mousedown", startX, startY, 1);
+				emit(handle, "mousedown", startX, startY, 1);
 				if (!finished) animationFrame = view.requestAnimationFrame(tick);
 			} catch (error) {
 				finish(error);
 			}
+		});
+	}
+	function dragIdsSlider(slider, distance, options = {}) {
+		return dragSlider({
+			...options,
+			handle: slider,
+			track: slider?.closest(".sliderContainer"),
+			distance
 		});
 	}
 	var POLL_MS = 200;
@@ -1233,7 +1255,7 @@ self.onmessage = async (e) => {
 		}
 		return "exhausted";
 	}
-	var console$36 = MyConsole("[ids.slider]");
+	var console$35 = MyConsole("[ids.slider]");
 	var solving = null;
 	async function waitForSliderElements(timeoutMs = 8e3) {
 		const interval = 200;
@@ -1253,7 +1275,7 @@ self.onmessage = async (e) => {
 	}
 	async function solve() {
 		if (!isSliderCaptchaPresent()) {
-			console$36("滑块验证码未出现，跳过");
+			console$35("滑块验证码未出现，跳过");
 			return false;
 		}
 		let toastHandle = toast("info", "正在识别滑块验证…", 0);
@@ -1264,7 +1286,7 @@ self.onmessage = async (e) => {
 			if (toastHandle) removeToastHandle(toastHandle);
 			toastHandle = toast("info", message, 0);
 		};
-		console$36("发现滑块验证码，开始自动识别");
+		console$35("发现滑块验证码，开始自动识别");
 		try {
 			const { pieceImg } = await waitForSliderElements();
 			if (!pieceImg.width || !pieceImg.height) throw new Error("展示位图 canvas 尺寸无效，无法确定滑动坐标系");
@@ -1286,7 +1308,7 @@ self.onmessage = async (e) => {
 					return "manual";
 				}
 				const distance = Math.round(box[0]);
-				console$36(`第 ${attempt}/3 次滑块拖动，距离: ${distance}px`);
+				console$35(`第 ${attempt}/3 次滑块拖动，距离: ${distance}px`);
 				await dragIdsSlider(slider, distance, { signal: controller.signal });
 				controller.signal.throwIfAborted();
 				showProgress("滑块已拖动，等待验证与跳转…");
@@ -1305,7 +1327,7 @@ self.onmessage = async (e) => {
 		} catch (err) {
 			if (controller.signal.aborted) return false;
 			const isScheduleError = err?.code === SLIDER_RECOGNIZER_UNAVAILABLE;
-			console$36("滑块验证识别异常", err, "error");
+			console$35("滑块验证识别异常", err, "error");
 			removeToastHandle(toastHandle);
 			toastHandle = null;
 			toast("error", isScheduleError ? err.message : "滑块验证识别失败，请手动操作", 5);
@@ -1313,6 +1335,81 @@ self.onmessage = async (e) => {
 		} finally {
 			if (toastHandle) removeToastHandle(toastHandle);
 			window.removeEventListener("pagehide", onPageHide);
+		}
+	}
+	var LIBRARY_PROXY_HOST = "zylib.nxu.edu.cn";
+	var LIBRARY_READER_PLATFORMS = Object.freeze([{
+		id: "cnki",
+		hosts: ["kns.cnki.net", "www.cnki.net"],
+		paths: ["/reader/xml", "/xmlRead/trialRead"],
+		copy: true,
+		slider: true
+	}, {
+		id: "wanfang",
+		hosts: ["f.wanfangdata.com.cn"],
+		paths: ["/online/pc/periodical_html"],
+		copy: true,
+		slider: false
+	}]);
+	Object.freeze([`*://${LIBRARY_PROXY_HOST}/*`, ...LIBRARY_READER_PLATFORMS.flatMap(({ hosts, paths }) => hosts.flatMap((host) => paths.map((path) => `*://${host}${path}*`)))]);
+	function parseLibraryReaderLocation(input) {
+		let url;
+		try {
+			url = new URL(typeof input === "string" ? input : input?.url);
+		} catch {
+			return null;
+		}
+		if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
+		if (url.hostname === "zylib.nxu.edu.cn") {
+			const hosts = url.searchParams.getAll("__host__");
+			const protocols = url.searchParams.getAll("__proto__");
+			if (hosts.length || protocols.length) {
+				if (hosts.length !== 1 || protocols.length !== 1) return null;
+				if (!["http", "https"].includes(protocols[0]) || !/^[a-z0-9.-]+$/i.test(hosts[0])) return null;
+				if (url.pathname.startsWith("/-----")) return null;
+				return {
+					host: hosts[0].toLowerCase(),
+					path: url.pathname,
+					access: "zylib"
+				};
+			}
+			if (!url.pathname.startsWith("/-----")) return null;
+			let target;
+			try {
+				target = new URL(url.pathname.slice(6));
+			} catch {
+				return null;
+			}
+			if (!["http:", "https:"].includes(target.protocol) || target.username || target.password || target.port) return null;
+			return {
+				host: target.hostname,
+				path: target.pathname,
+				access: "zylib"
+			};
+		}
+		const vpn = parseWebVpnContext(url.href);
+		if (vpn?.viaVpn) return vpn.realHost ? {
+			host: vpn.realHost,
+			path: vpn.realPath,
+			access: "webvpn"
+		} : null;
+		return {
+			host: url.hostname,
+			path: url.pathname,
+			access: "direct"
+		};
+	}
+	function resolveLibraryReader(input, platforms = LIBRARY_READER_PLATFORMS) {
+		const location = parseLibraryReaderLocation(input);
+		if (!location) return null;
+		return platforms.find(({ hosts, paths }) => hosts.includes(location.host) && paths.some((path) => location.path === path || location.path.startsWith(`${path}/`) || location.path.startsWith(`${path}.`))) || null;
+	}
+	function isTuanweiDownloadRoute(ctx) {
+		try {
+			const url = new URL(ctx?.url);
+			return ["https:", "http:"].includes(url.protocol) && url.hostname === "tuanwei.nxu.edu.cn" && !url.port && !url.username && !url.password && url.pathname === "/system/_content/download.jsp" && url.searchParams.getAll("urltype").length === 1 && url.searchParams.get("urltype") === "news.DownloadAttachUrl" && ["owner", "wbfileid"].every((key) => url.searchParams.getAll(key).length === 1 && /^\d+$/.test(url.searchParams.get(key)));
+		} catch {
+			return false;
 		}
 	}
 	function isTrustedIdsContext(ctx) {
@@ -1328,17 +1425,25 @@ self.onmessage = async (e) => {
 		if (!isTrustedIdsContext(ctx) || !ctx.isWebvpn) return false;
 		return String(ctx.vpnContext?.realPath || "").includes("/authserver/reAuthCheck/");
 	}
-	var console$35 = MyConsole("[统一认证]");
+	function isWebVpnToolsRoute(ctx, bodyHtml = "") {
+		if (ctx?.host !== "webvpn.nxu.edu.cn") return false;
+		if (ctx.path === "/h/tools" || ctx.path === "/h/tools/") return true;
+		return ctx.path === "/wengine-vpn/failed" && /地址[：:]\s*\/h\/tools\/?(?=$|[\s?#<])/.test(bodyHtml);
+	}
+	function isWebVpnFailedRoute(ctx, bodyHtml = "") {
+		return ctx?.host === "webvpn.nxu.edu.cn" && ctx.path === "/wengine-vpn/failed" && !isWebVpnToolsRoute(ctx, bodyHtml);
+	}
+	var console$34 = MyConsole("[统一认证]");
 	var pageWindow$4 = _unsafeWindow ?? window;
 	var authLoginSubmitting = false;
 	async function idsLogin() {
 		if (!getGMValue("WebVPN.autoLogin")) return;
 		if (authLoginSubmitting) {
-			console$35("已触发登录，忽略重复调用", "", "debug");
+			console$34("已触发登录，忽略重复调用", "", "debug");
 			return;
 		}
 		if (!isTrustedIdsContext(getContext())) {
-			console$35("拒绝在非统一认证页面执行自动登录", { href: window.location.href }, "error");
+			console$34("拒绝在非统一认证页面执行自动登录", { href: window.location.href }, "error");
 			return;
 		}
 		toast("info", "正在填写统一认证登录信息…", 3);
@@ -1346,7 +1451,7 @@ self.onmessage = async (e) => {
 		const authErrorText = getAuthErrorText();
 		if (authErrorText) {
 			if (isCredentialsErrorText(authErrorText)) notifyCredentialsProblem("WebVPN", 0);
-			else toast("error", `<p>${escapeHtml$1(authErrorText)}</p>`, 5);
+			else toast("error", authErrorText, 5);
 			return;
 		}
 		try {
@@ -1382,23 +1487,23 @@ self.onmessage = async (e) => {
 			} else throw scheduleOperationError(AUTH_SUBMIT_MISSING, "统一认证登录按钮尚未加载");
 			setTimeout(() => {
 				solveIdsSliderCaptcha().catch((err) => {
-					console$35("滑块自动识别流程异常", err, "error");
+					console$34("滑块自动识别流程异常", err, "error");
 				});
 			}, 800);
 		} catch (error) {
 			authLoginSubmitting = false;
-			console$35("自动登录失败", error, "error");
+			console$34("自动登录失败", error, "error");
 			installNotification();
 			toast("error", "统一认证自动登录失败，请手动操作", 5);
 		}
 	}
 	var installed = false;
-	var console$34 = MyConsole("[vant.style]");
+	var console$33 = MyConsole("[vant.style]");
 	function installVantStyle() {
 		if (installed) return;
 		const vantCss = _GM_getResourceText?.("vant-css");
 		if (typeof vantCss !== "string" || vantCss.trim() === "") {
-			console$34("Vant CSS 资源不可用，跳过样式注入", "", "error");
+			console$33("Vant CSS 资源不可用，跳过样式注入", "", "error");
 			return;
 		}
 		if (typeof _GM_addStyle === "function") _GM_addStyle(vantCss);
@@ -1410,7 +1515,7 @@ self.onmessage = async (e) => {
 		}
 		installed = true;
 	}
-	var console$33 = MyConsole("[use-vue-app]");
+	var console$32 = MyConsole("[use-vue-app]");
 	function mountVueApp(options = {}) {
 		const { root, id, rootProps, useVantStyles = true } = options;
 		let mountEl = id ? document.getElementById(id) : null;
@@ -1420,7 +1525,7 @@ self.onmessage = async (e) => {
 			document.body.appendChild(mountEl);
 		}
 		if (typeof vue.createApp !== "function") {
-			console$33("createApp 未就绪（@require vue 可能被 ScriptCat 拒载）", void 0, "error");
+			console$32("createApp 未就绪（@require vue 可能被 ScriptCat 拒载）", void 0, "error");
 			return null;
 		}
 		if (useVantStyles) installVantStyle();
@@ -1468,13 +1573,13 @@ self.onmessage = async (e) => {
 			};
 		}
 	}, [["__scopeId", "data-v-acbd53d7"]]);
-	var console$32 = MyConsole("[ids.login]");
-	async function register$19() {
-		console$32("进入登录页");
+	var console$31 = MyConsole("[ids.login]");
+	async function register$20() {
+		console$31("进入登录页");
 		installNotification();
 		if (getGMValue("WebVPN.autoLogin")) await idsLogin();
 		else {
-			console$32("自动登录未启用，注入浮动填账号按钮");
+			console$31("自动登录未启用，注入浮动填账号按钮");
 			mountVueApp({
 				root: LoginFillButton_default,
 				id: "better-nxu-auth-fill-host",
@@ -1482,21 +1587,21 @@ self.onmessage = async (e) => {
 			});
 		}
 	}
-	var console$31 = MyConsole("[ids.re-auth]");
+	var console$30 = MyConsole("[ids.re-auth]");
 	var pageWindow$3 = _unsafeWindow ?? window;
-	async function register$18() {
-		console$31("进入二次确认页");
+	async function register$19() {
+		console$30("进入二次确认页");
 		if (!isTrustedIdsContext(getContext())) {
-			console$31("拒绝在非统一认证页面执行二次认证", { href: window.location.href }, "error");
+			console$30("拒绝在非统一认证页面执行二次认证", { href: window.location.href }, "error");
 			return;
 		}
 		installNotification();
 		if (!getGMValue("WebVPN.autoReLogin")) return;
 		toast("info", "尝试自动登录...");
 		if (typeof pageWindow$3.reAuthByCombined === "function") pageWindow$3.reAuthByCombined("weixin");
-		else console$31("页面未提供 reAuthByCombined 函数，无法自动通过二次验证", void 0, "warn");
+		else console$30("页面未提供 reAuthByCombined 函数，无法自动通过二次验证", void 0, "warn");
 	}
-	var console$30 = MyConsole("[ids.callback]");
+	var console$29 = MyConsole("[ids.callback]");
 	function redirectToWeixinScan(query) {
 		if (!getGMValue("WebVPN.autoReLogin")) return;
 		toast("info", "尝试自动登录...");
@@ -1524,19 +1629,19 @@ self.onmessage = async (e) => {
 		}
 		location.href = callbackUrl;
 	}
-	async function register$17() {
-		console$30("进入微信回调/扫码代理页");
+	async function register$18() {
+		console$29("进入微信回调/扫码代理页");
 		installNotification();
 		const ctx = getContext();
 		if (ctx.url.indexOf(`/${WEBVPN_HOST_TOKENS["open.weixin.qq.com"]}/connect/qrconnect`) !== -1) {
-			console$30("进入微信扫码代理分支");
+			console$29("进入微信扫码代理分支");
 			redirectToWeixinScan(ctx.query);
 			return;
 		}
-		console$30("进入微信回调修复分支");
+		console$29("进入微信回调修复分支");
 		redirectToFixedCallback(ctx.query);
 	}
-	var console$29 = MyConsole("[wait-or-toast]");
+	var console$28 = MyConsole("[wait-or-toast]");
 	async function waitOrToast(selector, options = {}) {
 		const { timeout, interval, predicate, level, timeoutMessage, errorMessage, duration = 5 } = options || {};
 		try {
@@ -1551,7 +1656,7 @@ self.onmessage = async (e) => {
 			const tipLevel = level === "error" ? "error" : "warning";
 			const message = isTimeout ? timeoutMessage || `等待页面元素超时：${selector}` : errorMessage || error?.message || `${selector} 加载失败`;
 			toast(tipLevel, message, duration);
-			console$29("waitOrToast 捕获", {
+			console$28("waitOrToast 捕获", {
 				selector,
 				isTimeout,
 				code: error?.code,
@@ -1560,9 +1665,9 @@ self.onmessage = async (e) => {
 			return null;
 		}
 	}
-	var console$28 = MyConsole("[weixin.login]");
-	async function register$16() {
-		console$28("进入授权页面");
+	var console$27 = MyConsole("[weixin.login]");
+	async function register$17() {
+		console$27("进入授权页面");
 		const ctx = getContext();
 		if (ctx.query.get("fast_login") === "0") {
 			location.href = ctx.url.replace("fast_login=0", "fast_login=1");
@@ -1587,7 +1692,7 @@ self.onmessage = async (e) => {
 			toast("error", error.message || "微信登录入口加载失败，请手动操作", 4);
 		}
 	}
-	var console$27 = MyConsole("[use-app-page]");
+	var console$26 = MyConsole("[use-app-page]");
 	function mountAppPage({ id, title, deployMessage = "请等待工具部署", extraSetup } = {}) {
 		document.body.replaceChildren();
 		if (title) document.title = title;
@@ -1600,7 +1705,7 @@ self.onmessage = async (e) => {
 		if (typeof extraSetup === "function") try {
 			extraSetup({ mountEl });
 		} catch (error) {
-			console$27("extraSetup 回调抛错", error, "warn");
+			console$26("extraSetup 回调抛错", error, "warn");
 		}
 		return {
 			mountEl,
@@ -2005,6 +2110,7 @@ self.onmessage = async (e) => {
 		tel: "电话",
 		save: "保存",
 		clear: "清空",
+		undo: "撤销",
 		cancel: "取消",
 		confirm: "确认",
 		delete: "删除",
@@ -2631,12 +2737,12 @@ self.onmessage = async (e) => {
 			direction.value = "";
 			isTap.value = true;
 		};
-		const start = (event) => {
+		const start = ((event) => {
 			reset();
 			startX.value = event.touches[0].clientX;
 			startY.value = event.touches[0].clientY;
-		};
-		const move = (event) => {
+		});
+		const move = ((event) => {
 			const touch = event.touches[0];
 			deltaX.value = (touch.clientX < 0 ? 0 : touch.clientX) - startX.value;
 			deltaY.value = touch.clientY - startY.value;
@@ -2645,7 +2751,7 @@ self.onmessage = async (e) => {
 			const LOCK_DIRECTION_DISTANCE = 10;
 			if (!direction.value || offsetX.value < LOCK_DIRECTION_DISTANCE && offsetY.value < LOCK_DIRECTION_DISTANCE) direction.value = getDirection(offsetX.value, offsetY.value);
 			if (isTap.value && (offsetX.value > 5 || offsetY.value > 5)) isTap.value = false;
-		};
+		});
 		return {
 			move,
 			start,
@@ -2671,7 +2777,9 @@ self.onmessage = async (e) => {
 		const onTouchMove = (event) => {
 			touch.move(event);
 			const direction = touch.deltaY.value > 0 ? DIRECTION_DOWN : DIRECTION_UP;
-			const { scrollHeight, offsetHeight, scrollTop } = getScrollParent(event.target, rootRef.value);
+			let el = getScrollParent(event.target, rootRef.value);
+			while (el.scrollHeight <= el.offsetHeight && el !== rootRef.value && el.parentElement) el = getScrollParent(el.parentElement, rootRef.value);
+			const { scrollHeight, offsetHeight, scrollTop } = el;
 			let status = "11";
 			if (scrollTop === 0) status = offsetHeight >= scrollHeight ? "00" : "01";
 			else if (scrollTop + offsetHeight >= scrollHeight) status = "10";
@@ -2946,10 +3054,10 @@ self.onmessage = async (e) => {
 	}
 	var listDelimiterRE = /;(?![^(]*\))/g;
 	var propertyDelimiterRE = /:([^]+)/;
-	var styleCommentRE = /\/\*[^]*?\*\//g;
+	var styleCommentRE = /"(?:[^"\\]|\\[^])*"|'(?:[^'\\]|\\[^])*'|\\[^]|\/\*[^]*?\*\//g;
 	function parseStringStyle(cssText) {
 		const ret = {};
-		cssText.replace(styleCommentRE, "").split(listDelimiterRE).forEach((item) => {
+		cssText.replace(styleCommentRE, (match) => match.startsWith("/*") ? "" : match).split(listDelimiterRE).forEach((item) => {
 			if (item) {
 				const tmp = item.split(propertyDelimiterRE);
 				tmp.length > 1 && (ret[tmp[0].trim()] = tmp[1].trim());
@@ -4080,9 +4188,9 @@ self.onmessage = async (e) => {
 				}
 			};
 			return () => {
-				var _a;
+				var _a, _b, _c;
 				const { tag, size, center, border, isLink, required } = props;
-				const clickable = (_a = props.clickable) != null ? _a : isLink;
+				const clickable = Boolean((_c = (_b = (_a = props.clickable) != null ? _a : props.to) != null ? _b : props.url) != null ? _c : isLink);
 				const classes = {
 					center,
 					required: !!required,
@@ -4094,7 +4202,7 @@ self.onmessage = async (e) => {
 					"class": bem$18(classes),
 					"role": clickable ? "button" : void 0,
 					"tabindex": clickable ? 0 : void 0,
-					"onClick": route
+					"onClick": clickable ? route : void 0
 				}, { default: () => {
 					var _a2;
 					return [
@@ -4354,10 +4462,11 @@ self.onmessage = async (e) => {
 				if (isDef(maxlength) && getStringLength(value) > +maxlength) {
 					const modelValue = getModelValue();
 					if (modelValue && getStringLength(modelValue) === +maxlength) return modelValue;
-					const selectionEnd = (_a = inputRef.value) == null ? void 0 : _a.selectionEnd;
+					let selectionEnd = (_a = inputRef.value) == null ? void 0 : _a.selectionEnd;
 					if (state.focused && selectionEnd) {
 						const valueArr = [...value];
 						const exceededLength = valueArr.length - +maxlength;
+						selectionEnd = getStringLength(value.slice(0, selectionEnd));
 						valueArr.splice(selectionEnd - exceededLength, exceededLength);
 						return valueArr.join("");
 					}
@@ -4369,7 +4478,7 @@ self.onmessage = async (e) => {
 				var _a, _b;
 				const originalValue = value;
 				value = limitValueLength(value);
-				const limitDiffLen = getStringLength(originalValue) - getStringLength(value);
+				const limitDiffLen = originalValue.length - value.length;
 				if (props.type === "number" || props.type === "digit") {
 					const isNumber = props.type === "number";
 					value = formatNumber(value, isNumber, isNumber);
@@ -4386,7 +4495,7 @@ self.onmessage = async (e) => {
 					if (inputRef.value && state.focused) {
 						const { selectionEnd } = inputRef.value;
 						const bcoVal = cutString(originalValue, selectionEnd);
-						formatterDiffLen = getStringLength(formatter(bcoVal)) - getStringLength(bcoVal);
+						formatterDiffLen = formatter(bcoVal).length - bcoVal.length;
 					}
 				}
 				if (inputRef.value && inputRef.value.value !== value) {
@@ -4394,7 +4503,7 @@ self.onmessage = async (e) => {
 						let { selectionStart, selectionEnd } = inputRef.value;
 						inputRef.value.value = value;
 						if (isDef(selectionStart) && isDef(selectionEnd)) {
-							const valueLen = getStringLength(value);
+							const valueLen = value.length;
 							if (limitDiffLen) {
 								selectionStart -= limitDiffLen;
 								selectionEnd -= limitDiffLen;
@@ -4578,7 +4687,8 @@ self.onmessage = async (e) => {
 				validate,
 				formValue,
 				resetValidation,
-				getValidationStatus
+				getValidationStatus,
+				adjustTextareaSize
 			});
 			(0, vue.provide)(CUSTOM_FIELD_INJECTION_KEY, {
 				customValue,
@@ -4617,8 +4727,9 @@ self.onmessage = async (e) => {
 					}),
 					"center": props.center,
 					"border": props.border,
-					"isLink": props.isLink,
-					"clickable": props.clickable,
+					"isLink": disabled ? false : props.isLink,
+					"clickable": disabled ? false : props.clickable,
+					"onClick": disabled ? (e) => e.stopImmediatePropagation() : void 0,
 					"titleStyle": labelStyle.value,
 					"valueClass": bem$17("value"),
 					"titleClass": [bem$17("label", [labelAlign, { required: showRequiredMark.value }]), props.labelClass],
@@ -6403,6 +6514,14 @@ self.onmessage = async (e) => {
 				}, null);
 			};
 			const onClosed = () => emit("closed");
+			const prev = () => {
+				var _a;
+				return (_a = swipeRef.value) == null ? void 0 : _a.prev();
+			};
+			const next = () => {
+				var _a;
+				return (_a = swipeRef.value) == null ? void 0 : _a.next();
+			};
 			const swipeTo = (index, options) => {
 				var _a;
 				return (_a = swipeRef.value) == null ? void 0 : _a.swipeTo(index, options);
@@ -6412,7 +6531,9 @@ self.onmessage = async (e) => {
 					var _a;
 					(_a = activedPreviewItemRef.value) == null || _a.resetScale();
 				},
-				swipeTo
+				swipeTo,
+				prev,
+				next
 			});
 			(0, vue.onMounted)(resize);
 			(0, vue.watch)([windowWidth, windowHeight], resize);
@@ -6711,6 +6832,7 @@ self.onmessage = async (e) => {
 					"type": "search",
 					"class": bem$3("field", { "with-message": fieldAttrs.errorMessage }),
 					"border": false,
+					"labelAlign": "left",
 					"onBlur": onBlur,
 					"onFocus": onFocus,
 					"onClear": onClear,
@@ -7250,7 +7372,7 @@ self.onmessage = async (e) => {
 			const pageWindow = _unsafeWindow ?? window;
 			const props = __props;
 			const cellCheckBoxToggle = (refs, index) => {
-				refs.value[index]?.toggle();
+				refs[index]?.toggle();
 			};
 			const webVPNAutoLogin = (0, vue.ref)(getGMValue("WebVPN.autoLogin"));
 			const webVPNAutoReLogin = (0, vue.ref)(getGMValue("WebVPN.autoReLogin"));
@@ -7298,26 +7420,6 @@ self.onmessage = async (e) => {
 			};
 			enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, "WebVPN.autoLogin", "WebVPN ", false);
 			enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, "Jwgl.autoLogin", "教务系统", false);
-			(0, vue.watch)(webVPNCustomCard, (newValue) => persistSetting("WebVPN.customCard", newValue));
-			(0, vue.watch)(webVPNAutoLogin, (newValue) => persistSetting("WebVPN.autoLogin", newValue));
-			(0, vue.watch)(webVPNAutoReLogin, (newValue) => persistSetting("WebVPN.autoReLogin", newValue));
-			(0, vue.watch)(webVPNAccount, (newValue) => persistSetting("WebVPN.username", newValue));
-			(0, vue.watch)(webVPNPassword, (newValue) => persistSetting("WebVPN.password", newValue));
-			(0, vue.watch)([webVPNAccount, webVPNPassword], () => {
-				enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, "WebVPN.autoLogin", "WebVPN ");
-			});
-			(0, vue.watch)(webVPNCourseGrab, (newValue) => persistSetting("WebVPN.courseGrab", newValue));
-			(0, vue.watch)(webVPNCustomTool, (newValue) => persistSetting("WebVPN.customTool", newValue));
-			(0, vue.watch)(webVPNAutoClose, (newValue) => persistSetting("WebVPN.autoClose", newValue));
-			(0, vue.watch)(webVPNSearchClose, (newValue) => persistSetting("WebVPN.searchClose", newValue));
-			(0, vue.watch)(jwglCustomMenu, (newValue) => persistSetting("Jwgl.customMenu", newValue));
-			(0, vue.watch)(jwglAutoLogin, (newValue) => persistSetting("Jwgl.autoLogin", newValue));
-			(0, vue.watch)(jwglAccount, (newValue) => persistSetting("Jwgl.username", newValue));
-			(0, vue.watch)(jwglPassword, (newValue) => persistSetting("Jwgl.password", newValue));
-			(0, vue.watch)([jwglAccount, jwglPassword], () => {
-				enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, "Jwgl.autoLogin", "教务系统");
-			});
-			(0, vue.watch)(jwglCourseBeautify, (newValue) => persistSetting("Jwgl.courseBeautify", newValue));
 			const resettableSettingModels = {
 				"WebVPN.autoLogin": webVPNAutoLogin,
 				"WebVPN.autoReLogin": webVPNAutoReLogin,
@@ -7339,6 +7441,15 @@ self.onmessage = async (e) => {
 				"Jwgl.username": jwglAccount,
 				"Jwgl.password": jwglPassword
 			};
+			Object.entries(allSettingModels).forEach(([name, model]) => {
+				(0, vue.watch)(model, (value) => persistSetting(name, value), { deep: true });
+			});
+			(0, vue.watch)([webVPNAccount, webVPNPassword], () => {
+				enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, "WebVPN.autoLogin", "WebVPN ");
+			});
+			(0, vue.watch)([jwglAccount, jwglPassword], () => {
+				enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, "Jwgl.autoLogin", "教务系统");
+			});
 			const syncSettingModels = (defaults, models) => {
 				Object.entries(models).forEach(([name, model]) => {
 					model.value = cloneGMValue(defaults[name]);
@@ -7409,9 +7520,6 @@ self.onmessage = async (e) => {
 				webVPNCustomCardRefs.value = [];
 				jwglCustomMenuRefs.value = [];
 			});
-			const unrealizedFunction = () => {
-				toast("error", "暂未实现的功能", 3);
-			};
 			(0, vue.onMounted)(() => {
 				if (props.deployToast) removeToastHandle(props.deployToast);
 				toast("success", "设置页面部署完毕", 2);
@@ -7652,27 +7760,24 @@ self.onmessage = async (e) => {
 						default: (0, vue.withCtx)(() => [_cache[29] || (_cache[29] = (0, vue.createElementVNode)("h2", null, "下载设置", -1)), (0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 							default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Cell), {
 								center: "",
-								style: { "--van-cell-text-color": "var(--van-doc-gray-6)" },
 								title: "是否自动下载附件",
-								onClick: unrealizedFunction
+								label: "自动识别验证码，失败时可手动下载"
 							}, {
 								"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 									modelValue: tuanweiAutoDownload.value,
-									"onUpdate:modelValue": _cache[16] || (_cache[16] = ($event) => tuanweiAutoDownload.value = $event),
-									disabled: ""
+									"onUpdate:modelValue": _cache[16] || (_cache[16] = ($event) => tuanweiAutoDownload.value = $event)
 								}, null, 8, ["modelValue"])]),
 								_: 1
 							}), (0, vue.createVNode)((0, vue.unref)(Cell), {
 								center: "",
-								style: { "--van-cell-text-color": "var(--van-doc-gray-6)" },
 								title: "是否自动关闭下载页面",
-								onClick: unrealizedFunction
+								label: "自动下载完成后关闭附件页"
 							}, {
 								"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 									modelValue: tuanweiAutoDownloadClose.value,
 									"onUpdate:modelValue": _cache[17] || (_cache[17] = ($event) => tuanweiAutoDownloadClose.value = $event),
-									disabled: ""
-								}, null, 8, ["modelValue"])]),
+									disabled: !tuanweiAutoDownload.value
+								}, null, 8, ["modelValue", "disabled"])]),
 								_: 1
 							})]),
 							_: 1
@@ -7805,9 +7910,9 @@ self.onmessage = async (e) => {
 	var _style = (b, a = document.createElement("style")) => (a.append(b), a);
 	var app_page_css_default = _style(app_page_default);
 	var settings_css_default = _style("#settings{background-color:var(--van-doc-background);flex-direction:column;gap:12px;width:100%;height:100%;padding:20px;display:flex;overflow:hidden}.settings-function-area{border:1px solid var(--van-doc-gray-3);background-color:var(--van-doc-white);border-radius:8px;flex-shrink:0;justify-content:space-between;align-items:center;gap:16px;min-width:0;padding:14px 16px;display:flex}.settings-function-copy{flex-direction:column;gap:4px;min-width:0;display:flex}.settings-function-title{color:var(--van-doc-gray-8);font-size:16px;font-weight:600;line-height:22px}.settings-function-description{color:var(--van-doc-gray-6);font-size:13px;line-height:18px}.settings-function-actions{flex-wrap:wrap;flex-shrink:0;justify-content:flex-end;gap:8px;display:flex}.settings-groups{scrollbar-width:auto;flex:1;gap:1em;min-height:0;display:flex;overflow-x:auto}.group{background-color:var(--van-doc-gray-1);scrollbar-width:auto;border-radius:20px;flex-shrink:0;width:400px;height:100%;overflow:hidden}.group-content{width:100%;height:calc(100% - 46px);padding-bottom:32px;overflow:hidden auto}.group h2{color:var(--van-doc-gray-6);margin:0;padding:32px 16px 16px;font-size:14px;font-weight:400;line-height:16px}.group h3{color:var(--van-doc-gray-6);margin:0;padding:16px 32px;font-size:14px;font-weight:400;line-height:14px}.login-setting-disabled{--van-cell-label-color:var(--van-doc-gray-6)}@media (width<=640px){#settings{padding:12px}.settings-function-area{flex-direction:column;align-items:stretch}.settings-function-actions{justify-content:flex-start}.group{width:calc(100vw - 24px)}}");
-	var console$26 = MyConsole("[sslvpn.settings]");
-	async function register$15() {
-		console$26("进入设置页");
+	var console$25 = MyConsole("[sslvpn.settings]");
+	async function register$16() {
+		console$25("进入设置页");
 		const ctx = getContext();
 		const { deployToast } = mountAppPage({
 			id: "settings",
@@ -7837,7 +7942,7 @@ self.onmessage = async (e) => {
 		if (!runtime) throw new Error(`资源 ${resourceName} 未暴露预期的全局对象`);
 		return runtime;
 	}
-	var console$25 = MyConsole("[markdown]");
+	var console$24 = MyConsole("[markdown]");
 	var markdownRuntime;
 	var runtimeLoadAttempted = false;
 	function getMarkdownRuntime() {
@@ -7849,7 +7954,7 @@ self.onmessage = async (e) => {
 				DOMPurify: evaluatePageResource("dompurify-js", (pageWindow) => typeof pageWindow.DOMPurify?.sanitize === "function" ? pageWindow.DOMPurify : null)
 			};
 		} catch (error) {
-			console$25("Markdown 运行时资源加载失败，降级为纯文本", error, "error");
+			console$24("Markdown 运行时资源加载失败，降级为纯文本", error, "error");
 			markdownRuntime = null;
 		}
 		return markdownRuntime;
@@ -7911,7 +8016,7 @@ self.onmessage = async (e) => {
 		if (runtime) try {
 			rawHtml = runtime.marked.parse(source);
 		} catch (error) {
-			console$25("marked.parse 失败，降级 HTML 转义", error, "warn");
+			console$24("marked.parse 失败，降级 HTML 转义", error, "warn");
 			rawHtml = escapeHtml(source);
 		}
 		else rawHtml = escapeHtml(source);
@@ -8205,18 +8310,18 @@ self.onmessage = async (e) => {
 		}
 	};
 	var about_css_default = _style("#about{background-color:var(--van-doc-background);scrollbar-width:auto;gap:1vw;width:100%;height:100%;padding:20px 1vw;display:flex;overflow-x:auto}ul{list-style-type:disc}:is(dir,menu,ol,ul) ul{list-style-type:circle}:is(dir,menu,ol,ul) :is(dir,menu,ol,ul) ul{list-style-type:square}.group{background-color:var(--van-doc-gray-1);scrollbar-width:auto;border-radius:20px;flex-shrink:0;width:32vw;height:100%;overflow:hidden}.group-content{width:100%;height:calc(100% - 46px);padding-bottom:32px;overflow:hidden auto}.group-content:not(.markdown-body)>h2{color:var(--van-doc-gray-6);margin:0;padding:32px 16px 16px;font-size:14px;font-weight:400;line-height:16px}.markdown-body{box-sizing:border-box;min-width:200px;max-width:980px;margin:0 auto;padding:25px}");
-	var console$24 = MyConsole("[sslvpn.about]");
+	var console$23 = MyConsole("[sslvpn.about]");
 	function trimMarkdownHead(text) {
 		return String(text || "").replace(/^(?:.*(?:\r\n|\n|\r)){2}/, "");
 	}
 	function readMarkdownResource(name, fallback) {
 		const markdown = _GM_getResourceText?.(name);
 		if (typeof markdown === "string" && markdown.trim() !== "") return trimMarkdownHead(markdown);
-		console$24(`Markdown 资源 ${name} 不可用，使用降级内容`, "", "error");
+		console$23(`Markdown 资源 ${name} 不可用，使用降级内容`, "", "error");
 		return fallback;
 	}
-	async function register$14() {
-		console$24("进入关于页");
+	async function register$15() {
+		console$23("进入关于页");
 		const aboutMd = readMarkdownResource("about-md", "项目说明暂时无法加载，请稍后重新安装或更新脚本。");
 		const updateMd = readMarkdownResource("update-md", "更新日志暂时无法加载，请稍后重新安装或更新脚本。");
 		const { deployToast } = mountAppPage({
@@ -8237,7 +8342,7 @@ self.onmessage = async (e) => {
 			}
 		});
 	}
-	var console$23 = MyConsole("[OCR]");
+	var console$22 = MyConsole("[OCR]");
 	var tesseractRuntime;
 	function getTesseractRuntime() {
 		if (tesseractRuntime) return tesseractRuntime;
@@ -8245,8 +8350,8 @@ self.onmessage = async (e) => {
 		return tesseractRuntime;
 	}
 	var OCR_MIRROR = {
-		workerPath: "https://unpkg.com/tesseract.js@6.0.1/dist/worker.min.js",
-		corePath: "https://unpkg.com/tesseract.js-core@6.0.0",
+		workerPath: "https://unpkg.com/tesseract.js@7.0.0/dist/worker.min.js",
+		corePath: "https://unpkg.com/tesseract.js-core@7.0.0",
 		langPathBase: "https://unpkg.com/@tesseract.js-data"
 	};
 	async function createOcrWorker(langs = "eng", oem = 1, extraOptions = {}) {
@@ -8261,11 +8366,11 @@ self.onmessage = async (e) => {
 		try {
 			return await getTesseractRuntime().createWorker(langs, oem, options);
 		} catch (error) {
-			console$23("createWorker 失败（worker/core/lang 镜像或构造问题）", error, "error");
+			console$22("createWorker 失败（worker/core/lang 镜像或构造问题）", error, "error");
 			throw scheduleOperationError(OCR_ENGINE_UNAVAILABLE, `验证码识别组件加载失败：${error?.message || error}`);
 		}
 	}
-	var console$22 = MyConsole("[OCR]");
+	var console$21 = MyConsole("[OCR]");
 	var LoadMessage = {
 		"loading tesseract core": "OCR核心加载",
 		"initializing tesseract": "OCR初始化",
@@ -8282,7 +8387,7 @@ self.onmessage = async (e) => {
 	}
 	async function readJwglCaptcha() {
 		const url = new URL("captcha/image.action", window.location.href).href;
-		console$22("开始加载验证码图片", { url }, "info");
+		console$21("开始加载验证码图片", { url }, "info");
 		installNotification();
 		let worker;
 		let progressToast = null;
@@ -8292,7 +8397,7 @@ self.onmessage = async (e) => {
 			workerPromise = createOcrWorker("eng", 1, { logger: (m) => {
 				if (!active) return;
 				const statusText = LoadMessage[m.status];
-				if (statusText) console$22("识别进度", {
+				if (statusText) console$21("识别进度", {
 					status: statusText,
 					progress: Number(m.progress || 0)
 				}, "debug");
@@ -8311,7 +8416,7 @@ self.onmessage = async (e) => {
 			worker = await withTimeout(workerPromise, 45e3, "验证码识别组件加载超时");
 			const code = ((await withTimeout(worker.recognize(url), 3e4, "验证码识别超时"))?.data?.text || "").replace(/\s+/g, "");
 			if (!code) throw scheduleOperationError(OCR_EMPTY_RESULT, "验证码识别结果为空");
-			console$22("验证码识别完成", void 0, "info");
+			console$21("验证码识别完成", void 0, "info");
 			return code;
 		} finally {
 			active = false;
@@ -8320,17 +8425,17 @@ self.onmessage = async (e) => {
 				try {
 					await lateWorker?.terminate?.();
 				} catch (error) {
-					console$22("迟到 worker 清理失败", error, "warn");
+					console$21("迟到 worker 清理失败", error, "warn");
 				}
 			}).catch(() => {});
 			if (worker) try {
 				await worker.terminate();
 			} catch (error) {
-				console$22("worker 清理失败", error, "warn");
+				console$21("worker 清理失败", error, "warn");
 			}
 		}
 	}
-	var console$21 = MyConsole("[教务登录]");
+	var console$20 = MyConsole("[教务登录]");
 	async function jwglLogin() {
 		if (!getGMValue("Jwgl.autoLogin")) return;
 		installNotification();
@@ -8360,19 +8465,19 @@ self.onmessage = async (e) => {
 			fillInput(captchaInput, verification);
 			submitButton.click();
 		} catch (error) {
-			console$21("自动填写失败", error, "error");
+			console$20("自动填写失败", error, "error");
 			toast("error", "验证码识别失败，请手动输入后登录", 5);
 		} finally {
 			removeToastHandle(recognitionToast);
 		}
 	}
-	var console$20 = MyConsole("[jwgl.login]");
-	async function register$13() {
-		console$20("进入登录页");
+	var console$19 = MyConsole("[jwgl.login]");
+	async function register$14() {
+		console$19("进入登录页");
 		installNotification();
 		await jwglLogin();
 	}
-	var console$19 = MyConsole("[教务菜单]");
+	var console$18 = MyConsole("[教务菜单]");
 	function addMenu(menu, menu_dd, href, content) {
 		const menuContainer = document.querySelectorAll("div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li")[menu];
 		const menuDdMyGrade = menuContainer?.querySelectorAll("dd.menu-dd")[menu_dd];
@@ -8388,10 +8493,10 @@ self.onmessage = async (e) => {
   `;
 		menuList.insertBefore(menu_dd_all_grade, menuDdMyGrade || null);
 	}
-	async function register$12() {
-		console$19("进入主页");
+	async function register$13() {
+		console$18("进入主页");
 		const jwglCustomMenu = getGMValue("Jwgl.customMenu");
-		console$19("当前启用的自定义菜单", jwglCustomMenu, "debug");
+		console$18("当前启用的自定义菜单", jwglCustomMenu, "debug");
 		if (jwglCustomMenu.length === 0) return;
 		if (!await waitOrToast("div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li", {
 			timeout: 15e3,
@@ -8405,31 +8510,45 @@ self.onmessage = async (e) => {
 			toast("warning", error.message || "教务菜单加载超时，已跳过自定义菜单", 4);
 		}
 	}
-	var console$18 = MyConsole("[jwgl CourseFrame]");
-	async function register$11() {
-		console$18("进入课表容器页");
+	var installations$2 = new WeakMap();
+	function installCourseFrameResize(iframe) {
+		const existing = installations$2.get(iframe);
+		if (existing) return existing;
+		const pageWindow = iframe.ownerDocument.defaultView;
+		const resize = () => {
+			try {
+				const table = (iframe.contentWindow?.document)?.querySelector("table");
+				if (table) iframe.style.height = `${table.scrollHeight + 100}px`;
+			} catch {}
+		};
+		const onMessage = (event) => {
+			if (event.source === iframe.contentWindow && event.data?.type === "COURSE_BEAUTIFY_CHANGED") resize();
+		};
+		const onPageHide = (event) => {
+			if (!event.persisted) cleanup();
+		};
+		const cleanup = () => {
+			iframe.removeEventListener("load", resize);
+			pageWindow.removeEventListener("message", onMessage);
+			pageWindow.removeEventListener("pagehide", onPageHide);
+			installations$2.delete(iframe);
+		};
+		iframe.addEventListener("load", resize);
+		pageWindow.addEventListener("message", onMessage);
+		pageWindow.addEventListener("pagehide", onPageHide);
+		installations$2.set(iframe, cleanup);
+		resize();
+		return cleanup;
+	}
+	var console$17 = MyConsole("[jwgl CourseFrame]");
+	async function register$12() {
+		console$17("进入课表容器页");
 		const iframe = await waitOrToast("#contentListFrame", {
 			timeout: 15e3,
 			level: "warning",
 			duration: 4
 		});
-		if (!iframe) return;
-		if (!await waitOrToast("#contentListFrame", {
-			timeout: 15e3,
-			predicate: (element) => Boolean(element.contentWindow?.document),
-			level: "warning",
-			duration: 4
-		})) return;
-		const resize = () => {
-			const iframeDocument = iframe.contentWindow?.document;
-			if (!iframeDocument) return;
-			const table = iframeDocument.querySelector("table");
-			iframe.style.height = table ? `${table.scrollHeight + 100}px` : "100px";
-		};
-		resize();
-		window.addEventListener("message", (event) => {
-			if (event.data?.type === "COURSE_BEAUTIFY_CHANGED") resize();
-		});
+		if (iframe) installCourseFrameResize(iframe);
 	}
 	var JWGL_COURSE_TEXT_FILTERS = [(text) => text.replace(/,{2,}/g, "")];
 	function filterJwglCourseText(value) {
@@ -8512,8 +8631,9 @@ self.onmessage = async (e) => {
 		const computed = pageWindow.getComputedStyle.call(pageWindow, element);
 		buffer.cssText = "";
 		for (const property of CAPTURE_STYLE_PROPERTIES) {
-			const value = computed.getPropertyValue(property);
+			let value = computed.getPropertyValue(property);
 			if (!value) continue;
+			if (property === "width" && /^\d+(?:\.\d+)?px$/.test(value)) value = `${Math.ceil(Number.parseFloat(value))}px`;
 			try {
 				buffer.setProperty(property, value);
 			} catch {}
@@ -8541,7 +8661,6 @@ self.onmessage = async (e) => {
 	async function downloadWithWebVpnFix({ snapdom, target, options, pageWindow }) {
 		const elements = [target, ...target.querySelectorAll("*")];
 		const originalStyles = elements.map((element) => element.getAttribute("style"));
-		const computedStyles = await collectComputedStyles(elements, pageWindow);
 		const serializerPrototype = (pageWindow.XMLSerializer ?? globalThis.XMLSerializer)?.prototype;
 		const originalSerialize = serializerPrototype?.serializeToString;
 		if (typeof originalSerialize !== "function") throw new Error("当前浏览器不支持 XMLSerializer，无法导出图片");
@@ -8549,13 +8668,15 @@ self.onmessage = async (e) => {
 			return originalSerialize.call(this, node).replace(/<(\/?)foreignobject(?=[\s>])/g, "<$1foreignObject");
 		};
 		try {
+			const computedStyles = await collectComputedStyles(elements, pageWindow);
 			elements.forEach((element, index) => {
 				element.style.cssText = computedStyles[index];
 			});
 			serializerPrototype.serializeToString = fixedSerialize;
 			return await snapdom.download(target, {
 				...options,
-				cache: "disabled"
+				cache: "disabled",
+				invalidate: true
 			});
 		} finally {
 			elements.forEach((element, index) => {
@@ -8569,11 +8690,15 @@ self.onmessage = async (e) => {
 	function downloadSnapdomImage({ snapdom, target, options = {}, fixWebVpn = false, pageWindow = window }) {
 		if (typeof snapdom?.download !== "function") return Promise.reject(new Error("snapdom 未加载，无法导出图片"));
 		if (!target || typeof target.querySelectorAll !== "function") return Promise.reject(new Error("图片导出目标不存在"));
-		if (!fixWebVpn) return snapdom.download(target, options);
+		const captureOptions = {
+			embedFonts: false,
+			...options
+		};
+		if (!fixWebVpn) return snapdom.download(target, captureOptions);
 		return enqueueWebVpnCapture(() => downloadWithWebVpnFix({
 			snapdom,
 			target,
-			options,
+			options: captureOptions,
 			pageWindow
 		}));
 	}
@@ -9966,7 +10091,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	};
-	var console$17 = MyConsole("[教务课表]");
+	var console$16 = MyConsole("[教务课表]");
 	var pageWindow$2 = _unsafeWindow ?? window;
 	function getJwglExportFilename(schedule, extension) {
 		return `${(schedule?.owner?.name || "未命名用户").replace(/[\\/:*?"<>|]/g, "_")} - 教务系统课表.${extension}`;
@@ -10056,7 +10181,7 @@ self.onmessage = async (e) => {
 		return JSON.stringify(buildFromJwgl(entries, ownerName));
 	}
 	async function hExportImage({ fixWebVpn = false } = {}) {
-		console$17("[图片导出] 开始生成课表图片", "", "info");
+		console$16("[图片导出] 开始生成课表图片", "", "info");
 		showNotify({
 			type: "primary",
 			message: "正在生成课表图片，请稍候",
@@ -10077,13 +10202,13 @@ self.onmessage = async (e) => {
 				fixWebVpn,
 				pageWindow: pageWindow$2
 			});
-			console$17("[图片导出] 导出完成", "", "info");
+			console$16("[图片导出] 导出完成", "", "info");
 			showNotify({
 				type: "success",
 				message: "课表图片已导出"
 			});
 		} catch (error) {
-			console$17("[图片导出] 导出失败", error, "error");
+			console$16("[图片导出] 导出失败", error, "error");
 			showNotify({
 				type: "danger",
 				message: error.message || "课表图片导出失败"
@@ -10091,26 +10216,26 @@ self.onmessage = async (e) => {
 		}
 	}
 	async function hExportJson() {
-		console$17("[JSON 导出] 开始解析当前课表", "", "info");
+		console$16("[JSON 导出] 开始解析当前课表", "", "info");
 		try {
 			const schedule = JSON.parse(readJwglTableToJson());
-			console$17("[JSON 导出] 课表解析完成", {
+			console$16("[JSON 导出] 课表解析完成", {
 				courseCount: schedule.courses.length,
 				lessonCount: schedule.lessons.length
 			}, "debug");
 			const result = await prepareScheduleExport(schedule);
 			await downloadTextFile(result.content, getJwglExportFilename(schedule, "json"));
-			console$17("[JSON 导出] 导出完成", { encrypted: result.encrypted }, "info");
+			console$16("[JSON 导出] 导出完成", { encrypted: result.encrypted }, "info");
 			showNotify({
 				type: "success",
 				message: result.encrypted ? "加密课表已导出" : "课表 JSON 已导出"
 			});
 		} catch (error) {
 			if (error.code === "EXPORT_CANCELLED") {
-				console$17("[JSON 导出] 用户取消导出", "", "info");
+				console$16("[JSON 导出] 用户取消导出", "", "info");
 				return;
 			}
-			console$17("[JSON 导出] 导出失败", error, "error");
+			console$16("[JSON 导出] 导出失败", error, "error");
 			showNotify({
 				type: "danger",
 				message: error.message || "课表导出失败"
@@ -10120,7 +10245,7 @@ self.onmessage = async (e) => {
 	var jwglExcelExporting = false;
 	async function hExportExcel() {
 		if (jwglExcelExporting) {
-			console$17("[Excel 导出] 忽略重复点击", "已有导出任务正在执行", "warn");
+			console$16("[Excel 导出] 忽略重复点击", "已有导出任务正在执行", "warn");
 			showNotify({
 				type: "warning",
 				message: "课表 Excel 正在生成，请稍候"
@@ -10128,7 +10253,7 @@ self.onmessage = async (e) => {
 			return;
 		}
 		jwglExcelExporting = true;
-		console$17("[Excel 导出] 开始生成工作簿", "", "info");
+		console$16("[Excel 导出] 开始生成工作簿", "", "info");
 		showNotify({
 			type: "primary",
 			message: "正在生成课表 Excel"
@@ -10183,7 +10308,7 @@ self.onmessage = async (e) => {
 			XLSX.utils.book_append_sheet(workbook, detailSheet, "课程明细");
 			const filename = getJwglExportFilename(schedule, "xlsx");
 			await Promise.resolve(XLSX.writeFile(workbook, filename));
-			console$17("[Excel 导出] 导出完成", {
+			console$16("[Excel 导出] 导出完成", {
 				arrangementCount: tables.arrangementCount,
 				worksheetCount: workbook.SheetNames.length
 			}, "info");
@@ -10192,7 +10317,7 @@ self.onmessage = async (e) => {
 				message: "课表 Excel 已导出"
 			});
 		} catch (error) {
-			console$17("[Excel 导出] 导出失败", error, "error");
+			console$16("[Excel 导出] 导出失败", error, "error");
 			showNotify({
 				type: "danger",
 				message: error.message || "课表 Excel 导出失败"
@@ -10222,7 +10347,7 @@ self.onmessage = async (e) => {
 			}
 		});
 	}
-	var console$16 = MyConsole("[教务课表美化]");
+	var console$15 = MyConsole("[教务课表美化]");
 	var pageWindow$1 = _unsafeWindow ?? window;
 	function notifyCourseBeautifyChanged() {
 		pageWindow$1.parent.postMessage({ type: "COURSE_BEAUTIFY_CHANGED" }, "*");
@@ -10293,7 +10418,7 @@ self.onmessage = async (e) => {
         padding: 0.5em 0;
       }
     `);
-		else console$16("GM_addStyle 不可用，跳过样式注入", void 0, "warn");
+		else console$15("GM_addStyle 不可用，跳过样式注入", void 0, "warn");
 		stripNoneprintStyle();
 		const mainTable = document.querySelector("table.listTable#contentListFrame");
 		if (mainTable) mainTable.classList.add("optimized");
@@ -10338,9 +10463,9 @@ self.onmessage = async (e) => {
 		});
 		notifyCourseBeautifyChanged();
 	}
-	var console$15 = MyConsole("[jwgl CourseTable]");
-	async function register$10() {
-		console$15("进入课表内容页");
+	var console$14 = MyConsole("[jwgl CourseTable]");
+	async function register$11() {
+		console$14("进入课表内容页");
 		await beautifyJwglCourseTable();
 	}
 	function normalizeConfigVersion(value) {
@@ -10699,7 +10824,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	};
-	var console$14 = MyConsole("[webvpn.home]");
+	var console$13 = MyConsole("[webvpn.home]");
 	function titleCard(title, id) {
 		const group = document.createElement("div");
 		group.className = "block-group";
@@ -10726,7 +10851,7 @@ self.onmessage = async (e) => {
 			rootProps
 		});
 	}
-	async function register$9() {
+	async function register$10() {
 		const scriptVersion = getContext().version;
 		installNotification();
 		if (!await waitOrToast("div[title=教务管理平台]", {
@@ -10764,10 +10889,10 @@ self.onmessage = async (e) => {
   `);
 		const firstSet = getGMValue("firstSet");
 		const configVersion = normalizeConfigVersion(getGMValue("configVersion"));
-		console$14("检查首次配置与版本提示状态", {
+		console$13("检查首次配置与版本提示状态", {
 			firstSet,
 			configVersion,
-			ConfigVersion: 7
+			ConfigVersion: 8
 		});
 		mountVueApp({
 			root: _sfc_main$5,
@@ -10776,7 +10901,7 @@ self.onmessage = async (e) => {
 				firstSet,
 				configVersion,
 				scriptVersion,
-				configVersionLatest: 7
+				configVersionLatest: 8
 			}
 		});
 		const rtEl = document.querySelector("header .rt");
@@ -10792,7 +10917,7 @@ self.onmessage = async (e) => {
 			});
 			if (wrapper.firstElementChild) rtEl.appendChild(wrapper.firstElementChild);
 			wrapper.remove();
-		} else console$14("未找到 header .rt，BetterMenu 菜单跳过", void 0, "warn");
+		} else console$13("未找到 header .rt，BetterMenu 菜单跳过", void 0, "warn");
 		const mainDiv = document.querySelector(".portal-content__block .el-scrollbar__view");
 		if (mainDiv) {
 			if (getGMValue("WebVPN.courseGrab")) {
@@ -10811,26 +10936,145 @@ self.onmessage = async (e) => {
 				mainDiv.prepend(group);
 				mountCardGroup(content, "better-nxu-customcards-host", _sfc_main$1, { customCard });
 			}
-		} else console$14("未找到卡片组容器 .portal-content__block .el-scrollbar__view，跳过卡片注入", void 0, "warn");
+		} else console$13("未找到卡片组容器 .portal-content__block .el-scrollbar__view，跳过卡片注入", void 0, "warn");
 	}
-	var console$13 = MyConsole("[webvpn.knowledges-copy]");
-	async function register$8() {
+	var console$12 = MyConsole("[reader.copy]");
+	var installations$1 = new WeakMap();
+	function installReaderCopy(doc = document) {
+		const existing = installations$1.get(doc);
+		if (existing) return existing;
 		installNotification();
-		const chapterH1 = document.querySelector("h1.Chapter");
-		if (chapterH1) chapterH1.setAttribute("style", "user-select:auto;");
-		console$13("文本选择监听已启用");
-		toast("success", "已开启复制，选中文字即可自动复制到粘贴板~", 3);
-		document.addEventListener("mouseup", () => {
-			const text = window.getSelection()?.toString() || "";
-			if (text === "") return;
-			console$13("捕获当前选区并写入剪贴板", { length: text.length }, "debug");
-			_GM_setClipboard?.(text);
-		});
+		const style = doc.createElement("style");
+		style.textContent = "h1.Chapter { user-select: text !important; -webkit-user-select: text !important; }";
+		(doc.head || doc.documentElement).appendChild(style);
+		const copy = (event) => {
+			if (!event.isTrusted || event.button !== 0) return;
+			const selection = doc.defaultView.getSelection();
+			if (!selection?.rangeCount) return;
+			const text = selection.toString();
+			if (!text.trim()) return;
+			try {
+				_GM_setClipboard?.(text);
+			} catch (error) {
+				console$12("自动复制失败", { name: error?.name }, "warn");
+				toast("warning", "自动复制失败，请使用浏览器复制功能", 3);
+			}
+		};
+		const onPageHide = (event) => {
+			if (!event.persisted) cleanup();
+		};
+		const cleanup = () => {
+			doc.removeEventListener("mouseup", copy, true);
+			doc.defaultView.removeEventListener("pagehide", onPageHide);
+			style.remove();
+			installations$1.delete(doc);
+		};
+		installations$1.set(doc, cleanup);
+		doc.addEventListener("mouseup", copy, true);
+		doc.defaultView.addEventListener("pagehide", onPageHide);
+		toast("success", "已开启复制，选中文字即可自动复制到剪贴板~", 3);
+		return cleanup;
 	}
-	var console$12 = MyConsole("[webvpn.failed]");
+	function createLibraryReaderRegistration(id, installSlider) {
+		return async () => {
+			const platform = resolveLibraryReader(getContext());
+			if (platform?.id !== id) return;
+			if (platform.copy) installReaderCopy();
+			if (platform.slider && installSlider) installSlider({ onError: () => toast("warning", "阅读滑块自动拖动失败，请手动完成验证", 4) });
+		};
+	}
+	var installations = new WeakMap();
+	var MAX_ATTEMPTS = 3;
+	function installCnkiSlider({ doc = document, drag = dragSlider, onError = () => {} } = {}) {
+		const existing = installations.get(doc);
+		if (existing) return existing;
+		const view = doc.defaultView;
+		const handled = new WeakSet();
+		let attempts = 0;
+		let active = null;
+		let frame = null;
+		let stopped = false;
+		const scan = () => {
+			frame = null;
+			if (stopped || active || attempts >= MAX_ATTEMPTS || doc.hidden) return;
+			const handle = doc.querySelector(".slider-wrapper #js-handler.handler");
+			const track = handle?.closest(".slider-wrapper");
+			if (!track || handled.has(handle) || !handle.getClientRects().length) return;
+			if (!handle.classList.contains("handler_bg")) return;
+			const rect = handle.getBoundingClientRect();
+			const trackRect = track.getBoundingClientRect();
+			const scale = track.offsetWidth ? trackRect.width / track.offsetWidth : 1;
+			const left = trackRect.left + (track.clientLeft || 0) * scale;
+			const distance = (track.clientWidth ? track.clientWidth * scale : trackRect.width) - rect.width;
+			if (distance <= 0 || rect.width <= 0 || Math.abs(rect.left - left) > 1) return;
+			handled.add(handle);
+			attempts++;
+			const controller = new AbortController();
+			active = controller;
+			Promise.resolve().then(() => drag({
+				handle,
+				track,
+				distance,
+				eventTarget: doc,
+				signal: controller.signal
+			})).catch((error) => {
+				if (!controller.signal.aborted) onError(error);
+			}).finally(() => {
+				if (active === controller) active = null;
+				schedule();
+			});
+		};
+		const schedule = () => {
+			if (!stopped && !active && attempts < MAX_ATTEMPTS && frame === null) frame = view.requestAnimationFrame(scan);
+		};
+		const observer = new view.MutationObserver(schedule);
+		const onUserPress = (event) => {
+			if (event.isTrusted && event.target?.closest(".slider-wrapper")) stop();
+		};
+		const onPageHide = (event) => {
+			active?.abort();
+			if (!event.persisted) stop();
+		};
+		const stop = () => {
+			if (stopped) return;
+			stopped = true;
+			observer.disconnect();
+			if (frame !== null) view.cancelAnimationFrame(frame);
+			frame = null;
+			active?.abort();
+			doc.removeEventListener("mousedown", onUserPress, true);
+			doc.removeEventListener("touchstart", onUserPress, true);
+			doc.removeEventListener("visibilitychange", schedule);
+			view.removeEventListener("resize", schedule);
+			view.removeEventListener("pageshow", schedule);
+			view.removeEventListener("pagehide", onPageHide);
+		};
+		installations.set(doc, stop);
+		observer.observe(doc.documentElement, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: [
+				"class",
+				"style",
+				"hidden"
+			]
+		});
+		doc.addEventListener("mousedown", onUserPress, true);
+		doc.addEventListener("touchstart", onUserPress, true);
+		doc.addEventListener("visibilitychange", schedule);
+		view.addEventListener("resize", schedule);
+		view.addEventListener("pageshow", schedule);
+		view.addEventListener("pagehide", onPageHide);
+		schedule();
+		return stop;
+	}
+	var register$9 = createLibraryReaderRegistration("cnki", installCnkiSlider);
+	var register$8 = createLibraryReaderRegistration("wanfang");
+	var console$11 = MyConsole("[webvpn.failed]");
 	async function register$7() {
 		if (!getGMValue("WebVPN.autoClose")) return;
-		console$12("按 WebVPN.autoClose 配置自动关闭失败页");
+		console$11("按 WebVPN.autoClose 配置自动关闭失败页");
 		closeCurrentTab();
 	}
 	var tools_css_default = _style("#main,#main .schedule-manager,#main .schedule-manager *{box-sizing:border-box}#main{width:calc(100% - 80px);height:calc(100% - 46px);padding-right:20px;position:absolute;top:46px;left:80px;overflow:hidden}#main>div{box-sizing:border-box;width:100%;height:100%;display:none}#main>div.show{display:block}#searchTeacher>.credits-bar{box-sizing:border-box;color:#000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:1000;white-space:nowrap;background:#ffffff1a;border-radius:30px;align-items:center;gap:8px;margin:0;padding:10px 25px;font-size:.9rem;animation:.6s ease-out slideUp;display:flex;position:fixed;bottom:20px;left:calc(50% + 64px);transform:translate(-50%);box-shadow:0 4px 12px #00000026}#searchTeacher .van-cell-group{padding-bottom:60px}.schedule-manager{flex-direction:column;height:100%;display:flex;overflow:hidden}.schedule-manager-tab{background:#f7f8fa;padding:12px}.schedule-manager-actions{border-bottom:1px solid #e1e4e8;flex:none;justify-content:space-between;align-items:center;gap:12px;padding:4px 8px 12px;display:flex}.schedule-manager-hint{color:#6b7280;font-size:13px}.add-btn{color:#fff;cursor:pointer;background:#4a6bdf;border:none;border-radius:6px;align-items:center;gap:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.add-btn:hover{background:#3a5bc7}.add-btn:disabled{cursor:not-allowed;opacity:.55}.export-container{margin-right:15px;position:relative}.export-btn{color:#fff;cursor:pointer;background:#a0a0a0;border:none;border-radius:6px;align-items:center;gap:5px;margin-right:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.export-btn:hover{background:#5b5b5b}.export-dropdown{z-index:100;background:#fff;border-radius:6px;min-width:120px;padding:8px 0;position:absolute;top:100%;right:0;box-shadow:0 4px 12px #0000001a}.export-dropdown div{cursor:pointer;color:#4a5568;padding:8px 16px;transition:background-color .2s}.export-dropdown div:hover{color:#4a6bdf;background-color:#f0f4ff}.file-list-header{background:0 0;border-bottom:1px solid #e1e4e8;padding:15px 20px}.file-list-header h3{color:#4a5568;margin-top:0;margin-bottom:10px;font-size:16px;font-weight:600}.files-display{flex-wrap:wrap;gap:8px;display:flex}.file-tag{color:#4a5568;background:#edf2f7;border-radius:20px;align-items:center;gap:6px;padding:6px 12px;font-size:13px;display:flex}.tag-delete-btn{color:#718096;cursor:pointer;background:0 0;border:none;border-radius:50%;justify-content:center;align-items:center;width:16px;height:16px;font-size:14px;display:flex}.tag-delete-btn:hover{color:#e53e3e;background:#fff5f5}.main-content{flex-direction:column;flex:1;display:flex;overflow:hidden}.schedule-container{flex:1;padding:12px 0 0;overflow:auto}.schedule-table{border-collapse:collapse;table-layout:fixed;background:#fff;width:100%}.schedule-table th,.schedule-table td{text-align:center;border:1px solid #e1e4e8;padding:12px}.schedule-table th{color:#4a5568;background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-table th.time-header{width:80px;font-weight:600;background-color:#f0f4ff!important}.period-cell{background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-cell{vertical-align:top;min-height:80px;padding:8px}.file-item-display{color:#2b6cb0;word-break:break-all;background:#ebf4ff;border-radius:4px;margin-bottom:4px;padding:6px 8px;font-size:13px}.file-item-display.file-item-all-free{color:#07c160;background:#e8f8ef;font-weight:600}.file-item-display.file-item-online-only{color:#ad6800;background:#fff7e6;font-weight:600}.availability-summary{color:#646566;margin-top:6px;font-size:11px;font-weight:600}.availability-summary.status-free{color:#078b47}.availability-summary.status-online{color:#ad6800}.availability-summary.status-none{color:#c41d7f}.empty-cell{color:#a0aec0;justify-content:center;align-items:center;height:100%;font-size:12px;display:flex}.visually-hidden{clip:rect(0, 0, 0, 0)!important;white-space:nowrap!important;border:0!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;position:absolute!important;overflow:hidden!important}@media (width<=768px){.schedule-table{font-size:12px}.schedule-table th,.schedule-table td{padding:6px}}.personal-schedule-page{background:#f7f8fa;flex-direction:column;min-width:0;height:100%;display:flex;overflow:hidden}#main>.personal-schedule-page.show{display:flex}.personal-schedule-toolbar{background:#fff;border-bottom:1px solid #ebedf0;flex-wrap:wrap;flex:none;align-items:center;gap:12px;padding:8px 12px;display:flex}.personal-link-search-form{flex:420px;min-width:240px}.personal-link-search{width:100%;padding:0}.personal-schedule-actions{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.personal-schedule-tabs{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.personal-schedule-tabs>.van-tabs__wrap{flex:none}.personal-schedule-tabs>.van-tabs__content{flex:1;min-height:0}.personal-schedule-tabs>.van-tabs__content>.van-tab__panel{height:100%;overflow:hidden}.schedule-key-page{background:#f7f8fa;height:100%;padding:12px 16px;overflow:auto}.schedule-key-content{width:100%;max-width:100%}.schedule-key-guide{color:#4b5563;border-left:4px solid #1989fa;margin-bottom:18px;padding:8px 12px;line-height:1.65}.schedule-key-guide p{margin:4px 0}.schedule-key-empty{flex-direction:column;align-items:center;padding-bottom:24px;display:flex}.schedule-key-section{border-top:1px solid #ebedf0;padding:16px 0}.schedule-private-key-section{border-color:#ebedf0}.schedule-key-section-title{justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;display:flex}.schedule-key-section-title strong,.schedule-key-section-title span{display:block}.schedule-key-section-title span{color:#6b7280;margin-top:3px;font-size:13px}.schedule-key-buttons{flex-wrap:wrap;justify-content:flex-end;gap:8px;display:flex}.schedule-key-text{resize:vertical;color:#334155;word-break:break-all;background:#f8fafc;border:1px solid #dcdfe6;border-radius:8px;width:100%;padding:10px;font:12px/1.5 Consolas,Monaco,monospace}.schedule-private-key-text{background:#fff}.schedule-private-key-hidden{color:#6b7280;text-align:center;background:#f3f4f6;padding:24px 12px}.schedule-key-regenerate{justify-content:flex-end;margin-top:18px;display:flex}.personal-panel-shell{flex-direction:column;height:100%;min-height:0;display:flex}.personal-week-filter{background:#fff;border-bottom:1px solid #f0f1f2;flex:none;padding:6px 12px;overflow:hidden}.personal-week-axis{--van-radius-sm:var(--van-radius-max);--van-tabs-card-height:32px}.personal-week-axis>.van-tabs__wrap{justify-content:center;align-items:center;display:flex}.personal-week-axis .van-tabs__nav--card{max-width:100%;margin:0}.personal-week-axis .van-tabs__nav--card .van-tab{min-width:64px}.personal-schedule-capture{background:#f7f8fa;flex:1;min-height:0;padding:12px;overflow:auto}.personal-table-capture{width:100%;min-width:1002px;min-height:100%}.personal-stats-capture{min-height:100%}.personal-course-grid{background:#ebedf0;border-radius:8px;grid-template-rows:38px repeat(10,minmax(52px,auto));grid-template-columns:92px repeat(7,minmax(130px,1fr));gap:1px;width:100%;min-width:1002px;padding:1px;display:grid;box-shadow:0 2px 10px #0000000d}.personal-course-grid-corner,.personal-course-grid-day,.personal-course-grid-period,.personal-course-grid-cell{box-sizing:border-box;min-width:0}.personal-course-grid-corner,.personal-course-grid-day{color:#4a5568;background:#f0f4ff;justify-content:center;align-items:center;font-size:13px;font-weight:600;display:flex}.personal-course-grid-corner{grid-area:1/1}.personal-course-grid-period{color:#4a5568;text-align:center;background:#f8f9ff;flex-direction:column;justify-content:center;align-items:center;padding:4px;font-size:11px;display:flex}.personal-course-grid-cell{z-index:1;background:#fff}.personal-table{table-layout:fixed;border-spacing:0;border-collapse:separate;background:#fff;border-radius:8px;width:100%;min-width:980px;overflow:hidden;box-shadow:0 2px 10px #0000000d}.personal-table th,.personal-table td{text-align:center;vertical-align:top;border-bottom:1px solid #ebedf0;border-right:1px solid #ebedf0;padding:6px}.personal-table thead th{color:#4a5568;background:#f0f4ff;height:38px;font-size:13px}.personal-table .personal-period-cell{color:#4a5568;vertical-align:middle;background:#f8f9ff;width:92px;min-width:92px;font-size:12px}.personal-course-card{color:#2d3748;text-align:left;word-break:break-word;background:#edf3ff;border-left:3px solid #4a6bdf;border-radius:6px;margin-bottom:5px;padding:7px 6px;line-height:1.35}.personal-course-card:last-child{margin-bottom:0}.personal-course-stack{z-index:2;box-sizing:border-box;flex-direction:column;justify-content:flex-start;align-self:stretch;gap:4px;min-width:0;margin:3px;display:flex}.personal-course-stack>.personal-course-card{box-sizing:border-box;flex:none;width:100%;min-height:0;margin-bottom:0}.personal-course-name{color:#2949b8;flex:1;min-width:0;font-size:13px;font-weight:600}.personal-course-header{justify-content:space-between;align-items:flex-start;gap:5px;display:flex}.personal-course-variant-count{color:#4a6bdf;white-space:nowrap;background:#dfe7ff;border-radius:999px;flex:none;padding:1px 5px;font-size:10px;line-height:1.5}.personal-course-variant-count.overlap{color:#d46b08;background:#fff3e0}.personal-course-variants{border-top:1px solid #d9e1f2;margin-top:5px}.personal-course-variant{padding:5px 0}.personal-course-variant+.personal-course-variant{border-top:1px dashed #d9e1f2}.personal-course-variant-weeks{color:#4a6bdf;font-size:11px;font-weight:600}.personal-course-variant-detail{color:#646566;margin-top:1px;font-size:11px}.personal-course-meta{color:#646566;margin-top:2px;font-size:11px}.personal-free-cell{color:#1989fa;white-space:pre-line;justify-content:center;align-items:center;min-height:52px;font-size:12px;line-height:1.45;display:flex}.personal-not-free{color:#c8c9cc}.personal-all-term-free{color:#07c160;font-weight:600}.personal-online-only{color:#ad6800;font-weight:600}.personal-empty-state{justify-content:center;align-items:center;height:100%;min-height:260px;display:flex}.personal-stats{height:100%;padding:12px;overflow:auto}.personal-stat-grid{grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:12px;display:grid}.personal-stat-card,.personal-chart-card{background:#fff;border-radius:8px;padding:14px;box-shadow:0 2px 10px #0000000d}.personal-stat-value{color:#4a6bdf;margin-top:4px;font-size:26px;font-weight:700}.personal-stat-label,.personal-stat-unit{color:#969799;font-size:12px}.personal-chart-card h3{color:#323233;margin:0 0 12px;font-size:16px}.personal-week-bars{align-items:flex-end;gap:8px;min-height:210px;padding:8px 4px 0;display:flex;overflow-x:auto}.personal-week-bar-item{text-align:center;color:#969799;flex:1 0 36px;min-width:36px;font-size:11px}.personal-week-bar-track{justify-content:center;align-items:flex-end;height:160px;display:flex}.personal-week-bar{background:linear-gradient(#6f8df3,#4a6bdf);border-radius:5px 5px 0 0;width:22px;min-height:2px}.personal-week-bar-value{color:#4a6bdf;margin-bottom:3px;font-weight:600}@media (width<=900px){.personal-schedule-toolbar{flex-direction:column;align-items:stretch;gap:6px}.personal-link-search-form{flex-basis:auto;width:100%;min-width:0}.schedule-manager-actions{flex-direction:column;align-items:stretch}.schedule-manager-actions>div{justify-content:flex-start!important}.personal-stat-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.schedule-key-page{padding:10px}.schedule-key-section-title{flex-direction:column;align-items:stretch}.schedule-key-buttons{justify-content:flex-start}}");
@@ -11049,7 +11293,7 @@ self.onmessage = async (e) => {
 		}));
 		return grid;
 	}
-	var console$11 = MyConsole("[教师查询]");
+	var console$10 = MyConsole("[教师查询]");
 	function xmlToJson(xml) {
 		const xmlDoc = new DOMParser().parseFromString(xml, "application/xml");
 		if (xmlDoc.querySelector("parsererror")) throw new Error("教师查询接口返回了无效 XML");
@@ -11094,7 +11338,7 @@ self.onmessage = async (e) => {
 				planid: "undefined",
 				university_en_name: "undefined"
 			}).toString();
-			console$11("开始请求分页数据", { page }, "debug");
+			console$10("开始请求分页数据", { page }, "debug");
 			const xhr = new XMLHttpRequest();
 			xhr.withCredentials = true;
 			xhr.timeout = Math.max(1e3, Number(options.timeout || 15e3));
@@ -11132,7 +11376,7 @@ self.onmessage = async (e) => {
 				if (this.status >= 200 && this.status < 300) try {
 					const raw_result = xmlToJson(this.responseText);
 					if (!raw_result.page?.["#text"]) {
-						console$11("WebVPN 登录状态已失效", { page }, "warn");
+						console$10("WebVPN 登录状态已失效", { page }, "warn");
 						resolveOnce({
 							success: false,
 							msg: "webvpn登录已过期"
@@ -11141,7 +11385,7 @@ self.onmessage = async (e) => {
 					}
 					const pages = raw_result.page["#text"].match(/第(\d+)\/(\d+)页/);
 					if (!pages) {
-						console$11("无法识别分页信息", { page }, "error");
+						console$10("无法识别分页信息", { page }, "error");
 						resolveOnce({
 							success: false,
 							msg: "教师查询结果格式异常"
@@ -11151,7 +11395,7 @@ self.onmessage = async (e) => {
 					const now_page = Number.parseInt(pages[1], 10);
 					const all_page = Number.parseInt(pages[2], 10);
 					if (all_page === 0) {
-						console$11("当前关键词没有结果", { page }, "info");
+						console$10("当前关键词没有结果", { page }, "info");
 						resolveOnce({
 							success: false,
 							msg: "查询不到该教师"
@@ -11167,7 +11411,7 @@ self.onmessage = async (e) => {
 					const word = raw_result.word;
 					const remind = raw_result.remind;
 					if (!val || !word || !remind) {
-						console$11("教师查询结果字段缺失", { page }, "error");
+						console$10("教师查询结果字段缺失", { page }, "error");
 						resolveOnce({
 							success: false,
 							msg: "教师查询结果格式异常"
@@ -11201,21 +11445,21 @@ self.onmessage = async (e) => {
 							unit
 						});
 					}
-					console$11("分页数据解析完成", {
+					console$10("分页数据解析完成", {
 						page: now_page,
 						totalPages: all_page,
 						resultCount: result.data.length
 					}, "debug");
 					resolveOnce(result);
 				} catch (error) {
-					console$11("教师查询结果解析失败", {
+					console$10("教师查询结果解析失败", {
 						page,
 						error
 					}, "error");
 					rejectOnce(new Error("教师查询结果解析失败"));
 				}
 				else {
-					console$11("接口返回异常状态", {
+					console$10("接口返回异常状态", {
 						page,
 						status: this.status
 					}, "error");
@@ -11223,11 +11467,11 @@ self.onmessage = async (e) => {
 				}
 			});
 			xhr.addEventListener("error", function() {
-				console$11("请求发生网络错误", { page }, "error");
+				console$10("请求发生网络错误", { page }, "error");
 				rejectOnce(new Error("Network error"));
 			});
 			xhr.addEventListener("timeout", function() {
-				console$11("请求超时", {
+				console$10("请求超时", {
 					page,
 					timeout: xhr.timeout
 				}, "warn");
@@ -11241,7 +11485,7 @@ self.onmessage = async (e) => {
 			try {
 				xhr.send(data);
 			} catch (err) {
-				console$11("请求发送失败", {
+				console$10("请求发送失败", {
 					page,
 					error: err
 				}, "error");
@@ -11253,7 +11497,7 @@ self.onmessage = async (e) => {
 		if (typeof fetchImpl !== "function") throw new TypeError("fetch 实现不可用");
 		const requestedTimeout = Number(options.timeoutMs);
 		const timeoutMs = Number.isFinite(requestedTimeout) && requestedTimeout > 0 ? requestedTimeout : 15e3;
-		const externalSignal = options.signal;
+		const externalSignal = options.signal ?? init.signal;
 		const controller = new AbortController();
 		let timedOut = false;
 		const abortFromCaller = () => controller.abort(externalSignal?.reason);
@@ -11267,11 +11511,23 @@ self.onmessage = async (e) => {
 			timedOut = true;
 			controller.abort();
 		}, timeoutMs);
-		try {
-			return await fetchImpl(input, {
+		let rejectOnAbort;
+		const interrupted = new Promise((_resolve, reject) => {
+			rejectOnAbort = () => reject(controller.signal.reason);
+			controller.signal.addEventListener("abort", rejectOnAbort, { once: true });
+		});
+		const execute = async () => {
+			const response = await fetchImpl(input, {
 				...init,
 				signal: controller.signal
 			});
+			controller.signal.throwIfAborted();
+			return typeof options.consumeResponse === "function" ? options.consumeResponse(response) : response;
+		};
+		try {
+			const result = await Promise.race([execute(), interrupted]);
+			controller.signal.throwIfAborted();
+			return result;
 		} catch (error) {
 			if (timedOut) {
 				const timeoutError = new Error(`请求在 ${timeoutMs}ms 内未完成`, { cause: error });
@@ -11286,6 +11542,7 @@ self.onmessage = async (e) => {
 			throw error;
 		} finally {
 			clearTimeout(timer);
+			controller.signal.removeEventListener("abort", rejectOnAbort);
 			externalSignal?.removeEventListener("abort", abortFromCaller);
 		}
 	}
@@ -11332,9 +11589,9 @@ self.onmessage = async (e) => {
 		return walk(payload) || (candidates.size === 1 ? [...candidates][0] : "");
 	}
 	async function getIcsId(options = {}) {
-		let response;
+		let responseText;
 		try {
-			response = await fetchWithTimeout(pageWindow.fetch.bind(pageWindow), buildWebVpnUrl("https://portal.nxu.edu.cn/execCardMethod/20284725165199735/SYS_CARD_CALENDAR"), {
+			responseText = await fetchWithTimeout(pageWindow.fetch.bind(pageWindow), buildWebVpnUrl("https://portal.nxu.edu.cn/execCardMethod/20284725165199735/SYS_CARD_CALENDAR"), {
 				method: "POST",
 				credentials: "include",
 				headers: {
@@ -11353,42 +11610,47 @@ self.onmessage = async (e) => {
 				})
 			}, {
 				signal: options.signal,
-				timeoutMs: options.timeoutMs || 15e3
+				timeoutMs: options.timeoutMs || 15e3,
+				consumeResponse(response) {
+					if (!response.ok) throw new Error(`个人课表 ID 获取失败：HTTP ${response.status}`);
+					return response.text();
+				}
 			});
 		} catch (error) {
 			if (error?.name === "TimeoutError") throw new Error("个人课表 ID 获取超时，请稍后重试", { cause: error });
 			throw error;
 		}
-		if (!response.ok) throw new Error(`个人课表 ID 获取失败：HTTP ${response.status}`);
-		const responseText = await response.text();
 		let payload = responseText;
 		try {
 			payload = JSON.parse(responseText);
 		} catch {}
 		const icsId = extractIcsId(responseText) || extractIcsId(payload);
 		if (!icsId) throw new Error("响应中未找到个人课表 ID，请确认信息门户登录状态");
+		options.signal?.throwIfAborted();
 		await setGMValue("icsId", icsId);
 		return icsId;
 	}
 	async function getStudentOwner(studentId, options = {}) {
 		const normalizedId = String(studentId || "").trim();
-		let response;
+		let result;
 		try {
-			response = await fetchWithTimeout(pageWindow.fetch.bind(pageWindow), buildWebVpnUrl("https://xsfw.nxu.edu.cn/xsfw/sys/jbxxapp/modules/infoStudent/getStuBaseInfo.do?vpn-12-o2-xsfw.nxu.edu.cn"), {
+			result = await fetchWithTimeout(pageWindow.fetch.bind(pageWindow), buildWebVpnUrl("https://xsfw.nxu.edu.cn/xsfw/sys/jbxxapp/modules/infoStudent/getStuBaseInfo.do?vpn-12-o2-xsfw.nxu.edu.cn"), {
 				method: "POST",
 				credentials: "include",
 				headers: { Accept: "application/json, text/plain, */*" },
 				body: new URLSearchParams({ requestParamStr: JSON.stringify({ XSBH: normalizedId }) })
 			}, {
 				signal: options.signal,
-				timeoutMs: options.timeoutMs || 15e3
+				timeoutMs: options.timeoutMs || 15e3,
+				consumeResponse(response) {
+					if (!response.ok) throw new Error(`身份信息获取失败：HTTP ${response.status}`);
+					return response.json();
+				}
 			});
 		} catch (error) {
 			if (error?.name === "TimeoutError") throw new Error("身份信息获取超时，请稍后重试", { cause: error });
 			throw error;
 		}
-		if (!response.ok) throw new Error(`身份信息获取失败：HTTP ${response.status}`);
-		const result = await response.json();
 		if (result?.returnCode !== "#E000000000000") {
 			const error = new Error(result?.returnMessage || result?.message || "学号与当前登录账号不一致");
 			error.code = "STUDENT_ID_MISMATCH";
@@ -11454,6 +11716,69 @@ self.onmessage = async (e) => {
 				toast("error", error.message || "解密密钥不匹配或文件已损坏", 4);
 			}
 		}
+	}
+	function personalScheduleFilename(name, extension) {
+		return `${String(name || "").trim().replace(/[\\/:*?"<>|\p{Cc}]/gu, "_") || "未命名用户"} - 课表.${extension}`;
+	}
+	async function selectImageExportName({ studentId, owner, confirmAccountName, requestName, getOwner, onLookupError }) {
+		const id = String(studentId || "").trim();
+		if (id && await confirmAccountName(id, owner)) try {
+			const account = owner?.id === id && owner?.name?.trim() ? owner : await getOwner(id);
+			const name = String(account?.name || "").trim();
+			if (!name) throw new Error("当前学号未返回姓名");
+			return name;
+		} catch (error) {
+			if (error?.name === "AbortError") throw error;
+			onLookupError?.(error);
+		}
+		const name = String(await requestName(owner?.name || "") || "").trim();
+		if (!name) {
+			const error = new Error("已取消图片导出");
+			error.code = "EXPORT_CANCELLED";
+			throw error;
+		}
+		return name;
+	}
+	async function prepareCurrentScheduleImageExport({ getSchedule, getViewKey, getName }) {
+		const original = getSchedule();
+		const viewKey = getViewKey();
+		const assertCurrent = () => {
+			if (!original || getSchedule() !== original || getViewKey() !== viewKey) {
+				const error = new Error("课表或视图已切换，请重新导出图片");
+				error.code = "SCHEDULE_CHANGED";
+				throw error;
+			}
+		};
+		assertCurrent();
+		const name = await getName(original);
+		assertCurrent();
+		return {
+			filename: personalScheduleFilename(name, "png"),
+			assertCurrent
+		};
+	}
+	async function prepareCurrentScheduleExport({ getSchedule, getOwner, prepareExport }) {
+		const original = getSchedule();
+		const assertCurrent = () => {
+			if (!original || getSchedule() !== original) {
+				const error = new Error("课表已切换，请重新发起导出");
+				error.code = "SCHEDULE_CHANGED";
+				throw error;
+			}
+		};
+		assertCurrent();
+		const owner = await getOwner();
+		assertCurrent();
+		const data = normalize({
+			...original,
+			owner
+		});
+		const result = await prepareExport(data);
+		assertCurrent();
+		return {
+			data,
+			result
+		};
 	}
 	var _hoisted_1 = { id: "main" };
 	var _hoisted_2 = {
@@ -11999,6 +12324,16 @@ self.onmessage = async (e) => {
 					return "";
 				}
 			};
+			const lookupStudentOwner = async (studentId) => {
+				ownerRequestController?.abort();
+				const controller = new AbortController();
+				ownerRequestController = controller;
+				try {
+					return await getStudentOwner(studentId, { signal: controller.signal });
+				} finally {
+					if (ownerRequestController === controller) ownerRequestController = null;
+				}
+			};
 			const getVerifiedStudentOwner = async () => {
 				const existingOwner = personalSchedule.value?.owner;
 				if (existingOwner?.id && existingOwner?.name) return existingOwner;
@@ -12021,14 +12356,7 @@ self.onmessage = async (e) => {
 						throw error;
 					}
 					try {
-						ownerRequestController?.abort();
-						const controller = new AbortController();
-						ownerRequestController = controller;
-						try {
-							return await getStudentOwner(studentId, { signal: controller.signal });
-						} finally {
-							if (ownerRequestController === controller) ownerRequestController = null;
-						}
+						return await lookupStudentOwner(studentId);
 					} catch (error) {
 						if (error.code !== "STUDENT_ID_MISMATCH") throw error;
 						toast("warning", `${error.message}，请重新输入学号`, 4);
@@ -12036,52 +12364,117 @@ self.onmessage = async (e) => {
 					}
 				}
 			};
-			const getPersonalExportFilename = (extension) => {
-				return `${(personalSchedule.value?.owner?.name || "未命名用户").replace(/[\\/:*?"<>|]/g, "_")} - 课表.${extension}`;
+			const requestImageName = async (initialName = "") => {
+				const name = (0, vue.ref)(String(initialName));
+				try {
+					await showConfirmDialog({
+						title: "填写图片姓名",
+						messageAlign: "left",
+						confirmButtonText: "导出图片",
+						cancelButtonText: "取消",
+						closeOnClickOverlay: false,
+						message: () => (0, vue.h)("div", null, [(0, vue.h)("p", { style: "padding:0 16px;font-size:13px;" }, "请输入真实姓名，用于图片文件名，无需提供学号。"), (0, vue.h)(Field, {
+							modelValue: name.value,
+							label: "姓名",
+							placeholder: "请输入真实姓名",
+							clearable: true,
+							autocomplete: "off",
+							"onUpdate:modelValue": (value) => name.value = String(value || "")
+						})]),
+						beforeClose(action) {
+							if (action === "confirm" && !name.value.trim()) {
+								showToast("请输入姓名");
+								return false;
+							}
+							return true;
+						}
+					});
+					return name.value.trim();
+				} catch {
+					return "";
+				}
 			};
+			const getImageExportName = (schedule) => selectImageExportName({
+				studentId: getGMValue("WebVPN.username"),
+				owner: schedule.owner,
+				async confirmAccountName(studentId, owner) {
+					const knownName = owner?.id === studentId ? owner.name : "";
+					try {
+						await showConfirmDialog({
+							title: "确认图片姓名",
+							message: knownName ? `是否使用学号 ${studentId} 对应的姓名“${knownName}”命名图片？也可自行填写姓名。` : `是否使用当前学号 ${studentId} 对应的姓名命名图片？确认后将查询当前 WebVPN 账号的姓名，也可自行填写姓名。`,
+							messageAlign: "left",
+							confirmButtonText: "使用当前姓名",
+							cancelButtonText: "填写姓名",
+							closeOnClickOverlay: false
+						});
+						return true;
+					} catch {
+						return false;
+					}
+				},
+				requestName: requestImageName,
+				getOwner: lookupStudentOwner,
+				onLookupError: () => showToast("获取姓名失败，请直接填写姓名")
+			});
+			const personalExportPending = (0, vue.ref)(false);
 			const exportPersonalJson = async () => {
+				if (personalExportPending.value || personalLoading.value) return;
 				if (!canExportPersonalJson.value) {
 					toast("warning", "只能导出当前登录账号本人的课表", 3);
 					return;
 				}
+				personalExportPending.value = true;
 				console("开始导出", {
 					courseCount: personalSchedule.value.courses.length,
 					lessonCount: personalSchedule.value.lessons.length
 				}, "info");
 				try {
-					const owner = await getVerifiedStudentOwner();
-					const data = normalize({
-						...personalSchedule.value,
-						owner
+					const { data, result } = await prepareCurrentScheduleExport({
+						getSchedule: () => personalSchedule.value,
+						getOwner: getVerifiedStudentOwner,
+						prepareExport: prepareScheduleExport
 					});
 					personalSchedule.value = data;
-					const result = await prepareScheduleExport(data);
-					await downloadTextFile(result.content, getPersonalExportFilename("json"));
+					await downloadTextFile(result.content, personalScheduleFilename(data.owner?.name, "json"));
 					console("导出完成", { encrypted: result.encrypted }, "info");
 					toast("success", result.encrypted ? "加密课表已导出" : "课表 JSON 已导出", 2);
 				} catch (error) {
+					if (error.code === "SCHEDULE_CHANGED") {
+						toast("warning", error.message, 4);
+						return;
+					}
 					if (error.code === "EXPORT_CANCELLED" || error?.name === "AbortError") {
 						console("用户取消导出", "", "info");
 						return;
 					}
 					console("导出失败", error, "error");
 					toast("error", error.message || "课表导出失败", 4);
+				} finally {
+					personalExportPending.value = false;
 				}
 			};
 			const exportPersonalImage = async () => {
-				await (0, vue.nextTick)();
-				const target = {
-					overview: personalStatsCapture.value,
-					personal: personalCourseCapture.value,
-					"personal-free": personalFreeCapture.value
-				}[personalTab.value];
-				if (!target) {
-					console("当前 Tab 尚未完成渲染", { tab: personalTab.value }, "warn");
-					toast("warning", "当前页面尚未完成渲染", 2);
-					return;
-				}
-				console("开始导出", { tab: personalTab.value }, "info");
+				if (personalExportPending.value || personalLoading.value || !personalSchedule.value) return;
+				personalExportPending.value = true;
 				try {
+					const { filename, assertCurrent } = await prepareCurrentScheduleImageExport({
+						getSchedule: () => personalLoading.value ? null : personalSchedule.value,
+						getViewKey: () => `${personalRequestVersion}:${personalTab.value}:${selectedCourseWeek.value}:${selectedFreeWeek.value}`,
+						getName: getImageExportName
+					});
+					await (0, vue.nextTick)();
+					assertCurrent();
+					const target = {
+						overview: personalStatsCapture.value,
+						personal: personalCourseCapture.value,
+						"personal-free": personalFreeCapture.value
+					}[personalTab.value];
+					if (!target) {
+						toast("warning", "当前页面尚未完成渲染", 2);
+						return;
+					}
+					console("开始导出", { tab: personalTab.value }, "info");
 					const progressToast = toast("info", "正在生成课表图片，请稍候", 0);
 					try {
 						await downloadSnapdomImage({
@@ -12089,7 +12482,7 @@ self.onmessage = async (e) => {
 							target,
 							options: {
 								format: "png",
-								filename: getPersonalExportFilename("png"),
+								filename,
 								scale: 2.5,
 								quality: 1
 							},
@@ -12102,11 +12495,18 @@ self.onmessage = async (e) => {
 					console("导出完成", { tab: personalTab.value }, "info");
 					toast("success", "课表图片已导出", 3);
 				} catch (error) {
+					if (error.code === "EXPORT_CANCELLED" || error?.name === "AbortError") return;
+					if (error.code === "SCHEDULE_CHANGED") {
+						toast("warning", error.message, 4);
+						return;
+					}
 					console("导出失败", {
 						tab: personalTab.value,
 						error
 					}, "error");
 					toast("error", "导出图片失败，请重试", 3);
+				} finally {
+					personalExportPending.value = false;
 				}
 			};
 			const personalCourseLayout = (0, vue.computed)(() => {
@@ -12498,7 +12898,7 @@ self.onmessage = async (e) => {
 									icon: "down",
 									type: "primary",
 									plain: "",
-									disabled: !canExportPersonalJson.value,
+									disabled: !canExportPersonalJson.value || personalLoading.value || personalExportPending.value,
 									onClick: exportPersonalJson
 								}, {
 									default: (0, vue.withCtx)(() => [..._cache[14] || (_cache[14] = [(0, vue.createTextVNode)("导出 JSON", -1)])]),
@@ -12508,11 +12908,12 @@ self.onmessage = async (e) => {
 									size: "small",
 									icon: "photo-o",
 									type: "primary",
+									disabled: !personalSchedule.value || personalLoading.value || personalExportPending.value,
 									onClick: exportPersonalImage
 								}, {
 									default: (0, vue.withCtx)(() => [..._cache[15] || (_cache[15] = [(0, vue.createTextVNode)("导出图片", -1)])]),
 									_: 1
-								})
+								}, 8, ["disabled"])
 							])], 512), [[vue.vShow, personalScheduleToolbarVisible.value]])]),
 							default: (0, vue.withCtx)(() => [
 								(0, vue.createVNode)((0, vue.unref)(Tab), {
@@ -12839,7 +13240,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	};
-	var console$10 = MyConsole("[webvpn.tools]");
+	var console$9 = MyConsole("[webvpn.tools]");
 	function openWarmupTab(openInTab, url) {
 		if (typeof openInTab !== "function" || !url) return;
 		try {
@@ -12848,11 +13249,11 @@ self.onmessage = async (e) => {
 				try {
 					tab.close();
 				} catch (error) {
-					console$10("后台预热标签页关闭失败", error, "warn");
+					console$9("后台预热标签页关闭失败", error, "warn");
 				}
 			}, 5e3);
 		} catch (error) {
-			console$10("后台预热标签页打开失败", error, "warn");
+			console$9("后台预热标签页打开失败", error, "warn");
 		}
 	}
 	async function register$6() {
@@ -12870,40 +13271,382 @@ self.onmessage = async (e) => {
 		removeToastHandle(deployToast);
 		toast("success", "小工具部署完毕", 2);
 		toast("info", "由于获取课表信息需要，我们正在后台打开信息门户和学工系统页面，请稍后再打开\"课表信息\"页面，以免获取信息失败", 6);
-		console$10("小工具页部署完毕");
+		console$9("小工具页部署完毕");
 	}
-	var console$9 = MyConsole("[sysaq.login]");
+	var console$8 = MyConsole("[sysaq.login]");
 	async function register$5() {
 		installNotification();
-		console$9("进入实验室安全教育平台登录页");
+		console$8("进入实验室安全教育平台登录页");
 		if (!document.evaluate("//button[.//span[contains(., '点击登录')]]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue) return;
 		toast("success", "自动登录…", 3);
-		console$9("识别到\"点击登录\"按钮，自动跳转认证页");
+		console$8("识别到\"点击登录\"按钮，自动跳转认证页");
 		const url = new URL(window.location.href);
 		url.pathname = url.pathname.replace(/\/$/, "") + "/login";
 		window.location.href = url.toString();
 	}
-	var console$8 = MyConsole("[sysaq.auth]");
+	var console$7 = MyConsole("[sysaq.auth]");
 	async function register$4() {
 		installNotification();
-		console$8("进入实验室安全教育平台认证页");
+		console$7("进入实验室安全教育平台认证页");
 		const button = document.evaluate(".//a[contains(., '统一身份认证登录')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 		if (!button) return;
 		toast("success", "自动登录…", 3);
-		console$8("识别到\"统一身份认证登录\"链接，自动点击");
+		console$7("识别到\"统一身份认证登录\"链接，自动点击");
 		simulateClick(button);
 	}
-	var console$7 = MyConsole("[评教]");
+	var console$6 = MyConsole("[评教]");
 	async function register$3() {
 		installNotification();
-		console$7("进入评教系统", "注入未实现提示");
+		console$6("进入评教系统", "注入未实现提示");
 		const message = "评教自动填写功能暂未实现，请手动完成当前页面操作。";
 		if (toast) toast("info", message, 5);
 		else window.alert(message);
 	}
-	var console$6 = MyConsole("[团委]");
-	async function register$2() {
-		console$6("团委系统命中（与 1.x 一致：不执行任何操作）");
+	async function withAbort(promise, signal) {
+		let abort;
+		const interrupted = new Promise((_, reject) => {
+			abort = () => reject(signal.reason);
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) abort();
+		});
+		try {
+			return await Promise.race([promise, interrupted]);
+		} finally {
+			signal.removeEventListener("abort", abort);
+		}
+	}
+	var LOCAL_OCR_ASSETS = Object.freeze({
+		worker: {
+			url: "https://unpkg.com/tesseract.js@7.0.0/dist/worker.min.js",
+			sha384: "iUyp1FxLBc4DYaSwxT1/G6elMdSh3vvQffNSmMiySoXDpk2XfS9ZcM4RjPSiqiw3"
+		},
+		core: {
+			url: "https://unpkg.com/tesseract.js-core@7.0.0/tesseract-core-lstm.wasm.js",
+			sha384: "ljppwjVnA7rpAU/v9enQiR6pXDStaEAYw9I+7ddiEynJcmDNnjHCmcvizBeO3cSA"
+		},
+		language: {
+			url: "https://unpkg.com/@tesseract.js-data/eng@1.0.0/4.0.0_best_int/eng.traineddata.gz",
+			sha384: "JI+fraGAoc5GBGIliuqzHRnP1nJyrukg5ggNSBv/TO+YOVj+6Te6XXQOx7ia10xq"
+		}
+	});
+	async function fetchOcrAsset({ url, sha384 }, signal) {
+		signal.throwIfAborted();
+		if (typeof _GM?.xmlHttpRequest !== "function") throw new Error("OCR 资源下载 API 不可用");
+		const request = _GM.xmlHttpRequest({
+			method: "GET",
+			url,
+			responseType: "arraybuffer",
+			anonymous: true,
+			timeout: 6e4
+		});
+		const abort = () => request.abort?.();
+		signal.addEventListener("abort", abort, { once: true });
+		try {
+			const response = await withAbort(request, signal);
+			signal.throwIfAborted();
+			const bytes = response.response;
+			if (response.status !== 200 || Object.prototype.toString.call(bytes) !== "[object ArrayBuffer]" || !bytes.byteLength) throw new Error("OCR 资源下载失败");
+			const digest = await crypto.subtle.digest("SHA-384", bytes);
+			signal.throwIfAborted();
+			if (btoa(String.fromCharCode(...new Uint8Array(digest))) !== sha384) throw new Error("OCR 资源完整性校验失败");
+			return bytes;
+		} finally {
+			signal.removeEventListener("abort", abort);
+		}
+	}
+	async function createLocalOcrWorker(signal, { page = _unsafeWindow ?? window, loadAsset = fetchOcrAsset, createWorker = createOcrWorker } = {}) {
+		const controller = new AbortController();
+		const cancel = () => controller.abort(signal.reason);
+		signal.addEventListener("abort", cancel, { once: true });
+		if (signal.aborted) cancel();
+		let timer = setTimeout(() => controller.abort(new Error("OCR 初始化超时")), 9e4);
+		const urls = [];
+		let worker;
+		let pendingWorker;
+		let disposed = false;
+		const terminate = (value) => Promise.resolve().then(() => value?.terminate()).catch(() => {});
+		const dispose = () => {
+			if (disposed) return;
+			disposed = true;
+			clearTimeout(timer);
+			signal.removeEventListener("abort", cancel);
+			controller.signal.removeEventListener("abort", dispose);
+			if (worker) terminate(worker);
+			else if (pendingWorker) pendingWorker.then(terminate, () => {});
+			for (const url of urls) page.URL.revokeObjectURL(url);
+		};
+		controller.signal.addEventListener("abort", dispose, { once: true });
+		try {
+			const assets = await Promise.all(Object.values(LOCAL_OCR_ASSETS).map((asset) => loadAsset(asset, controller.signal)));
+			controller.signal.throwIfAborted();
+			for (const [index, bytes] of assets.entries()) urls.push(page.URL.createObjectURL(new page.Blob([bytes], { type: index === 2 ? "application/octet-stream" : "text/javascript" })));
+			pendingWorker = createWorker("eng", 1, {
+				workerPath: urls[0],
+				workerBlobURL: false,
+				corePath: `${urls[1]}#.js`,
+				langPath: `${urls[2]}#`,
+				cacheMethod: "none"
+			});
+			worker = await withAbort(pendingWorker, controller.signal);
+			await withAbort(worker.setParameters({
+				tessedit_char_whitelist: "0123456789",
+				tessedit_pageseg_mode: "7"
+			}), controller.signal);
+			clearTimeout(timer);
+			return {
+				async recognize(image) {
+					controller.signal.throwIfAborted();
+					timer = setTimeout(() => controller.abort(new Error("验证码识别超时")), 3e4);
+					try {
+						return await withAbort(worker.recognize(image), controller.signal);
+					} finally {
+						clearTimeout(timer);
+					}
+				},
+				dispose
+			};
+		} catch (error) {
+			controller.abort(error);
+			dispose();
+			throw error;
+		}
+	}
+	function attachmentName(response) {
+		const disposition = response.headers.get("content-disposition") || "";
+		if (!response.ok || !/^attachment(?:\s*;|\s*$)/i.test(disposition)) return null;
+		if (/^(?:text\/html|application\/xhtml\+xml)(?:;|$)/i.test(response.headers.get("content-type") || "")) return null;
+		const extended = disposition.match(/(?:^|;)\s*filename\*\s*=\s*UTF-8'[^']*'([^;]+)/i);
+		const basic = disposition.match(/(?:^|;)\s*filename\s*=\s*(?:"([^"]*)"|([^;]*))/i);
+		let name = extended?.[1] || basic?.[1] || basic?.[2] || "团委附件";
+		try {
+			name = decodeURIComponent(name.trim());
+		} catch {}
+		return name.replace(/[\x00-\x1f\x7f/\\:*?"<>|]/g, "_").replace(/^[.\s]+|[.\s]+$/g, "") || "团委附件";
+	}
+	function fetchAttachment(url, signal, fetchImpl = window.fetch.bind(window)) {
+		return fetchWithTimeout(fetchImpl, url, {
+			credentials: "same-origin",
+			cache: "no-store",
+			redirect: "error"
+		}, {
+			signal,
+			timeoutMs: 12e4,
+			async consumeResponse(response) {
+				const name = attachmentName(response);
+				if (!name) {
+					await response.body?.cancel();
+					if (response.ok && /^text\/html(?:;|$)/i.test(response.headers.get("content-type") || "")) return null;
+					throw new Error("服务器未返回有效附件");
+				}
+				const blob = await response.blob();
+				if (!blob.size) throw new Error("附件内容为空");
+				return {
+					name,
+					blob
+				};
+			}
+		});
+	}
+	async function saveAttachment({ name, blob }, signal) {
+		signal.throwIfAborted();
+		if (typeof _GM_download !== "function") throw new Error("下载 API 不可用，请更新脚本并允许下载权限");
+		const reader = new FileReader();
+		const abortReader = () => reader.abort();
+		signal.addEventListener("abort", abortReader, { once: true });
+		let url;
+		try {
+			url = await withAbort(new Promise((resolve, reject) => {
+				reader.onload = () => resolve(reader.result);
+				reader.onerror = () => reject(new Error("附件读取失败"));
+				reader.readAsDataURL(blob);
+			}), signal);
+		} finally {
+			signal.removeEventListener("abort", abortReader);
+		}
+		signal.throwIfAborted();
+		let handle;
+		let timer;
+		const abort = () => handle?.abort?.();
+		signal.addEventListener("abort", abort, { once: true });
+		try {
+			await withAbort(new Promise((resolve, reject) => {
+				timer = setTimeout(() => {
+					abort();
+					reject(new Error("等待下载完成超时，请检查浏览器下载列表"));
+				}, 12e4);
+				handle = _GM_download({
+					url,
+					name,
+					downloadMode: "browser",
+					saveAs: false,
+					onload: resolve,
+					onerror: () => reject(new Error("附件下载失败，请检查下载权限或手动下载")),
+					ontimeout: () => reject(new Error("附件下载超时"))
+				});
+			}), signal);
+			signal.throwIfAborted();
+		} finally {
+			clearTimeout(timer);
+			signal.removeEventListener("abort", abort);
+		}
+	}
+	var BUTTON = "body > div.code > div > div.code_but > input[type=\"button\"]";
+	var IMAGE_PATH = "/system/resource/js/filedownload/createimage.jsp";
+	function normalizeCaptcha(text) {
+		const code = String(text || "").replace(/\s+/g, "");
+		return /^\d{4}$/.test(code) ? code : null;
+	}
+	function waitForImage(image, signal) {
+		if (image.complete && image.naturalWidth) return Promise.resolve();
+		let loaded;
+		let failed;
+		let timer;
+		return withAbort(new Promise((resolve, reject) => {
+			loaded = () => image.naturalWidth ? resolve() : reject(new Error("验证码图片为空"));
+			failed = () => reject(new Error("验证码图片加载失败"));
+			image.addEventListener("load", loaded, { once: true });
+			image.addEventListener("error", failed, { once: true });
+			timer = setTimeout(failed, 1e4);
+		}), signal).finally(() => {
+			clearTimeout(timer);
+			image.removeEventListener("load", loaded);
+			image.removeEventListener("error", failed);
+		});
+	}
+	function snapshot(doc, image) {
+		const canvas = doc.createElement("canvas");
+		canvas.width = image.naturalWidth * 3;
+		canvas.height = image.naturalHeight * 3;
+		canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+		return canvas;
+	}
+	async function autoDownloadAttachment({ doc = document, page = window, autoClose = false, report = () => {}, createWorker = createLocalOcrWorker, request = fetchAttachment, save = saveAttachment, close = closeCurrentTab } = {}) {
+		const url = new URL(page.location.href);
+		if (!isTuanweiDownloadRoute({ url: url.href })) return "ignored";
+		const input = doc.querySelector("#codeValue");
+		const button = doc.querySelector(BUTTON);
+		const image = doc.querySelector("#codeimg");
+		if (!input || !button || !image) throw new Error("未找到附件验证码控件，请手动下载");
+		const imageUrl = new URL(image.src, url);
+		if (imageUrl.origin !== url.origin || imageUrl.pathname !== IMAGE_PATH) throw new Error("验证码图片地址不匹配");
+		if (input.value.trim()) return "manual";
+		const controller = new AbortController();
+		const { signal } = controller;
+		let worker;
+		let automaticClick = false;
+		let downloadTask;
+		const originalDisabled = button.disabled;
+		const stop = () => controller.abort();
+		const manual = (event) => {
+			if (event.isTrusted) stop();
+		};
+		const intercept = (event) => {
+			if (!automaticClick) return;
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			const target = new URL(url);
+			target.searchParams.set("codeValue", input.value);
+			downloadTask = request(target.href, signal);
+		};
+		input.addEventListener("input", manual);
+		image.addEventListener("click", manual, true);
+		button.addEventListener("click", manual, true);
+		button.addEventListener("click", intercept, true);
+		page.addEventListener("pagehide", stop, { once: true });
+		try {
+			report("正在加载验证码识别组件…");
+			worker = await createWorker(signal);
+			for (let attempt = 0; attempt < 3; attempt++) {
+				signal.throwIfAborted();
+				if (attempt) image.src = new URL(`${IMAGE_PATH}?randnum=${Date.now()}`, url).href;
+				await waitForImage(image, signal);
+				const source = image.src;
+				report(`正在识别验证码（${attempt + 1}/3）…`);
+				const result = await withAbort(worker.recognize(snapshot(doc, image)), signal);
+				signal.throwIfAborted();
+				if (!input.isConnected || !button.isConnected || !image.isConnected || image.src !== source || input.value.trim()) return "manual";
+				const code = normalizeCaptcha(result?.data?.text);
+				if (!code) continue;
+				input.value = code;
+				input.dispatchEvent(new page.Event("input", { bubbles: true }));
+				input.dispatchEvent(new page.Event("change", { bubbles: true }));
+				downloadTask = void 0;
+				automaticClick = true;
+				try {
+					button.click();
+				} finally {
+					automaticClick = false;
+				}
+				if (!downloadTask) throw new Error("无法提交附件下载");
+				button.disabled = true;
+				report("正在验证并接收附件…");
+				const attachment = await withAbort(downloadTask, signal);
+				signal.throwIfAborted();
+				if (attachment) {
+					report("正在保存附件，请等待下载完成…");
+					await withAbort(save(attachment, signal), signal);
+					signal.throwIfAborted();
+					report("附件下载完成", "success");
+					if (autoClose) close();
+					return "downloaded";
+				}
+				button.disabled = originalDisabled;
+				if (input.value !== code) return "manual";
+				input.value = "";
+			}
+			throw new Error("验证码识别未通过，请点击验证码图片后手动输入并下载");
+		} catch (error) {
+			if (signal.aborted) return "manual";
+			throw error;
+		} finally {
+			controller.abort();
+			worker?.dispose();
+			button.disabled = originalDisabled;
+			input.removeEventListener("input", manual);
+			image.removeEventListener("click", manual, true);
+			button.removeEventListener("click", manual, true);
+			button.removeEventListener("click", intercept, true);
+			page.removeEventListener("pagehide", stop);
+		}
+	}
+	var task;
+	function register$2() {
+		if (!isTuanweiDownloadRoute(getContext()) || !getGMValue("TuanWei.autoDownload")) return;
+		if (task) return task;
+		installNotification();
+		let progressToast = null;
+		let active = true;
+		const clearProgress = () => {
+			if (progressToast) removeToastHandle(progressToast);
+			progressToast = null;
+		};
+		const onPageHide = () => {
+			active = false;
+			clearProgress();
+		};
+		window.addEventListener("pagehide", onPageHide, { once: true });
+		task = autoDownloadAttachment({
+			autoClose: getGMValue("TuanWei.autoDownloadClose") === true,
+			report: (message, type = "info") => {
+				if (!active) return;
+				clearProgress();
+				if (type === "success") toast("success", message, 3);
+				else progressToast = toast("info", message, 0);
+			}
+		}).then((result) => {
+			if (active && result === "manual") {
+				clearProgress();
+				toast("info", "已停止自动下载，请手动完成", 4);
+			}
+		}).catch((error) => {
+			if (!active) return;
+			clearProgress();
+			toast("error", `${error?.message || "自动下载失败"}；页面已保留，可手动下载。`, 6);
+		}).finally(() => {
+			clearProgress();
+			window.removeEventListener("pagehide", onPageHide);
+		});
+		return task;
 	}
 	var console$5 = MyConsole("[portal-spa]");
 	var capturedPushState = null;
@@ -12945,6 +13688,119 @@ self.onmessage = async (e) => {
 		popstateHandler = fireCallbacks;
 		window.addEventListener("popstate", popstateHandler);
 	}
+	var libraryCard = (title, url) => ({
+		title,
+		navigation: "system",
+		url: {
+			campus: `https://zylib.nxu.edu.cn/-----${url}`,
+			webvpn: url
+		}
+	});
+	var PORTAL_CARDS = [
+		{
+			title: "Better NXU - 常用",
+			id: "betternxu-h-main",
+			items: [
+				{
+					title: "学工系统",
+					url: "https://xsfw.nxu.edu.cn"
+				},
+				{
+					title: "双创平台",
+					url: "http://202.201.128.142/nxu1"
+				},
+				{
+					title: "实验室安全教育平台",
+					url: "https://sysaq.nxu.edu.cn"
+				}
+			]
+		},
+		{
+			title: "Better NXU - 教务系统",
+			id: "betternxu-h-jwgl",
+			items: [{
+				title: "教务系统",
+				url: "https://jwgl.nxu.edu.cn"
+			}, ...[
+				8080,
+				8081,
+				8082,
+				8083
+			].map((port, index) => ({
+				title: `备用${index + 1}`,
+				url: `http://202.201.128.234:${port}`
+			}))]
+		},
+		{
+			title: "Better NXU - 图书馆",
+			id: "betternxu-h-lib",
+			items: [
+				{
+					title: "图书馆",
+					url: "https://zylib.nxu.edu.cn/login"
+				},
+				libraryCard("中国知网", "https://www.cnki.net/"),
+				libraryCard("万方数据", "https://www.wanfangdata.com.cn/"),
+				libraryCard("维普资讯", "https://qikan.cqvip.com/"),
+				libraryCard("Web of Science", "https://www.webofscience.com/wos/alldb/basic-search"),
+				{
+					title: "PubScholar公益学术平台(校外)",
+					navigation: "direct",
+					url: "https://pubscholar.cn/"
+				}
+			]
+		},
+		{
+			title: "Better NXU - H 小工具",
+			id: "betternxu-h-tools",
+			items: [
+				{
+					title: "H 小工具",
+					navigation: "direct",
+					url: "https://webvpn.nxu.edu.cn/h/tools"
+				},
+				{
+					title: "宁夏大学猫狗图鉴",
+					navigation: "direct",
+					url: "https://nxu-cdig.thisish.cn/"
+				},
+				{
+					title: "NXU Charge（已废弃）",
+					navigation: "direct",
+					url: "https://campus-charge.thisish.cn/"
+				}
+			]
+		}
+	];
+	function resolvePortalCardLink(card, portalUrl) {
+		const context = parseWebVpnContext(portalUrl);
+		const viaVpn = context?.viaVpn && context.realHost === "portal.nxu.edu.cn";
+		const url = typeof card.url === "string" ? card.url : card.url?.[viaVpn ? "webvpn" : "campus"];
+		const navigation = card.navigation ?? "system";
+		if (!["system", "direct"].includes(navigation)) throw new Error("门户卡片跳转模式无效");
+		let parsed;
+		try {
+			parsed = new URL(url);
+		} catch {
+			throw new Error("当前环境的门户卡片地址未配置");
+		}
+		if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error("门户卡片地址必须为 HTTP(S) 地址");
+		return {
+			url,
+			navigation
+		};
+	}
+	function openPortalCard(card, { portalUrl, pageWindow, openInTab }) {
+		const { url, navigation } = resolvePortalCardLink(card, portalUrl);
+		if (navigation === "direct") {
+			if (typeof openInTab !== "function") throw new Error("直接打开链接需要 ScriptCat 的 GM_openInTab 权限");
+			return openInTab(url, {
+				active: true,
+				insert: true
+			});
+		}
+		return pageWindow.open(url, "_blank", "noopener,noreferrer");
+	}
 	var console$4 = MyConsole("[portal.hall]");
 	var inflightPortalInject = null;
 	async function injectPortalHall() {
@@ -12970,30 +13826,26 @@ self.onmessage = async (e) => {
 			}
 			const listFirst = list.querySelector("div.sortItem");
 			const dataVValue = Array.from(list.attributes).find((attr) => attr.name.startsWith("data-v-"))?.name || "";
-			const generateDiv = (data) => {
-				const title = data[0];
-				const id = data[1];
-				const liList = data[2].map((item) => {
-					const msg = item[0];
-					const url = item[1];
+			const generateDiv = ({ title, id, items }) => {
+				const liList = items.map((item, index) => {
+					const msg = item.title;
 					const firstChar = msg.charAt(0);
 					return `<li ${dataVValue}>
-                        <a ${dataVValue} class="li-item portal-font-color-lv1 portal-primary-color-hover-lv1 favoriteapp-list-hover portal-primary-backgroundcolor-hover-lv5"
-                            href="${url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
-                            <div ${dataVValue} class="favoriteapp-left">
-                                <div style="width:100%;height:100%;display:flex;justify-content:center;align-items:center;font-size:x-large;font-weight:bold;color:#38727F">
-                                    ${firstChar}
-                                </div>
+                    <div ${dataVValue} class="li-item portal-font-color-lv1 portal-primary-color-hover-lv1 favoriteapp-list-hover portal-primary-backgroundcolor-hover-lv5" role="link" tabindex="0" data-card-index="${index}">
+                        <div ${dataVValue} class="favoriteapp-left">
+                            <div style="width:100%;height:100%;display:flex;justify-content:center;align-items:center;font-size:x-large;font-weight:bold;color:#38727F">
+                                ${firstChar}
                             </div>
-                            <div ${dataVValue} class="favoriteapp-center">
-                                <div ${dataVValue} class="we-tooltip item" style="overflow: hidden;" aria-describedby="we-tooltip-9469" tabindex="0">
-                                    <span style="box-shadow: transparent 0px 0px;">
-                                        <span aria-label="${msg}"> ${msg} </span>
-                                    </span>
-                                </div>
+                        </div>
+                        <div ${dataVValue} class="favoriteapp-center">
+                            <div ${dataVValue} class="we-tooltip item" style="overflow: hidden;">
+                                <span style="box-shadow: transparent 0px 0px;">
+                                    <span aria-label="${msg}"> ${msg} </span>
+                                </span>
                             </div>
-                        </a>
-                    </li>`;
+                        </div>
+                    </div>
+                </li>`;
 				});
 				const template = `<h2 class="portal-font-color-lv1" ${dataVValue}> ${title} </h2>
             <div class="favoriteapp" ${dataVValue}>
@@ -13005,55 +13857,36 @@ self.onmessage = async (e) => {
 				div.className = "sortItem";
 				div.id = id;
 				div.innerHTML = template;
+				for (const card of div.querySelectorAll("[data-card-index]")) {
+					const item = items[Number(card.dataset.cardIndex)];
+					const reportError = (error) => toast("warning", error.message || "门户链接打开失败", 4);
+					const open = () => {
+						try {
+							const result = openPortalCard(item, {
+								portalUrl: window.location.href,
+								pageWindow: mainIframe,
+								openInTab: _GM_openInTab
+							});
+							if (item.navigation === "direct") Promise.resolve(result).catch(reportError);
+						} catch (error) {
+							reportError(error);
+						}
+					};
+					card.addEventListener("click", open);
+					card.addEventListener("keydown", (event) => {
+						if (event.key === "Enter" && !event.repeat) {
+							event.preventDefault();
+							open();
+						}
+					});
+				}
 				return div;
 			};
-			for (const { title, id, items } of [
-				{
-					title: "Better NXU - 常用",
-					id: "betternxu-h-main",
-					items: [
-						["学工系统", "https://xsfw.nxu.edu.cn"],
-						["双创平台", "http://202.201.128.142/nxu1"],
-						["实验室安全教育平台", "https://sysaq.nxu.edu.cn"]
-					]
-				},
-				{
-					title: "Better NXU - 教务系统",
-					id: "betternxu-h-jwgl",
-					items: [
-						["教务系统", "https://jwgl.nxu.edu.cn"],
-						["备用1", "http://202.201.128.234:8080"],
-						["备用2", "http://202.201.128.234:8081"],
-						["备用3", "http://202.201.128.234:8082"],
-						["备用4", "http://202.201.128.234:8083"]
-					]
-				},
-				{
-					title: "Better NXU - 图书馆",
-					id: "betternxu-h-lib",
-					items: [
-						["图书馆", "https://zylib.nxu.edu.cn/login"],
-						["中国知网", "https://zylib.nxu.edu.cn/-----https://www.cnki.net/"],
-						["万方数据", "https://zylib.nxu.edu.cn/-----https://www.wanfangdata.com.cn/"],
-						["维普资讯", "https://zylib.nxu.edu.cn/-----https://qikan.cqvip.com/"],
-						["Web of Science", "https://zylib.nxu.edu.cn/-----https://www.webofscience.com/wos/alldb/basic-search"],
-						["PubScholar公益学术平台(校外)", "https://pubscholar.cn/"]
-					]
-				},
-				{
-					title: "Better NXU - H 小工具",
-					id: "betternxu-h-tools",
-					items: [
-						["H 小工具", "h/tools"],
-						["宁夏大学猫狗图鉴", "https://nxu-cdig.thisish.cn/"],
-						["NXU Charge（已废弃）", "https://campus-charge.thisish.cn/"]
-					]
-				}
-			]) if (!mainIframe.document.querySelector(`#${id}`)) list.insertBefore(generateDiv([
+			for (const { title, id, items } of PORTAL_CARDS) if (!mainIframe.document.querySelector(`#${id}`)) list.insertBefore(generateDiv({
 				title,
 				id,
 				items
-			]), listFirst);
+			}), listFirst);
 		})().finally(() => {
 			inflightPortalInject = null;
 		});
@@ -13092,23 +13925,24 @@ self.onmessage = async (e) => {
 		return ctx.url;
 	}
 	var console$2 = MyConsole("[路由]");
+	var readerRegistrations = new Map([["cnki", register$9], ["wanfang", register$8]]);
 	var JUDGE_TABLE = [
 		{
 			site: "sslvpn",
 			page: "settings",
-			register: register$15,
+			register: register$16,
 			test: (c) => c.host === "sslvpn.nxu.edu.cn" && c.path === "/h/settings"
 		},
 		{
 			site: "sslvpn",
 			page: "about",
-			register: register$14,
+			register: register$15,
 			test: (c) => c.host === "sslvpn.nxu.edu.cn" && c.path === "/h/about"
 		},
 		{
 			site: "jwgl",
 			page: "login",
-			register: register$13,
+			register: register$14,
 			test: (c) => {
 				if (!isJwglSite(c)) return false;
 				if (c.isWebvpn) {
@@ -13121,7 +13955,7 @@ self.onmessage = async (e) => {
 		{
 			site: "jwgl",
 			page: "home",
-			register: register$12,
+			register: register$13,
 			test: (c) => {
 				if (!isJwglSite(c)) return false;
 				const p = jwglPathOrUrl(c);
@@ -13131,85 +13965,80 @@ self.onmessage = async (e) => {
 		{
 			site: "jwgl",
 			page: "course-table-container",
-			register: register$11,
+			register: register$12,
 			test: (c) => isJwglSite(c) && c.url.indexOf("courseTableForStd.action") !== -1 && c.query.get("method") === "stdHome"
 		},
 		{
 			site: "jwgl",
 			page: "course-table",
-			register: register$10,
+			register: register$11,
 			test: (c) => isJwglSite(c) && c.url.indexOf("courseTableForStd.action") !== -1 && c.query.get("method") === "courseTable"
 		},
 		{
 			site: "weixin",
 			page: "fast-login",
-			register: register$16,
+			register: register$17,
 			test: (c) => c.host === "open.weixin.qq.com" && c.url.indexOf("nxu.edu") !== -1
 		},
 		{
 			site: "ids",
 			page: "login",
-			register: register$19,
+			register: register$20,
 			test: (c) => c.host === "ids.nxu.edu.cn" && c.path.indexOf("/authserver/login") !== -1
 		},
 		{
 			site: "ids",
 			page: "re-auth",
-			register: register$18,
+			register: register$19,
 			test: (c) => c.host === "ids.nxu.edu.cn" && c.url.indexOf("/authserver/reAuthCheck/") !== -1
 		},
 		{
 			site: "ids",
 			page: "callback",
-			register: register$17,
+			register: register$18,
 			test: (c) => c.host === "ids.nxu.edu.cn" && (c.path === "/authserver/callback" || c.url.indexOf(`/${WEBVPN_HOST_TOKENS["open.weixin.qq.com"]}/connect/qrconnect`) !== -1)
 		},
 		{
 			site: "ids",
 			page: "login",
-			register: register$19,
+			register: register$20,
 			test: isWebVpnIdsLoginRoute
 		},
 		{
 			site: "ids",
 			page: "re-auth",
-			register: register$18,
+			register: register$19,
 			test: isWebVpnIdsReAuthRoute
 		},
 		{
 			site: "ids",
 			page: "callback",
-			register: register$17,
+			register: register$18,
 			test: (c) => c.isWebvpn && isWebVpnRealHost(c.vpnContext, "open.weixin.qq.com")
 		},
 		{
 			site: "webvpn",
 			page: "home",
-			register: register$9,
+			register: register$10,
 			test: (c) => c.isWebvpnHost && (c.url === "https://webvpn.nxu.edu.cn/" || c.path === "/")
 		},
-		{
-			site: "webvpn",
-			page: "knowledges-copy",
-			register: register$8,
-			test: (c) => {
-				const cnkiHost = isWebVpnRealHost(c.vpnContext, "kns.cnki.net") || isWebVpnRealHost(c.vpnContext, "www.cnki.net");
-				const realPath = c.vpnContext?.realPath || "";
-				if (cnkiHost) return realPath.indexOf("/xmlRead/trialRead") !== -1 || realPath.indexOf("/reader/xml") !== -1;
-				return isWebVpnRealHost(c.vpnContext, "f.wanfangdata.com.cn") && realPath.indexOf("/online/pc/periodical_html") !== -1;
-			}
-		},
+		...LIBRARY_READER_PLATFORMS.map(({ id }) => ({
+			site: id,
+			page: "reader",
+			register: readerRegistrations.get(id) || createLibraryReaderRegistration(id),
+			test: (c) => resolveLibraryReader(c)?.id === id
+		})),
 		{
 			site: "webvpn",
 			page: "tools",
 			register: register$6,
-			test: (c) => c.isWebvpnHost && c.path === "/wengine-vpn/failed" && document.body.innerHTML.indexOf("地址：/h/tools") !== -1
+			test: (c) => isWebVpnToolsRoute(c, document.body?.innerHTML || "")
 		},
 		{
 			site: "webvpn",
 			page: "failed",
 			register: register$7,
-			test: (c) => c.isWebvpnHost && c.path === "/wengine-vpn/failed" && document.body.innerHTML.indexOf("地址：/h/tools") === -1
+			test: (c) => isWebVpnFailedRoute(c, document.body?.innerHTML || "")
 		},
 		{
 			site: "sysaq",
@@ -13261,9 +14090,9 @@ self.onmessage = async (e) => {
 		},
 		{
 			site: "tuanwei",
-			page: "notify",
+			page: "download",
 			register: register$2,
-			test: (c) => c.host === "tuanwei.nxu.edu.cn"
+			test: isTuanweiDownloadRoute
 		}
 	];
 	function resolveRoute() {
