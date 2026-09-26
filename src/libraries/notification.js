@@ -30,6 +30,7 @@
 import { GM, GM_addStyle, unsafeWindow } from '#gm';
 import { installFontAwesome } from './fontawesome.js';
 import { MyConsole } from '../utils/console.js';
+import { escapeHtml } from '../utils/file.js';
 
 const console = MyConsole('[notification]');
 
@@ -84,19 +85,19 @@ export function betterNXUVersionClick() {
     method: 'GET',
     url: 'https://v1.hitokoto.cn/',
     // @connect v1.hitokoto.cn 已在头部声明，沙箱下放行跨域。
-  }).then((response) => {
-    try {
-      const json = JSON.parse(response.responseText);
-      const text = json?.hitokoto
-        ? `${json.hitokoto}\n——${json.from || ''}`
-        : '之前点的太快啦，请稍后重试';
-      toast('info', text, 3);
-    } catch {
-      toast('info', '之前点的太快啦，请稍后重试', 3);
-    }
-  }).catch(() => {
-    toast('warning', '一言暂时不可用，请稍后重试', 3);
-  });
+  })
+    .then((response) => {
+      try {
+        const json = JSON.parse(response.responseText);
+        const text = json?.hitokoto ? `${json.hitokoto}\n——${json.from || ''}` : '之前点的太快啦，请稍后重试';
+        toast('info', text, 3);
+      } catch {
+        toast('info', '之前点的太快啦，请稍后重试', 3);
+      }
+    })
+    .catch(() => {
+      toast('warning', '一言暂时不可用，请稍后重试', 3);
+    });
 }
 
 /**
@@ -107,6 +108,11 @@ export function betterNXUVersionClick() {
  * @returns {*} toast 句柄（供 removeToastHandle 使用）
  */
 export function toast(type, message, duration) {
+  return toastTrustedHtml(type, escapeHtml(String(message ?? '')), duration);
+}
+
+/** 仅用于项目静态构造的配置入口 HTML；文件名、接口响应和错误消息必须调用 toast。 */
+export function toastTrustedHtml(type, message, duration) {
   const impl = global.createToast;
   if (typeof impl === 'function') return impl(type, message, duration);
   // 兜底：@require 未就绪时不阻断，记日志即可。

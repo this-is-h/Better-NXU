@@ -17,7 +17,7 @@
  *  host → opener 映射在 resolveOpener 集中：新增站点须在此补一条，避免误用。
  */
 import { getGMValue } from '../config/gm-store.js';
-import { toast, installNotification } from '../libraries/notification.js';
+import { toastTrustedHtml as toast, installNotification } from '../libraries/notification.js';
 import { buildCredentialsErrorToast } from '../utils/auth-form.js';
 import { MyConsole } from '../utils/console.js';
 
