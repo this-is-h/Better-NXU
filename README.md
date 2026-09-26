@@ -92,6 +92,6 @@
 - 右：QQ交流群
 
 <div style="display: flex; justify-content: center; align-items: center;">
-  <img src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/issue.png" style="width: 49%;padding: 10px;" referrerpolicy="no-referrer"/>
-  <img src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/group.png" style="width: 49%;padding: 10px;" referrerpolicy="no-referrer"/>
+  <img referrerpolicy="no-referrer" src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/issue.png" style="width: 49%;padding: 10px;"/>
+  <img referrerpolicy="no-referrer" src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/group.png" style="width: 49%;padding: 10px;"/>
 </div>

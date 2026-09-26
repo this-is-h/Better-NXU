@@ -11,6 +11,7 @@ Better NXU 是面向宁夏大学多个站点的 ScriptCat 用户脚本。源码�
 5. [GitHub 协作开发规范](github-workflow.md)：工作区接手、分支、commit、更新联动、PR、审查、合并、发布与回滚。
 6. [设计决策与踩坑记录](design-decisions.md)：为什么这样设计、哪些写法不能随意改、已遇到的真机问题。
 7. [架构审计与优化报告](architecture-review.md)：当前剩余风险和后续优化方向。
+8. [站点维护与依赖评估](maintenance-review.md)：2.0.1 后的阅读页、门户、工具修复，依赖更新及迁移取舍。
 
 WebVPN 下出现外部脚本 MIME 错误、`Unexpected identifier 'ArrayBuffer'` 或 Blob 动态模块加载失败时，直接查看[WebVPN 资源加载排障](webvpn-resource-loading.md)：包含报错速查、可复用代码和完整网关脚本回归方法。
 
@@ -18,7 +19,7 @@ WebVPN 下出现外部脚本 MIME 错误、`Unexpected identifier 'ArrayBuffer'`
 
 环境要求：
 
-- Node.js `^20.19.0 || >=22.12.0`
+- Node.js `^22.13.0 || >=24.0.0`
 - pnpm `10.32.1`
 - Chromium 系浏览器和 ScriptCat，用于真实站点回归
 

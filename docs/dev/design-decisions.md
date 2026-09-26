@@ -86,7 +86,7 @@ WebVPN 外层 host 永远可能是 `webvpn.nxu.edu.cn`，路径中还可能出�
 
 ## 11. Vant CSS 为什么按需注入
 
-全局在 10 个匹配站点注入 Vant CSS 会污染学校页面、增加解析成本，认证页尤其敏感。当前 Vant JS 由构建按组件使用，完整 CSS 只在 `mountVueApp()` 默认路径或 `mountAppPage()` 注入；IDS 填充按钮显式跳过。
+全局在所有匹配页面注入 Vant CSS 会污染学校页面、增加解析成本，认证页尤其敏感。当前 Vant JS 由构建按组件使用，完整 CSS 只在 `mountVueApp()` 默认路径或 `mountAppPage()` 注入；IDS 填充按钮显式跳过。
 
 如果新增纯原生/Vue 组件不使用 Vant，应传 `useVantStyles: false`。如果使用 Vant，先确保 CSS，再注入页面专属覆盖样式。
 
@@ -151,6 +151,14 @@ RSA 不适合直接加密几 MB JSON。每个文件生成随机 AES-256-GCM 密�
 WebVPN 会包装外部请求、`Blob`、`URL.createObjectURL()` 和 Worker。GM 后台下载只能解决外链改写；JavaScript 还需按 UTF-8 解码，再使用嵌套 Blob 保留源码，并将网关伪装成 IDS 来源的 Blob URL 还原后交给动态模块加载器。少一层都会重新出现已遇到的报错。
 
 实现位于 `libraries/slider-resources.js` 和 `libraries/slider-recognizer.js`。具体错误对照、复用示例及为何普通浏览器测试不足，见[WebVPN 资源加载排障](webvpn-resource-loading.md)。升级运行时或网关后按该文档复查完整加载链。
+
+## 21. WebVPN 导出周次文字为什么会重叠
+
+2026-09-25 根据用户指出的教室换行线索重新验证，纠正此前的字体重影判断：教室 `<mark>` 没有换行符，但导出样式固定了小数宽度和单行高度，同时允许文字换行。计算宽度序列化后会丢失少量精度，再次布局时向下量化；例如 SVG 的 `68.0156px` 在本地 Chrome 中变成 `68px`。教室末尾数字被挤到下一行，而 `height: 25px`、`line-height: 25px` 和可见溢出让它覆盖周次。
+
+WebVPN 导出在 `utils/snapdom.js` 内将计算样式中的像素 `width` 向上取整，每个小数宽度增加不足 1px，防止内联和 snapdom 克隆重复序列化后继续缩窄。整数宽度、非像素值、字体、行高和换行规则保持原值，因此原本需要多行的长教室名仍可正常换行。全部计算样式读取完成后才统一写入；成功或失败都在 `finally` 恢复原内联样式。移除此前的 Helvetica/Arial 替换，直连仍使用原生捕获路径。
+
+本地 Chrome 验证上传 SVG 的 41 个教室节点均出现换行覆盖；仅将教室宽度向上取整后，41 处均恢复正常，未改字体。另用虚构课程验证 snapdom 2.16.0 和 3.1.0 的实际 SVG/PNG 导出：直连正常，旧 WebVPN 样式复制可复现短教室名换行，修复后短教室名恢复单行、长教室名保持原有三行，2.5 倍导出尺寸不变。Node 回归覆盖小数/整数/非像素宽度、字体和换行保留、测量失败与样式恢复。仍需在真实 ScriptCat 的教务直连与 WebVPN 页面验证；禁止把用户上传的完整课表 SVG 加入测试或文档。
 
 ## 官方参考
 
