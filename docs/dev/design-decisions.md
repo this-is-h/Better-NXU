@@ -98,7 +98,11 @@ marked 只解析 Markdown，不提供安全边界。README/CHANGELOG 跟随远�
 
 ## 13. OCR 为什么分为 UMD、worker、core、语言包
 
-把完整 OCR 编入脚本会显著增加每个匹配页面的启动成本。当前 UMD 作为固定 SHA384 `@resource`，只在教务自动登录触发时执行；worker/core/lang 由 Tesseract 运行时继续按固定 URL 获取。
+把完整 OCR 编入脚本会显著增加每个匹配页面的启动成本。当前 UMD 作为固定 SHA384 `@resource`，只在教务登录或团委附件识别时执行；教务 worker/core/lang 由 Tesseract 运行时继续按固定 URL 获取。
+
+团委 CSP 禁止 Worker 直接加载 CDN。`tesseract-local.js` 经 GM 匿名下载并验证三项固定 SHA384，再创建本地 Blob URL；core 选用内嵌 WASM 的通用 LSTM 构建。Tesseract 会向语言路径追加文件名，且按 `js` 后缀判断 core 文件，因此用 URL fragment 容纳这些后缀，保持 Blob 目标不变。资源约 6.96 MB，仅命中并开启功能时加载；不改变教务原加载路径。该路径已在保持 CSP 的真实团委页面识别并获取有效附件。
+
+自动点击只拦截脚本自己派发的确定事件，学校原 `setCode()` 处理器保留给手动操作。同源 fetch 验证 HTTP 状态、Content-Disposition 和 Content-Type 并收完响应体后，才使用 `GM_download({ downloadMode: 'browser', saveAs: false })` 保存 data URL，避免页面 Blob URL 无法被管理器后台读取。以 `onload` 作为关页依据，不按固定延时猜测；ScriptCat 当前实现会将部分用户取消也转为 onload，脚本无法独立检查磁盘，此限制必须保留在用户说明中。依据：[ScriptCat API](https://docs.scriptcat.org/docs/dev/api/#gm_download)、[下载回调源码](https://github.com/scriptscat/scriptcat/blob/main/src/app/service/content/gm_api/gm_api.ts)、[Tesseract 7 core 加载源码](https://github.com/naptha/tesseract.js/blob/v7.0.0/src/worker-script/browser/getCore.js)。
 
 已踩坑：Tesseract 默认 CDN 在中国大陆不稳定；某镜像只有 worker、缺 core 或语言包。当前三类统一指向经验证的 unpkg 固定版本。超时后 Promise 仍可能晚到，因此要为 late worker 补 terminate，不能只清当前局部变量。
 

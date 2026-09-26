@@ -9,7 +9,7 @@
  * 须保留的 1.x 判定形态（当前路由约束见 docs/dev/architecture.md）：
  *  - `202.201.128.234` 使用精确 hostname，端口不影响匹配（B6 入表时）。
  *  - `open.weixin.qq.com` 须 URL 含 `nxu.edu` 守卫才命中（1.x 行 2354）。
- *  - `tuanwei.nxu.edu.cn` 命中后空操作占位（与 1.x case 整段注释逐字维度一致；B8 已入）。
+ *  - `tuanwei.nxu.edu.cn` 仅附件下载端点启用验证码识别与下载。
  *  - `sslvpn.nxu.edu.cn`：/h/settings、/h/about 命中（设置/关于仅 sslvpn，需求4）；其它 path 不命中。
  *  - `webvpn.nxu.edu.cn`：/h/tools 或带工具标记的失败页 → tools；其它失败页 → failed；
  *    知网/万方阅读页；代理 sysaq/ids/weixin/portal 各按 realHost 命中；仅根路径 → home。
@@ -35,7 +35,7 @@ import { register as registerWebvpnTools } from './sites/webvpn/pages/tools.page
 import { register as registerSysaqLogin } from './sites/sysaq/pages/login.page.js';
 import { register as registerSysaqAuth } from './sites/sysaq/pages/auth.page.js';
 import { register as registerPingjiaoNotify } from './sites/pingjiao/pages/notify.page.js';
-import { register as registerTuanweiNotify } from './sites/tuanwei/pages/notify.page.js';
+import { register as registerTuanweiDownload } from './sites/tuanwei/pages/download.page.js';
 import { register as registerPortalHall } from './sites/portal/pages/hall.page.js';
 import { isWebVpnRealHost, WEBVPN_HOST_TOKENS } from './utils/webvpn-url.js';
 import { LIBRARY_READER_PLATFORMS, resolveLibraryReader } from './utils/library-reader.js';
@@ -45,6 +45,7 @@ import {
   isWebVpnIdsReAuthRoute,
   isWebVpnToolsRoute,
   isWebVpnFailedRoute,
+  isTuanweiDownloadRoute,
 } from './utils/route-guards.js';
 
 /**
@@ -88,7 +89,7 @@ const readerRegistrations = new Map([
  *
  * 已落地：sslvpn(settings/about)、jwgl(login/home/course-table-container/course-table)、
  *         weixin(fast-login)、ids(login/re-auth/callback)、webvpn(home/failed/tools)、cnki(reader)、wanfang(reader)、
- *         sysaq(login/auth 直连+代理)、pingjiao(notify)、tuanwei(notify)、portal(hall 直连+代理)。
+ *         sysaq(login/auth 直连+代理)、pingjiao(notify)、tuanwei(download)、portal(hall 直连+代理)。
  *         sslvpn settings/about 为真实分发（B9 并入 sslvpn/pages，无 shared 转发层）。详见各 entry 注释。
  * webvpn 代理 ids/weixin 三分支（见下 webvpn-via-ids-* entry，2026-08-01 补）：1.x webvpn case 行 2386-2398
  *   原本就是 webvpn host 下复用 ids/weixin page 的登录/二次确认/扫码能力。2.0 此前漏建——webvpn 代理下访问
@@ -363,14 +364,12 @@ const JUDGE_TABLE = [
     test: (c) => c.host === 'portal.nxu.edu.cn',
   },
 
-  // === tuanwei：团委系统 tuanwei.nxu.edu.cn（1.x 行 2557-2568 case 整段被注释）===
-  // 03 §2 B8 验收 5：1.x case 已注释（不执行业务逻辑），2.0 也仅 toast 未实现、不下载、不 eval、不 throw。
-  // 全站命中（1.x 原注释块也无 path 前置）。tuanwei 仅供姿态占位（config 保留 TuanWei.autoDownload* 兼容无消费）。
+  // 团委附件仅允许直连的精确下载路径与必要参数；普通文章页保持原样。
   {
     site: 'tuanwei',
-    page: 'notify',
-    register: registerTuanweiNotify,
-    test: (c) => c.host === 'tuanwei.nxu.edu.cn',
+    page: 'download',
+    register: registerTuanweiDownload,
+    test: isTuanweiDownloadRoute,
   },
 ];
 

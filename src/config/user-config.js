@@ -96,13 +96,13 @@ Jwgl:
         values: ['全部学期成绩']
 TuanWei:
     autoDownload:
-        title: 自动下载附件（未实现）
-        description: 是否自动填写二维码并下载附件
+        title: 自动下载附件
+        description: 自动识别团委附件页验证码并下载，失败时保留手动操作
         type: checkbox
         default: false
     autoDownloadClose:
-        title: 自动关闭下载页面（未实现）
-        description: 是否自动下载后自动关闭页面
+        title: 自动关闭下载页面
+        description: 开启自动下载后，收到下载完成回调时关闭附件页面
         type: checkbox
         default: false
  ==/UserConfig== */`;

@@ -7,7 +7,7 @@
  *
  * 说明：1.x 无 set*Value 包装、无 setGMValue 包装，写都直接调 GM_setValue；2.0 按目录树（02 §2）
  * 增加 setGMValue 包装并同样做键注册校验，统一写入入口，便于以后加埋点/校验。
- * 2.0 不新增 GM 键；默认值和选项调整通过 ConfigVersion=7 提示用户检查配置，已有显式存储值不覆盖。
+ * 配置变化通过 ConfigVersion 提示用户检查设置，已有显式存储值不覆盖。
  * GM API 通过 vite-plugin-monkey 的官方 ESM 客户端别名 #gm 导入，autoGrant 自动生成权限。
  * 写入优先使用 ScriptCat 官方 Promise API `GM.setValue(s)`，并保留旧式同步 API 兼容路径。
  */

@@ -9,7 +9,7 @@
   与 1.x 等价点（C5）：
    - 行 3940-4207 settings_template 逐字保留：功能区（原生配置/恢复功能默认值/完全重置）+ 三分组（WebVPN/教务/团委）+
      空状态卡。van-* 组件、绑定状态/方法名、@click/@change 事件、:class 计算属性 全 1:1。
-   - 行 4210-4441 setup：ref/computed/watch/onBeforeUpdate 逐字迁移；watch 统一 setGMValue 持久化；
+   - ref/computed/onBeforeUpdate 保留；所有设置按模型映射注册深度 watch，经写入队列持久化；
      enforceAutoLoginCredentials 缺凭证自动关 autoLogin；resetFunctionSettings/resetAllSettings 弹
      showConfirmDialog 二次确认；openNativeConfig 调 CAT_userConfig。
    - 行 4443-4446 mounted：removeToast(部署中) + createToast success → SFC onMounted 内 removeToastHandle + toast。
@@ -57,7 +57,8 @@ const props = defineProps({
 
 // 1.x 行 4211-4213：van-cell 整行 clickable 点击 → 触发对应 van-checkbox toggle（Vant checkbox-in-cell 官方写法）。
 const cellCheckBoxToggle = (refs, index) => {
-  refs.value[index]?.toggle();
+  // 模板传参时 ref 已自动解包，这里收到的是复选框实例数组。
+  refs[index]?.toggle();
 };
 
 // === WebVPN 组 ref（1.x 行 4215-4225）===
@@ -86,7 +87,7 @@ const jwglCustomMenu = ref(getGMValue('Jwgl.customMenu'));
 const jwglCustomMenuList = ['全部学期成绩'];
 const jwglCustomMenuRefs = ref([]);
 
-// === 团委组 ref（1.x 行 4233-4234；业务未实现但配置保留兼容，02 §8）===
+// === 团委附件下载设置（沿用历史键名）===
 const tuanweiAutoDownload = ref(getGMValue('TuanWei.autoDownload'));
 const tuanweiAutoDownloadClose = ref(getGMValue('TuanWei.autoDownloadClose'));
 
@@ -115,29 +116,7 @@ const enforceAutoLoginCredentials = (credentialsReady, autoLogin, storageKey, la
 enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, 'WebVPN.autoLogin', 'WebVPN ', false);
 enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, 'Jwgl.autoLogin', '教务系统', false);
 
-// 1.x 行 4248-4310：各 ref 变更即持久化（watch → setGMValue）。逐字迁移。
-watch(webVPNCustomCard, (newValue) => persistSetting('WebVPN.customCard', newValue));
-watch(webVPNAutoLogin, (newValue) => persistSetting('WebVPN.autoLogin', newValue));
-watch(webVPNAutoReLogin, (newValue) => persistSetting('WebVPN.autoReLogin', newValue));
-watch(webVPNAccount, (newValue) => persistSetting('WebVPN.username', newValue));
-watch(webVPNPassword, (newValue) => persistSetting('WebVPN.password', newValue));
-watch([webVPNAccount, webVPNPassword], () => {
-  enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, 'WebVPN.autoLogin', 'WebVPN ');
-});
-watch(webVPNCourseGrab, (newValue) => persistSetting('WebVPN.courseGrab', newValue));
-watch(webVPNCustomTool, (newValue) => persistSetting('WebVPN.customTool', newValue));
-watch(webVPNAutoClose, (newValue) => persistSetting('WebVPN.autoClose', newValue));
-watch(webVPNSearchClose, (newValue) => persistSetting('WebVPN.searchClose', newValue));
-watch(jwglCustomMenu, (newValue) => persistSetting('Jwgl.customMenu', newValue));
-watch(jwglAutoLogin, (newValue) => persistSetting('Jwgl.autoLogin', newValue));
-watch(jwglAccount, (newValue) => persistSetting('Jwgl.username', newValue));
-watch(jwglPassword, (newValue) => persistSetting('Jwgl.password', newValue));
-watch([jwglAccount, jwglPassword], () => {
-  enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, 'Jwgl.autoLogin', '教务系统');
-});
-watch(jwglCourseBeautify, (newValue) => persistSetting('Jwgl.courseBeautify', newValue));
-
-// 1.x 行 4312-4332：功能默认值/全量默认值 ref 模型映射，供 reset 后回填 UI。
+// 保存监听与重置回填共用映射，避免新增开关只有 UI 绑定却漏掉存储写入。
 const resettableSettingModels = {
   'WebVPN.autoLogin': webVPNAutoLogin,
   'WebVPN.autoReLogin': webVPNAutoReLogin,
@@ -159,6 +138,15 @@ const allSettingModels = {
   'Jwgl.username': jwglAccount,
   'Jwgl.password': jwglPassword,
 };
+Object.entries(allSettingModels).forEach(([name, model]) => {
+  watch(model, (value) => persistSetting(name, value), { deep: true });
+});
+watch([webVPNAccount, webVPNPassword], () => {
+  enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, 'WebVPN.autoLogin', 'WebVPN ');
+});
+watch([jwglAccount, jwglPassword], () => {
+  enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, 'Jwgl.autoLogin', '教务系统');
+});
 // 1.x 行 4333-4337：把默认值集合回填到对应 ref.value（深拷贝防引用共享）。
 const syncSettingModels = (defaults, models) => {
   Object.entries(models).forEach(([name, model]) => {
@@ -246,11 +234,6 @@ onBeforeUpdate(() => {
   webVPNCustomCardRefs.value = [];
   jwglCustomMenuRefs.value = [];
 });
-
-// 1.x 行 4408-4410：团委未实现功能 toast。
-const unrealizedFunction = () => {
-  toast('error', '暂未实现的功能', 3);
-};
 
 // 1.x 行 4443-4446 mounted：移除部署中常驻 toast + 弹"设置页面部署完毕"。
 onMounted(() => {
@@ -420,24 +403,14 @@ onMounted(() => {
         <van-form>
           <h2>下载设置</h2>
           <van-cell-group inset>
-            <van-cell
-              center
-              style="--van-cell-text-color: var(--van-doc-gray-6)"
-              title="是否自动下载附件"
-              @click="unrealizedFunction"
-            >
+            <van-cell center title="是否自动下载附件" label="自动识别验证码，失败时可手动下载">
               <template #right-icon>
-                <van-switch v-model="tuanweiAutoDownload" disabled />
+                <van-switch v-model="tuanweiAutoDownload" />
               </template>
             </van-cell>
-            <van-cell
-              center
-              style="--van-cell-text-color: var(--van-doc-gray-6)"
-              title="是否自动关闭下载页面"
-              @click="unrealizedFunction"
-            >
+            <van-cell center title="是否自动关闭下载页面" label="自动下载完成后关闭附件页">
               <template #right-icon>
-                <van-switch v-model="tuanweiAutoDownloadClose" disabled />
+                <van-switch v-model="tuanweiAutoDownloadClose" :disabled="!tuanweiAutoDownload" />
               </template>
             </van-cell>
           </van-cell-group>

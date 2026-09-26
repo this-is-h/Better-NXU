@@ -82,7 +82,7 @@ export default defineConfig({
       userscript: {
         name: 'Better NXU',
         namespace: 'https://thisish.com/',
-        version: '2.0.1', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 7（见 src/config/config-version.js）。
+        version: '2.0.1', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 8（见 src/config/config-version.js）。
         description: '这是一个提高各种 NXU 网站体验的用户脚本（Userscript）',
         author: 'H',
         'run-at': 'document-idle',
@@ -141,7 +141,13 @@ export default defineConfig({
         },
         // cdn.jsdelivr.net 用于滑块 ORT/WASM/模型的 GM 后台下载；固定版本与摘要见
         // libraries/slider-resources.js。Worker 只使用本地资源，避免 WebVPN 改写外链。
-        connect: ['webvpn.nxu.edu.cn', 'portal.nxu.edu.cn', 'v1.hitokoto.cn', 'cdn.jsdelivr.net'],
+        connect: [
+          'webvpn.nxu.edu.cn',
+          'portal.nxu.edu.cn',
+          'v1.hitokoto.cn',
+          'cdn.jsdelivr.net',
+          'unpkg.com',
+        ],
         // @storageName ScriptCat 专有经 $extra 透传（§6.1 源码核验：直接 userscript.storageName 会被静默忽略）。
         $extra: { storageName: 'h.nxu' },
         // 标准 GM API 全部通过 #gm 静态导入，由 autoGrant 精确收集。CAT_userConfig 是 ScriptCat

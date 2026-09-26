@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { USER_CONFIG_BLOCK, USER_CONFIG_SAFE_DEFAULTS } from '../src/config/user-config.js';
 
+test('Tuanwei native settings are available and default to off', () => {
+  const config = USER_CONFIG_BLOCK.split('TuanWei:')[1];
+  assert.equal(config.includes('未实现'), false);
+  assert.equal(config.match(/default: false/g).length, 2);
+});
+
 test('native ScriptCat configuration keeps automatic login opt-in', () => {
   assert.deepEqual(USER_CONFIG_SAFE_DEFAULTS, {
     'WebVPN.autoLogin': false,

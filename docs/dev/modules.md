@@ -47,7 +47,7 @@
 
 ### `config-version.js`
 
-- `ConfigVersion`：当前配置结构版本，现为 `7`。
+- `ConfigVersion`：当前配置结构版本，现为 `8`。团委历史开关开始生效，沿用旧值和默认关闭值。
 - `normalizeConfigVersion(value)`：将数字/数字字符串规范化为非负安全整数，非法值回退 `0`。
 
 新增、删除或改变设置语义时，应提升 `ConfigVersion` 并提供迁移/提示；仅调整 UI 不一定需要提升。
@@ -259,7 +259,8 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 - `sysaq/pages/login.page.js`、`sysaq/pages/auth.page.js`：分别查找并点击实验室安全平台的登录和统一身份认证入口。
 - `weixin/pages/fast-login.page.js`：快速登录参数和按钮。
 - `pingjiao/pages/notify.page.js`：仅提示自动评教未实现。
-- `tuanwei/pages/notify.page.js`：空操作兼容占位；保留配置键不等于功能已实现。
+- `tuanwei/pages/download.page.js`：读取开关、保证同页单次运行，统一用通知适配器显示 toast（单条常驻进度，成功/失败/手动接管时替换，离页清理）；`components/auto-download.js` 处理识别、三次上限与手动接管，`components/attachment.js` 校验附件并等待下载回调。
+- `libraries/tesseract-local.js`：团委 CSP 下的本地 OCR 资源与 Worker 生命周期；初始化最多 90 秒、识别最多 30 秒，失败或离页时中止下载、终止 Worker 并回收 Blob URL。
 
 路由直接静态 import page 文件；无调用方的 `sites/*/index.js` barrel 已删除。
 

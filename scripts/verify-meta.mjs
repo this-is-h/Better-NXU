@@ -56,6 +56,7 @@ const expectedGrants = [
   'GM.xmlHttpRequest',
   'GM_addElement',
   'GM_addStyle',
+  'GM_download',
   'GM_getResourceText',
   'GM_getValue',
   'GM_info',
@@ -78,6 +79,7 @@ assert.deepEqual(values('connect'), [
   'portal.nxu.edu.cn',
   'v1.hitokoto.cn',
   'cdn.jsdelivr.net',
+  'unpkg.com',
 ]);
 
 const requires = values('require');

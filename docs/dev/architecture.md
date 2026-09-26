@@ -10,7 +10,7 @@ Better NXU 同时增强 WebVPN、统一身份认证、教务系统、信息门�
 - 安装脚本必须保持单文件，不含 SystemJS 或动态 chunk。
 - 依赖 ScriptCat `@run-at document-idle` 的“所有内容加载完成”保证，入口不再重复等待 `readyState`。
 - 运行在 ScriptCat `@inject-into page` 模型下，共享存储域为 `h.nxu`。
-- 当前元数据固定为 16 个 `@match`、15 个 `@grant`、7 个 `@require`、8 个 `@resource`、4 个 `@connect`，并包含完整 `==UserConfig==`。
+- 当前元数据固定为 16 个 `@match`、16 个 `@grant`、7 个 `@require`、8 个 `@resource`、5 个 `@connect`，并包含完整 `==UserConfig==`。
 
 ## 2. 启动与分发
 
@@ -96,7 +96,7 @@ utils -----------------> 浏览器基础 API（不依赖上层）
 | `sysaq/auth`                  | 直连或代理 `/lab-platform/login`                                                              | 点击统一身份认证                     |
 | `portal/hall`                 | 直连 `portal.nxu.edu.cn` 或 WebVPN 真实主机为该域名                                           | 门户 SPA 卡片注入                    |
 | `pingjiao/notify`             | 两个评教任务路径                                                                              | 提示尚未实现，不自动评教             |
-| `tuanwei/notify`              | 团委全站                                                                                      | 兼容占位，不做下载或 UI 操作         |
+| `tuanwei/download`            | 团委直连 `/system/_content/download.jsp`，含附件类型、owner 和 wbfileid 参数                  | 验证码识别、下载与可选关页           |
 
 WebVPN 代理 URL 形如：
 
@@ -139,6 +139,10 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 4. 课表页先注入导出栏，再按 `Jwgl.courseBeautify` 重建课程单元格。
 5. 美化和导出共用 `parseCourseCellFromJwgl()`，避免两套解析规则漂移。
 6. 父页面在 iframe 加载后、收到该 iframe 的 `COURSE_BEAUTIFY_CHANGED` 通知时重新计算高度；跨源读取失败时保留已有高度。监听器随页面生命周期清理。
+
+### 团委附件下载
+
+`tuanwei/pages/download.page.js` 按两个历史配置开关启用。`tesseract-local.js` 经 GM 匿名下载并校验固定 SHA384 的 worker、内嵌 WASM core 和语言包，再使用本地 Blob URL，适配学校 CSP。验证码只从当前 `#codeimg` 绘制到 Canvas，不重新请求验证码接口。自动点击确定时临时拦截该次导航，使用同源 fetch 获取并验证附件，再交给 `GM_download` 的 browser 模式保存 data URL；只有完成回调到达才按设置关页。手动操作保留原处理器，重试最多三次，离页时取消并清理资源。
 
 ### 课表工具
 
