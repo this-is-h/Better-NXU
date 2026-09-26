@@ -82,7 +82,7 @@ export default defineConfig({
       userscript: {
         name: 'Better NXU',
         namespace: 'https://thisish.com/',
-        version: '2.0.1', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 8（见 src/config/config-version.js）。
+        version: '2.0.2', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 8（见 src/config/config-version.js）。
         description: '这是一个提高各种 NXU 网站体验的用户脚本（Userscript）',
         author: 'H',
         'run-at': 'document-idle',
