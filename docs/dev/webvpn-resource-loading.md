@@ -6,14 +6,15 @@
 
 ## 1. 按报错定位
 
-| 现象或错误                                                                                                                 | 本次确认的原因                                                                                | 对应处理                                                                      |
-| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `Refused to execute script ... MIME type ('text/html')`，资源地址出现 WebVPN `/https/<host-token>/npm/...`，最后返回登录页 | 页面或 Worker 的外链加载被 WebVPN 改写，取得 HTML 而非 JavaScript                             | 全部静态依赖改由 `GM.xmlHttpRequest` 从原始 CDN 下载；验证响应和摘要          |
-| `Unexpected identifier 'ArrayBuffer'`，调用栈包含网关 `main.js`                                                            | 网关的 JavaScript Blob hook 将 `ArrayBuffer` 隐式转成 `[object ArrayBuffer]`                  | JavaScript 先用 `TextDecoder` 解码；WASM 和模型保留二进制                     |
-| `SyntaxError: Unexpected token (79:31)`，解析栈来自网关 `main.js`                                                          | 网关把模块源码作为普通脚本包装解析，无法处理该 `.mjs` 中的顶层 `await`                        | 使用无 MIME 内层 Blob，再用外层 Blob 设置 JavaScript MIME，避免源码被重新解析 |
-| `Not allowed to load local resource: blob:https://ids.nxu.edu.cn/...` 或 `Failed to fetch dynamically imported module`     | `createObjectURL()` 返回的真实 WebVPN 来源被伪装成 IDS 来源；原生动态 `import()` 不会自动还原 | 使用页面已有 `vpn_rewrite_url()` 转回真实 Blob URL，再传给模块加载器          |
-| `no available backend found. ERR: [wasm] ...`                                                                              | 上层汇总错误；本次实际失败是动态模块加载                                                      | 先读嵌套错误，检查 `.mjs` 与 `.wasm`，不要仅更换推理后端                      |
-| 一直显示初始化中，没有进入错误提示                                                                                         | 上游把初始化错误放在 `id: 0` 的 Worker 消息中，但调用方未处理；也可能是下载未结束             | 初始化也注册待处理消息，设置下载/初始化超时，失败清理后允许重试               |
+| 现象或错误                                                                                                                 | 本次确认的原因                                                                                           | 对应处理                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Refused to execute script ... MIME type ('text/html')`，资源地址出现 WebVPN `/https/<host-token>/npm/...`，最后返回登录页 | 页面或 Worker 的外链加载被 WebVPN 改写，取得 HTML 而非 JavaScript                                        | 全部静态依赖改由 `GM.xmlHttpRequest` 从原始 CDN 下载；验证响应和摘要                              |
+| `Unexpected identifier 'ArrayBuffer'`，调用栈包含网关 `main.js`                                                            | 网关的 JavaScript Blob hook 将 `ArrayBuffer` 隐式转成 `[object ArrayBuffer]`                             | JavaScript 先用 `TextDecoder` 解码；WASM 和模型保留二进制                                         |
+| `SyntaxError: Unexpected token (79:31)`，解析栈来自网关 `main.js`                                                          | 网关把模块源码作为普通脚本包装解析，无法处理该 `.mjs` 中的顶层 `await`                                   | 使用无 MIME 内层 Blob，再用外层 Blob 设置 JavaScript MIME，避免源码被重新解析                     |
+| `Not allowed to load local resource: blob:https://ids.nxu.edu.cn/...` 或 `Failed to fetch dynamically imported module`     | `createObjectURL()` 返回的真实 WebVPN 来源被伪装成 IDS 来源；原生动态 `import()` 不会自动还原            | 使用页面已有 `vpn_rewrite_url()` 转回真实 Blob URL，再传给模块加载器                              |
+| `pnpm dev` 正常，安装版报 `Failed to construct 'Worker' ... cannot be accessed from origin`                                | ScriptCat 沙箱 `window` 与真实页面不同；从沙箱读取不到页面的地址还原函数，或混用了两侧的 Blob/Worker API | 从 `#gm` 导入 `unsafeWindow`；Blob、URL 创建/回收、Worker 和 `vpn_rewrite_url` 统一使用该页面对象 |
+| `no available backend found. ERR: [wasm] ...`                                                                              | 上层汇总错误；本次实际失败是动态模块加载                                                                 | 先读嵌套错误，检查 `.mjs` 与 `.wasm`，不要仅更换推理后端                                          |
+| 一直显示初始化中，没有进入错误提示                                                                                         | 上游把初始化错误放在 `id: 0` 的 Worker 消息中，但调用方未处理；也可能是下载未结束                        | 初始化也注册待处理消息，设置下载/初始化超时，失败清理后允许重试                                   |
 
 错误行列随资源版本变化。判断依据是失败阶段、实际加载内容、Blob 来源和调用栈，不能只匹配某个固定行号。
 
@@ -52,34 +53,39 @@ ScriptCat @resource 读取识别器入口
 4. 在现有 `@connect` 范围内访问；新增域名时同步 `vite.config.js` 和 `scripts/verify-meta.mjs`。
 5. 取消时中止仍在执行的请求；不以页面 `fetch` 或远程 `importScripts` 作为失败回退。
 
-当前四项资源及去向：
+当前四项资源及去向（2026-09-24 已升级 ORT 1.30.0；开头的 1.20.1 为最初排障环境）：
 
 | 资源                          | 固定版本     | 下载后处理                           | 消费方式                                      |
 | ----------------------------- | ------------ | ------------------------------------ | --------------------------------------------- |
-| `ort.min.js`                  | ORT 1.20.1   | UTF-8 文本、受保护的 JavaScript Blob | Worker `importScripts`                        |
-| `ort-wasm-simd-threaded.mjs`  | ORT 1.20.1   | UTF-8 文本、受保护的 JavaScript Blob | ORT 原生动态 `import()`                       |
-| `ort-wasm-simd-threaded.wasm` | ORT 1.20.1   | 二进制、`application/wasm` Blob      | WASM 后端                                     |
+| `ort.min.js`                  | ORT 1.30.0   | UTF-8 文本、受保护的 JavaScript Blob | Worker `importScripts`                        |
+| `ort-wasm-simd-threaded.mjs`  | ORT 1.30.0   | UTF-8 文本、受保护的 JavaScript Blob | ORT 原生动态 `import()`                       |
+| `ort-wasm-simd-threaded.wasm` | ORT 1.30.0   | 二进制、`application/wasm` Blob      | WASM 后端                                     |
 | `slider.onnx.q8.onnx`         | 识别器 1.0.4 | ArrayBuffer 转 Uint8Array            | `InferenceSession.create()`，不再请求模型 URL |
 
-准确 URL 和摘要以 `SLIDER_ASSETS` 为准，文档不重复维护摘要值。下载资源不会上传验证码图像或账号信息。
+识别器 1.0.4 内嵌的旧 ORT URL 仅用作精确源码替换锚点，不是实际加载版本。准确 URL 和摘要以 `SLIDER_ASSETS` 为准，文档不重复维护摘要值。下载资源不会上传验证码图像或账号信息。
 
 ### 3.2 保留 Blob 内容并还原来源
 
 实现参考：`src/libraries/slider-recognizer.js` 的 `initialize()`。下面是同一处理方式的独立示例，`allocatedUrls` 属于调用方的资源生命周期；这不是新增的项目公共 API。
 
 ```js
+import { unsafeWindow } from '#gm';
+
+const pageWindow = unsafeWindow ?? window;
 const allocatedUrls = [];
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 function localResourceUrl(content, type) {
   // 内层不设置 MIME，网关不会把内容送入 JS 解析器。
   // 外层的 parts 已经是 Blob，当前 WebVPN 明确保留它的原始内容。
-  const blob = new Blob([new Blob([content])], { type });
-  const allocatedUrl = URL.createObjectURL(blob);
+  const blob = new pageWindow.Blob([new pageWindow.Blob([content])], { type });
+  const allocatedUrl = pageWindow.URL.createObjectURL(blob);
   allocatedUrls.push(allocatedUrl);
 
   // 只转换本模块创建的本地资源地址；直连环境直接使用原值。
-  return typeof window.vpn_rewrite_url === 'function' ? window.vpn_rewrite_url(allocatedUrl) : allocatedUrl;
+  return typeof pageWindow.vpn_rewrite_url === 'function'
+    ? pageWindow.vpn_rewrite_url(allocatedUrl)
+    : allocatedUrl;
 }
 
 // assets 为已经下载并通过摘要校验的 ArrayBuffer 集合。
@@ -87,10 +93,10 @@ const runtimeUrl = localResourceUrl(decoder.decode(assets.runtime), 'text/javasc
 const moduleUrl = localResourceUrl(decoder.decode(assets.module), 'text/javascript');
 const wasmUrl = localResourceUrl(assets.wasm, 'application/wasm');
 
-// Worker 源码也通过 localResourceUrl 创建。
+// Worker 源码也通过 localResourceUrl 创建，并使用 new pageWindow.Worker(workerUrl)。
 // 完成使用或初始化失败后，先终止 Worker，再统一释放：
 function releaseUrls() {
-  for (const url of allocatedUrls) URL.revokeObjectURL(url);
+  for (const url of allocatedUrls) pageWindow.URL.revokeObjectURL(url);
   allocatedUrls.length = 0;
 }
 ```
@@ -99,9 +105,11 @@ function releaseUrls() {
 
 `vpn_rewrite_url()` 是此网关提供的接口，不是浏览器标准 API。只在函数存在时使用，保持页面对象作为调用接收者。若将来接口消失或行为改变，应重新检查网关实现及报错，不能默认以前的修复对所有 WebVPN 产品都适用。
 
+安装版必须通过 `#gm` 的 `unsafeWindow` 取得真实页面对象；`@inject-into page` 仍有 ScriptCat 的脚本包装作用域，不能据此假定裸 `window` 就是页面。开发模块直接读到页面函数的测试无法覆盖这一差异。页面离开监听和 URL 回收也使用初始化时选定的同一对象，保留完整清理路径。
+
 ### 3.3 配置 Worker 内部依赖
 
-ORT 1.20.1 支持将模块和 WASM 分开指定。在 Worker 的初始化代码中，使用上一步得到的真实本地地址：
+当前 ORT 1.30.0 继续支持将模块和 WASM 分开指定。在 Worker 的初始化代码中，使用上一步得到的真实本地地址：
 
 ```js
 importScripts(runtimeUrl);

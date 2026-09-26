@@ -43,8 +43,8 @@ export function initContext() {
     webvpnRealHost: vpnContext?.viaVpn ? vpnContext.realHost : null,
     // 便利标记：是否为 webvpn 主域（非代理，主页/工具/失败页等在此 host）。
     isWebvpnHost: Host === 'webvpn.nxu.edu.cn',
-    // 1.x `Host.indexOf('202.201.128.234') != -1` 子串判定兜住 :8080~:8083 端口变体（02 §7.2）。
-    isJwglIp: Host.indexOf('202.201.128.234') !== -1,
+    // hostname 本身不含端口；精确匹配同时兼容各端口并排除相似域名。
+    isJwglIp: Host === '202.201.128.234',
   };
   return context;
 }

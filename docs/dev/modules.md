@@ -11,6 +11,7 @@
 ### `src/context.js`
 
 - `initContext()`：首次调用时解析 URL、WebVPN 真实站点和 `GM_info`，以后返回同一对象。
+- `isJwglIp` 只接受精确的 `202.201.128.234` hostname；端口不参与主机判断，相似域名不会命中。
 - `getContext()`：取得已初始化上下文；过早调用会抛错。因此 page 不应在模块顶层调用它，应放在 `register()` 或事件处理函数中。
 - `_resetContextForTest()`：仅测试使用。
 
@@ -46,7 +47,7 @@
 
 ### `config-version.js`
 
-- `ConfigVersion`：当前配置结构版本，现为 `7`。
+- `ConfigVersion`：当前配置结构版本，现为 `8`。团委历史开关开始生效，沿用旧值和默认关闭值。
 - `normalizeConfigVersion(value)`：将数字/数字字符串规范化为非负安全整数，非法值回退 `0`。
 
 新增、删除或改变设置语义时，应提升 `ConfigVersion` 并提供迁移/提示；仅调整 UI 不一定需要提升。
@@ -76,7 +77,7 @@ GM API 从 vite-plugin-monkey 官方客户端别名 `#gm` 按需静态导入。�
 - `isWebVpnIdsLoginRoute(ctx)`：可信代理 IDS 且真实路径包含 `/authserver/login`。
 - `isWebVpnIdsReAuthRoute(ctx)`：可信代理 IDS 且真实路径包含 `/authserver/reAuthCheck/`。
 
-这些函数是凭证访问的安全边界，路由判定和认证业务入口都要使用。
+前三项是凭证访问的安全边界，路由和认证业务入口都要使用。`isCnkiReaderRoute()` / `isWanfangReaderRoute()` 统一直连与代理阅读路径；`isWebVpnToolsRoute(ctx, bodyHtml)` / `isWebVpnFailedRoute(ctx, bodyHtml)` 区分工具直接入口、旧标记入口与普通失败页。
 
 ### `dom.js`
 
@@ -95,6 +96,8 @@ GM API 从 vite-plugin-monkey 官方客户端别名 `#gm` 按需静态导入。�
 - `hasLegacyAuthCaptcha()`：判断旧式图形验证码是否可见。
 - `isCredentialsErrorText(errorText)`：判断错误是否属于账号/密码问题。
 - `buildCredentialsErrorToast(options)`：生成带设置入口的静态 toast HTML。动态错误文本仍需转义。
+
+普通消息调用 `libraries/notification.toast()`，由适配层统一转义。只有上述静态配置入口使用 `toastTrustedHtml()`；不向它传入文件名、接口消息或用户文本。
 
 该文件只做 DOM 读取和文案构造，不读取凭证、不弹 toast。
 
@@ -124,7 +127,8 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 
 ### `fetch.js`
 
-- `fetchWithTimeout(fetchImpl, input, init, options)`：为 page window `fetch` 组合内部超时和调用方 `AbortSignal`；超时抛 `name=TimeoutError`，主动取消保持 `AbortError`。
+- `fetchWithTimeout(fetchImpl, input, init, options)`：为 page window `fetch` 组合内部超时和调用方 `AbortSignal`；超时抛 `name=TimeoutError`，主动取消保持 `AbortError`。信号可放在 `options.signal` 或标准 `init.signal`，前者优先。
+- 需要读取响应体时传 `options.consumeResponse(response)` 并返回读取 Promise；该 Promise 完成前保持超时与取消，成功后返回解析结果。未传时保留返回 `Response` 的语义，响应体读取不受该次超时保护。课表 ID 和身份查询均使用此回调，避免响应头到达后正文卡住。
 
 ### `file.js`
 
@@ -134,7 +138,7 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 
 ### `snapdom.js`
 
-- `downloadSnapdomImage(options)`：调用 snapdom 生成图片；WebVPN 模式下分批内联计算样式、修正 SVG `foreignObject` 大小写，并在完成后恢复页面状态。
+- `downloadSnapdomImage(options)`：调用 snapdom 生成图片；WebVPN 模式下分批内联计算样式，将像素宽度向上取整以避免教室文字意外换行覆盖周次，并修正 SVG `foreignObject` 大小写。保留原有字体和换行规则，完成或失败后恢复页面状态。
 
 ## 4. `src/libraries`
 
@@ -143,10 +147,11 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 - `installNotification()`：把 h.notification 运行时、Toast CSS、FontAwesome 和页面回调准备好；幂等。
 - `openTab('settings' | 'about')`：用 `GM_openInTab` 打开 SSL VPN 设置/关于页。
 - `betterNXUVersionClick()`：通过 `GM.xmlHttpRequest` 获取一言并 toast。
-- `toast(type, message, duration)`：包装远程 `createToast`，不可用时降级日志。
+- `toast(type, message, duration)`：将消息转义为纯文本后传给远程 `createToast`，不可用时降级日志。
+- `toastTrustedHtml(type, message, duration)`：仅接收项目静态构造的配置入口 HTML。
 - `removeToastHandle(handle)`：包装 `removeToast`。
 
-页面在第一次 toast 前先调用 `installNotification()`。包含 HTML 的 message 只能使用静态模板或已转义动态数据。
+页面在第一次 toast 前先调用 `installNotification()`。普通消息直接传原文，不重复转义；只有静态配置入口使用专用 HTML 接口。
 
 ### 其他适配器
 
@@ -225,7 +230,8 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 - `auth/jwgl-login.js`：导出 `jwglLogin()`，负责教务凭证校验、错误提示、OCR、填表和提交。
 - `components/login/captcha-reader.js`：导出 `readJwglCaptcha()`，负责 OCR 进度、45 秒初始化/30 秒识别超时、worker 清理。
 - `pages/home.page.js`：注入“全部学期成绩”。
-- `pages/course-table-container.page.js`：iframe 高度和消息监听。
+- `pages/course-table-container.page.js`：等待学校 iframe 后安装高度同步。
+- `components/course-table/course-frame.js`：`installCourseFrameResize(iframe)` 幂等监听 iframe `load` 和该 iframe 发出的 `COURSE_BEAUTIFY_CHANGED`，返回清理函数。加载完成前及跨源认证期间保留原高度；最终离页时清理，BFCache 恢复保留监听。
 - `components/course-table/course-beautify.js`：导出 `beautifyJwglCourseTable()`，用原生 DOM 安全重建课表单元格。
 - `components/course-table/course-reader.js`：导出 `parseRangeString()`、`getAccurateColumnIndex()`、`readJwglTableToJson()`、`installCourseToolbar()`；负责从 DOM 构建标准课表并导出图片/JSON/Excel。
 - `components/course-table/CourseToolbar.vue`：导出栏 UI。
@@ -239,8 +245,9 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 - `components/tools/ics-id.js`：导出 `getIcsId(options)`、`getStudentOwner(studentId, options)`，用于获取课表分享 ID 和验证当前登录学生身份；`options.signal` 支持取消，`timeoutMs` 默认 15 秒。
 - `components/tools/schedule-file.js`：导出 `parseScheduleFileContent(text, options)`，处理明文/加密课表导入和密钥协商。
 - `components/tools/schedule-view.js`：导出 `personalDays`、`personalPeriodRows`、`getTotalWeeks`、`courseColor`、`splitConsecutivePeriods`、`buildPersonalCourseEntries`、`buildPersonalCourseLayout`、`isOnlineLesson`、`getLessonAvailability`、`formatAvailabilityWeeks`、`buildPersonalFreeGrid`。
-- `pages/knowledges-copy.page.js`：选区复制。
 - `pages/failed.page.js`：按配置关闭失败页。
+
+文献阅读页已归属 `sites/cnki/pages/reader.page.js` 与 `sites/wanfang/pages/reader.page.js`，直连和代理共用入口。
 
 ### 其他站点
 
@@ -252,6 +259,18 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 - `sysaq/pages/login.page.js`、`sysaq/pages/auth.page.js`：分别查找并点击实验室安全平台的登录和统一身份认证入口。
 - `weixin/pages/fast-login.page.js`：快速登录参数和按钮。
 - `pingjiao/pages/notify.page.js`：仅提示自动评教未实现。
-- `tuanwei/pages/notify.page.js`：空操作兼容占位；保留配置键不等于功能已实现。
+- `tuanwei/pages/download.page.js`：读取开关、保证同页单次运行，统一用通知适配器显示 toast（单条常驻进度，成功/失败/手动接管时替换，离页清理）；`components/auto-download.js` 处理识别、三次上限与手动接管，`components/attachment.js` 校验附件并等待下载回调。
+- `libraries/tesseract-local.js`：团委 CSP 下的本地 OCR 资源与 Worker 生命周期；初始化最多 90 秒、识别最多 30 秒，失败或离页时中止下载、终止 Worker 并回收 Blob URL。
 
 路由直接静态 import page 文件；无调用方的 `sites/*/index.js` barrel 已删除。
+
+## 9. 阅读与共享拖动
+
+- `utils/slider-drag.js` 的 `dragSlider({ handle, track, distance, eventTarget, signal, timeoutMs })`：视口像素坐标、420–700ms 平滑轨迹、20ms 事件间隔；取消时回到起点释放，Promise 在 mouseup 后完成。它不判断验证是否成功。
+- `composables/reader-copy.js` 的 `installReaderCopy(doc)`：幂等选区复制、局部标题样式、忽略合成鼠标事件，返回清理函数。
+- `sites/cnki/reader/slide-verification.js` 的 `installCnkiSlider(options)`：观察异步控件，每个控件一次、同页最多三次，手动接管或离页取消；返回停止函数。
+- 知网/万方 `pages/reader.page.js`：复用路由守卫与复制流程；只有知网页面安装无缺口滑块处理，不初始化 ONNX。
+
+工具页的 `components/tools/schedule-export.js#prepareCurrentScheduleExport()` 捕获最初课表，在身份核验和导出选项等待后检查是否仍是同一份数据；切换则抛 `SCHEDULE_CHANGED`，成功返回规范化课表与导出结果。
+
+同模块 `selectImageExportName()` 先确认是否采用已配置学号的姓名，或只输入姓名；结果不写 `owner`。`prepareCurrentScheduleImageExport()` 在姓名确认前后校验课表与视图，并返回文件名和最终校验函数；JSON 与图片导出共用页面操作锁，避免重复弹窗。

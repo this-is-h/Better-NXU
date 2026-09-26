@@ -33,6 +33,9 @@ import { waitOrToast } from '../../../composables/use-wait-or-toast.js';
 import { WaitTime } from '../../../utils/random.js';
 import { toast } from '../../../libraries/notification.js';
 import { MyConsole } from '../../../utils/console.js';
+import { GM_openInTab } from '#gm';
+import { PORTAL_CARDS } from './portal-cards.js';
+import { openPortalCard } from './portal-navigation.js';
 
 const console = MyConsole('[portal.hall]');
 
@@ -81,35 +84,28 @@ export async function injectPortalHall() {
     const vueScopedAttr = Array.from(list.attributes).find((attr) => attr.name.startsWith('data-v-'));
     const dataVValue = vueScopedAttr?.name || '';
 
-    // 1.x 行 3653-3697 generateDiv(data)：data=[title, id, items=[[msg,url],...]] → 生成带 data-v 伪造属性的 sortItem div。
-    const generateDiv = (data) => {
-      const title = data[0];
-      const id = data[1];
-      const items = data[2];
-
+    const generateDiv = ({ title, id, items }) => {
       // 生成所有 <li> 元素（1.x 行 3659-3681 逐字）。
-      const liList = items.map((item) => {
-        const msg = item[0];
-        const url = item[1];
+      const liList = items.map((item, index) => {
+        const msg = item.title;
         const firstChar = msg.charAt(0); // 取第一个汉字或字符（1.x 行 3663）
 
         return `<li ${dataVValue}>
-                        <a ${dataVValue} class="li-item portal-font-color-lv1 portal-primary-color-hover-lv1 favoriteapp-list-hover portal-primary-backgroundcolor-hover-lv5"
-                            href="${url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
-                            <div ${dataVValue} class="favoriteapp-left">
-                                <div style="width:100%;height:100%;display:flex;justify-content:center;align-items:center;font-size:x-large;font-weight:bold;color:#38727F">
-                                    ${firstChar}
-                                </div>
+                    <div ${dataVValue} class="li-item portal-font-color-lv1 portal-primary-color-hover-lv1 favoriteapp-list-hover portal-primary-backgroundcolor-hover-lv5" role="link" tabindex="0" data-card-index="${index}">
+                        <div ${dataVValue} class="favoriteapp-left">
+                            <div style="width:100%;height:100%;display:flex;justify-content:center;align-items:center;font-size:x-large;font-weight:bold;color:#38727F">
+                                ${firstChar}
                             </div>
-                            <div ${dataVValue} class="favoriteapp-center">
-                                <div ${dataVValue} class="we-tooltip item" style="overflow: hidden;" aria-describedby="we-tooltip-9469" tabindex="0">
-                                    <span style="box-shadow: transparent 0px 0px;">
-                                        <span aria-label="${msg}"> ${msg} </span>
-                                    </span>
-                                </div>
+                        </div>
+                        <div ${dataVValue} class="favoriteapp-center">
+                            <div ${dataVValue} class="we-tooltip item" style="overflow: hidden;">
+                                <span style="box-shadow: transparent 0px 0px;">
+                                    <span aria-label="${msg}"> ${msg} </span>
+                                </span>
                             </div>
-                        </a>
-                    </li>`;
+                        </div>
+                    </div>
+                </li>`;
       });
 
       // 拼接整体模板（1.x 行 3684-3689）。
@@ -126,62 +122,41 @@ export async function injectPortalHall() {
       div.id = id;
       div.innerHTML = template;
 
+      // 系统模式保留 WebVPN 的 window.open 转换；直开模式由脚本管理器打开原地址。
+      for (const card of div.querySelectorAll('[data-card-index]')) {
+        const item = items[Number(card.dataset.cardIndex)];
+        const reportError = (error) => toast('warning', error.message || '门户链接打开失败', 4);
+        const open = () => {
+          try {
+            const result = openPortalCard(item, {
+              portalUrl: window.location.href,
+              pageWindow: mainIframe,
+              openInTab: GM_openInTab,
+            });
+            // GM API 可能返回 Promise；不对 window.open 返回的页面窗口进行 Promise 同化。
+            if (item.navigation === 'direct') Promise.resolve(result).catch(reportError);
+          } catch (error) {
+            reportError(error);
+          }
+        };
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && !event.repeat) {
+            event.preventDefault();
+            open();
+          }
+        });
+      }
+
       return div;
     };
 
     // 1.x 行 3698-3746：4 个卡片块各 insertBefore(listFirst)，按 id 存在则跳过（幂等）。
-    // 2.0 改数据驱动循环（数据逐字取自 1.x 四处粘贴块，C5 行为等价；消除 1.x 样板）。
-    const PORTAL_CARDS = [
-      {
-        title: 'Better NXU - 常用',
-        id: 'betternxu-h-main',
-        items: [
-          ['学工系统', 'https://xsfw.nxu.edu.cn'],
-          ['双创平台', 'http://202.201.128.142/nxu1'],
-          ['实验室安全教育平台', 'https://sysaq.nxu.edu.cn'],
-        ],
-      },
-      {
-        title: 'Better NXU - 教务系统',
-        id: 'betternxu-h-jwgl',
-        items: [
-          ['教务系统', 'https://jwgl.nxu.edu.cn'],
-          ['备用1', 'http://202.201.128.234:8080'],
-          ['备用2', 'http://202.201.128.234:8081'],
-          ['备用3', 'http://202.201.128.234:8082'],
-          ['备用4', 'http://202.201.128.234:8083'],
-        ],
-      },
-      {
-        title: 'Better NXU - 图书馆',
-        id: 'betternxu-h-lib',
-        items: [
-          ['图书馆', 'https://zylib.nxu.edu.cn/login'],
-          ['中国知网', 'https://zylib.nxu.edu.cn/-----https://www.cnki.net/'],
-          ['万方数据', 'https://zylib.nxu.edu.cn/-----https://www.wanfangdata.com.cn/'],
-          ['维普资讯', 'https://zylib.nxu.edu.cn/-----https://qikan.cqvip.com/'],
-          [
-            'Web of Science',
-            'https://zylib.nxu.edu.cn/-----https://www.webofscience.com/wos/alldb/basic-search',
-          ],
-          ['PubScholar公益学术平台(校外)', 'https://pubscholar.cn/'],
-        ],
-      },
-      {
-        title: 'Better NXU - H 小工具',
-        id: 'betternxu-h-tools',
-        items: [
-          ['H 小工具', 'h/tools'],
-          ['宁夏大学猫狗图鉴', 'https://nxu-cdig.thisish.cn/'],
-          ['NXU Charge（已废弃）', 'https://campus-charge.thisish.cn/'],
-        ],
-      },
-    ];
     for (const { title, id, items } of PORTAL_CARDS) {
       // 幂等检查须在 iframe 文档内查（2.0 审计 C1）：卡片插入的是 iframe 的 div.city_sort，查外层 document
       // 永远找不到 → 幂等失效、每次导航都重插，只能靠 SPA 销毁 DOM 兜底。改查 mainIframe.document 后才真正幂等。
       if (!mainIframe.document.querySelector(`#${id}`)) {
-        list.insertBefore(generateDiv([title, id, items]), listFirst);
+        list.insertBefore(generateDiv({ title, id, items }), listFirst);
       }
     }
   })();

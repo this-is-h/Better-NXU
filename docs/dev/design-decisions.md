@@ -86,7 +86,7 @@ WebVPN 外层 host 永远可能是 `webvpn.nxu.edu.cn`，路径中还可能出�
 
 ## 11. Vant CSS 为什么按需注入
 
-全局在 10 个匹配站点注入 Vant CSS 会污染学校页面、增加解析成本，认证页尤其敏感。当前 Vant JS 由构建按组件使用，完整 CSS 只在 `mountVueApp()` 默认路径或 `mountAppPage()` 注入；IDS 填充按钮显式跳过。
+全局在所有匹配页面注入 Vant CSS 会污染学校页面、增加解析成本，认证页尤其敏感。当前 Vant JS 由构建按组件使用，完整 CSS 只在 `mountVueApp()` 默认路径或 `mountAppPage()` 注入；IDS 填充按钮显式跳过。
 
 如果新增纯原生/Vue 组件不使用 Vant，应传 `useVantStyles: false`。如果使用 Vant，先确保 CSS，再注入页面专属覆盖样式。
 
@@ -98,7 +98,11 @@ marked 只解析 Markdown，不提供安全边界。README/CHANGELOG 跟随远�
 
 ## 13. OCR 为什么分为 UMD、worker、core、语言包
 
-把完整 OCR 编入脚本会显著增加每个匹配页面的启动成本。当前 UMD 作为固定 SHA384 `@resource`，只在教务自动登录触发时执行；worker/core/lang 由 Tesseract 运行时继续按固定 URL 获取。
+把完整 OCR 编入脚本会显著增加每个匹配页面的启动成本。当前 UMD 作为固定 SHA384 `@resource`，只在教务登录或团委附件识别时执行；教务 worker/core/lang 由 Tesseract 运行时继续按固定 URL 获取。
+
+团委 CSP 禁止 Worker 直接加载 CDN。`tesseract-local.js` 经 GM 匿名下载并验证三项固定 SHA384，再创建本地 Blob URL；core 选用内嵌 WASM 的通用 LSTM 构建。Tesseract 会向语言路径追加文件名，且按 `js` 后缀判断 core 文件，因此用 URL fragment 容纳这些后缀，保持 Blob 目标不变。资源约 6.96 MB，仅命中并开启功能时加载；不改变教务原加载路径。该路径已在保持 CSP 的真实团委页面识别并获取有效附件。
+
+自动点击只拦截脚本自己派发的确定事件，学校原 `setCode()` 处理器保留给手动操作。同源 fetch 验证 HTTP 状态、Content-Disposition 和 Content-Type 并收完响应体后，才使用 `GM_download({ downloadMode: 'browser', saveAs: false })` 保存 data URL，避免页面 Blob URL 无法被管理器后台读取。以 `onload` 作为关页依据，不按固定延时猜测；ScriptCat 当前实现会将部分用户取消也转为 onload，脚本无法独立检查磁盘，此限制必须保留在用户说明中。依据：[ScriptCat API](https://docs.scriptcat.org/docs/dev/api/#gm_download)、[下载回调源码](https://github.com/scriptscat/scriptcat/blob/main/src/app/service/content/gm_api/gm_api.ts)、[Tesseract 7 core 加载源码](https://github.com/naptha/tesseract.js/blob/v7.0.0/src/worker-script/browser/getCore.js)。
 
 已踩坑：Tesseract 默认 CDN 在中国大陆不稳定；某镜像只有 worker、缺 core 或语言包。当前三类统一指向经验证的 unpkg 固定版本。超时后 Promise 仍可能晚到，因此要为 late worker 补 terminate，不能只清当前局部变量。
 
@@ -151,6 +155,14 @@ RSA 不适合直接加密几 MB JSON。每个文件生成随机 AES-256-GCM 密�
 WebVPN 会包装外部请求、`Blob`、`URL.createObjectURL()` 和 Worker。GM 后台下载只能解决外链改写；JavaScript 还需按 UTF-8 解码，再使用嵌套 Blob 保留源码，并将网关伪装成 IDS 来源的 Blob URL 还原后交给动态模块加载器。少一层都会重新出现已遇到的报错。
 
 实现位于 `libraries/slider-resources.js` 和 `libraries/slider-recognizer.js`。具体错误对照、复用示例及为何普通浏览器测试不足，见[WebVPN 资源加载排障](webvpn-resource-loading.md)。升级运行时或网关后按该文档复查完整加载链。
+
+## 21. WebVPN 导出周次文字为什么会重叠
+
+2026-09-25 根据用户指出的教室换行线索重新验证，纠正此前的字体重影判断：教室 `<mark>` 没有换行符，但导出样式固定了小数宽度和单行高度，同时允许文字换行。计算宽度序列化后会丢失少量精度，再次布局时向下量化；例如 SVG 的 `68.0156px` 在本地 Chrome 中变成 `68px`。教室末尾数字被挤到下一行，而 `height: 25px`、`line-height: 25px` 和可见溢出让它覆盖周次。
+
+WebVPN 导出在 `utils/snapdom.js` 内将计算样式中的像素 `width` 向上取整，每个小数宽度增加不足 1px，防止内联和 snapdom 克隆重复序列化后继续缩窄。整数宽度、非像素值、字体、行高和换行规则保持原值，因此原本需要多行的长教室名仍可正常换行。全部计算样式读取完成后才统一写入；成功或失败都在 `finally` 恢复原内联样式。移除此前的 Helvetica/Arial 替换，直连仍使用原生捕获路径。
+
+本地 Chrome 验证上传 SVG 的 41 个教室节点均出现换行覆盖；仅将教室宽度向上取整后，41 处均恢复正常，未改字体。另用虚构课程验证 snapdom 2.16.0 和 3.1.0 的实际 SVG/PNG 导出：直连正常，旧 WebVPN 样式复制可复现短教室名换行，修复后短教室名恢复单行、长教室名保持原有三行，2.5 倍导出尺寸不变。Node 回归覆盖小数/整数/非像素宽度、字体和换行保留、测量失败与样式恢复。仍需在真实 ScriptCat 的教务直连与 WebVPN 页面验证；禁止把用户上传的完整课表 SVG 加入测试或文档。
 
 ## 官方参考
 

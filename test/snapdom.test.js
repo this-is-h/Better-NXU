@@ -21,6 +21,9 @@ function createInlineStyle(initial = '') {
       explicitCssText = '';
       properties.set(name, { value, priority });
     },
+    getPropertyValue(name) {
+      return properties.get(name)?.value || '';
+    },
   };
 }
 
@@ -77,7 +80,7 @@ function createEnvironment(descendantCount = 1) {
         ...Object.fromEntries(names.map((name, index) => [index, name])),
         getPropertyValue(name) {
           requestedProperties.push(name);
-          return element.computedValues[name] || '';
+          return element.style.getPropertyValue(name) || element.computedValues[name] || '';
         },
         getPropertyPriority() {
           return '';
@@ -110,7 +113,7 @@ function createEnvironment(descendantCount = 1) {
   };
 }
 
-test('direct captures keep the native snapdom path unchanged', async () => {
+test('direct captures preserve output scale and avoid newly automatic font downloads', async () => {
   const target = { querySelectorAll: () => [] };
   const options = { format: 'png', scale: 2.5 };
   const calls = [];
@@ -122,7 +125,9 @@ test('direct captures keep the native snapdom path unchanged', async () => {
   };
 
   assert.equal(await downloadSnapdomImage({ snapdom, target, options }), 'direct');
-  assert.deepEqual(calls, [{ receivedTarget: target, receivedOptions: options }]);
+  assert.deepEqual(calls, [{ receivedTarget: target, receivedOptions: { embedFonts: false, ...options } }]);
+  await downloadSnapdomImage({ snapdom, target, options: { ...options, embedFonts: 'auto' } });
+  assert.equal(calls.at(-1).receivedOptions.embedFonts, 'auto');
 });
 
 test('WebVPN captures inline styles, fix foreignObject, and restore state', async () => {
@@ -149,6 +154,8 @@ test('WebVPN captures inline styles, fix foreignObject, and restore state', asyn
 
   assert.equal(result, 'webvpn');
   assert.equal(receivedOptions.cache, 'disabled');
+  assert.equal(receivedOptions.invalidate, true);
+  assert.equal(receivedOptions.embedFonts, false);
   assert.equal(root.getAttribute('style'), 'color: red;');
   assert.equal(child.getAttribute('style'), null);
   assert.equal(Serializer.prototype.serializeToString, originalSerialize);
@@ -196,4 +203,83 @@ test('WebVPN style collection skips unrelated properties and yields between batc
 
   assert.equal(requestedProperties.includes('--webvpn-noise'), false);
   assert.equal(getYieldCount(), 3);
+});
+
+test('WebVPN preserves fractional text widths through repeated CSS serialization without changing fonts', async () => {
+  const { root, child, pageWindow } = createEnvironment();
+  const family =
+    '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, "Microsoft Yahei", sans-serif';
+  root.computedValues['font-family'] = family;
+  child.computedValues['font-family'] = family;
+  child.computedValues.width = '68.0156px';
+  child.computedValues.height = '25px';
+  child.computedValues['line-height'] = '25px';
+  child.computedValues['white-space'] = 'normal';
+  const originalStyle = 'font-family: "Helvetica Neue" !important; color: red;';
+  root.setAttribute('style', originalStyle);
+  await downloadSnapdomImage({
+    snapdom: {
+      async download() {
+        assert.match(child.style.cssText, /width: 69px/);
+        assert.match(child.style.cssText, /height: 25px/);
+        assert.match(child.style.cssText, /line-height: 25px/);
+        assert.match(child.style.cssText, /white-space: normal/);
+        assert.ok(child.style.cssText.includes(`font-family: ${family};`));
+      },
+    },
+    target: root,
+    fixWebVpn: true,
+    pageWindow,
+  });
+  assert.equal(root.getAttribute('style'), originalStyle);
+  assert.equal(child.getAttribute('style'), null);
+});
+
+test('WebVPN width normalization leaves integer and non-pixel widths unchanged', async () => {
+  for (const [width, expected] of [
+    ['56.0156px', '57px'],
+    ['80px', '80px'],
+    ['0px', '0px'],
+    ['auto', 'auto'],
+    ['100%', '100%'],
+    ['calc(100% - 2px)', 'calc(100% - 2px)'],
+  ]) {
+    const { root, pageWindow } = createEnvironment(0);
+    root.computedValues.width = width;
+    await downloadSnapdomImage({
+      snapdom: {
+        async download() {
+          assert.ok(root.style.cssText.includes(`width: ${expected};`));
+        },
+      },
+      target: root,
+      fixWebVpn: true,
+      pageWindow,
+    });
+  }
+});
+
+test('computed-style collection does not mutate any element before all measurements succeed', async () => {
+  const { root, child, pageWindow } = createEnvironment();
+  root.computedValues['font-family'] = 'Helvetica, sans-serif';
+  child.computedValues['font-family'] = 'Helvetica, sans-serif';
+  const getStyle = pageWindow.getComputedStyle;
+  let calls = 0;
+  pageWindow.getComputedStyle = (element) => {
+    assert.equal(root.style.cssText, 'color: red;');
+    assert.equal(child.style.cssText, '');
+    if (++calls === 2) throw new Error('measurement failed');
+    return getStyle(element);
+  };
+  await assert.rejects(
+    downloadSnapdomImage({
+      snapdom: { download: () => assert.fail('capture must not start') },
+      target: root,
+      fixWebVpn: true,
+      pageWindow,
+    }),
+    /measurement failed/
+  );
+  assert.equal(root.getAttribute('style'), 'color: red;');
+  assert.equal(child.getAttribute('style'), null);
 });

@@ -38,7 +38,6 @@
 import { getGMValue } from '../../../config/gm-store.js';
 import { waitForElement, fillControlledInput } from '../../../utils/dom.js';
 import { getAuthErrorText, hasLegacyAuthCaptcha, isCredentialsErrorText } from '../../../utils/auth-form.js';
-import { escapeHtml } from '../../../utils/file.js';
 import { requireCredentials, notifyCredentialsProblem } from '../../../composables/use-credentials-toast.js';
 import { solveIdsSliderCaptcha } from './slide-captcha.js';
 import { AUTH_SUBMIT_MISSING, scheduleOperationError } from '../../../utils/errors.js';
@@ -82,7 +81,7 @@ export async function idsLogin() {
     if (isCredentialsErrorText(authErrorText)) {
       notifyCredentialsProblem('WebVPN', 0);
     } else {
-      toast('error', `<p>${escapeHtml(authErrorText)}</p>`, 5);
+      toast('error', authErrorText, 5);
     }
     return;
   }

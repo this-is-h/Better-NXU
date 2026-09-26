@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const calls = [];
+const persisted = new Map();
 const gm = {
   async setValue(name, value) {
     calls.push({ api: 'GM.setValue', name, value });
@@ -17,7 +18,7 @@ Object.defineProperty(globalThis.document, '__monkeyWindow-node-test', {
     GM: gm,
     GM_getValue(name, defaultValue) {
       calls.push({ api: 'GM_getValue', name, defaultValue });
-      return defaultValue;
+      return persisted.has(name) ? persisted.get(name) : defaultValue;
     },
     async GM_setValue(name, value) {
       calls.push({ api: 'GM_setValue', name, value });
@@ -90,4 +91,18 @@ test('single writes prefer GM.setValue and fall back to GM_setValue', async () =
 
 test('single writes reject unregistered keys', async () => {
   await assert.rejects(setGMValue('unknown.key', true), /未注册的 GM 存储键/);
+});
+
+test('Tuanwei settings retain explicit old values and both resets default to off', async () => {
+  const { ConfigVersion } = await import('../src/config/config-version.js');
+  const { resetAllSettingValues } = await import('../src/config/gm-store.js');
+  assert.equal(ConfigVersion, 8);
+  for (const key of ['TuanWei.autoDownload', 'TuanWei.autoDownloadClose']) {
+    assert.equal(getGMValue(key), false);
+    persisted.set(key, true);
+    assert.equal(getGMValue(key), true);
+    persisted.delete(key);
+    assert.equal((await resetFunctionSettingValues())[key], false);
+    assert.equal((await resetAllSettingValues())[key], false);
+  }
 });

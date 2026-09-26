@@ -12,7 +12,7 @@
  *    保留 alert 兜底分支（与 1.x 同款防御写法，installNotification 万一失败时仍有提示）。
  *  - 1.x 两个 path 均调 qualityUnavailable，行为一致，2.0 同——路由两个 entry 命中后调同一 register。
  *
- * 03 §2 B8 验收 3：评教任务页与团委页均 toast 未实现，不 throw——本 page 只弹 toast，不做任何业务注入。
+ * 评教任务页只提示尚未实现，不 throw，不执行自动评价或提交。
  * 挂载形态：叠加注入——装 toast + 弹提示，不清 body、不换 title。
  *
  * 注：评教域名 jsfzyjxzlxt.nxu.edu.cn 不在 @match 的 nxu.edu 直连白名单内由 portal 代理可达，但其自有 @match 条目

@@ -4,6 +4,7 @@
  * WebVPN 会改写页面/Worker 的外链请求，不能再让上游自行访问 CDN。
  */
 import { buildWorkerSource, CONF_THRESHOLD } from 'captcha-recognizer-js/src/core.js';
+import { unsafeWindow } from '#gm';
 import { loadSliderAssets } from './slider-resources.js';
 import { SLIDER_RECOGNIZER_UNAVAILABLE, scheduleOperationError } from '../utils/errors.js';
 
@@ -34,7 +35,8 @@ import { SLIDER_RECOGNIZER_UNAVAILABLE, scheduleOperationError } from '../utils/
  */
 
 export const MIN_CONFIDENCE = CONF_THRESHOLD;
-const ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+// 上游 1.0.4 的源码锚点仍为 1.20.1；实际加载版本由 slider-resources.js 决定。
+const UPSTREAM_ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
 const INIT_TIMEOUT_MS = 90000;
 const DETECT_TIMEOUT_MS = 30000;
 let active = null;
@@ -44,11 +46,11 @@ export function buildLocalSliderWorker({ runtimeUrl, moduleUrl, wasmUrl }) {
   let source = buildWorkerSource();
   const replacements = [
     [
-      `importScripts(${JSON.stringify(`${ORT_BASE}ort.min.js`)});`,
+      `importScripts(${JSON.stringify(`${UPSTREAM_ORT_BASE}ort.min.js`)});`,
       `importScripts(${JSON.stringify(runtimeUrl)});`,
     ],
     [
-      `ort.env.wasm.wasmPaths = ${JSON.stringify(ORT_BASE)};`,
+      `ort.env.wasm.wasmPaths = ${JSON.stringify(UPSTREAM_ORT_BASE)};`,
       `ort.env.wasm.wasmPaths = ${JSON.stringify({ mjs: moduleUrl, wasm: wasmUrl })};`,
     ],
   ];
@@ -62,9 +64,17 @@ export function buildLocalSliderWorker({ runtimeUrl, moduleUrl, wasmUrl }) {
 /** 同页并发调用共用下载和初始化；失败后允许重试。 */
 export function getSliderRecognizer() {
   if (active) return active.ready;
-  const state = { controller: new AbortController(), worker: null, urls: [], pending: new Map(), nextId: 0 };
+  // 安装版的 window 是 ScriptCat 沙箱，网关转换器只在真实页面上；所有 Blob/Worker API 必须同源。
+  const state = {
+    pageWindow: unsafeWindow ?? window,
+    controller: new AbortController(),
+    worker: null,
+    urls: [],
+    pending: new Map(),
+    nextId: 0,
+  };
   state.onPageHide = () => stop(state, new Error('滑块识别页面已离开'));
-  window.addEventListener('pagehide', state.onPageHide, { once: true });
+  state.pageWindow.addEventListener('pagehide', state.onPageHide, { once: true });
   active = state;
   state.ready = initialize(state).catch((error) => {
     stop(state, error);
@@ -81,15 +91,16 @@ async function initialize(state) {
   try {
     const assets = await loadSliderAssets(state.controller.signal);
     state.controller.signal.throwIfAborted();
+    const pageWindow = state.pageWindow;
     const objectUrl = (bytes, type) => {
       // WebVPN 会解析带 JS MIME 的 Blob，不支持 ORT mjs 中的顶层 await。
       // 无 MIME 的内层 Blob 保存原始内容；外层含 Blob 时 WebVPN 明确保留，不重写源码。
-      const blob = new Blob([new Blob([bytes])], { type });
-      const url = URL.createObjectURL(blob);
+      const blob = new pageWindow.Blob([new pageWindow.Blob([bytes])], { type });
+      const url = pageWindow.URL.createObjectURL(blob);
       state.urls.push(url);
       // WebVPN createObjectURL 返回伪装成 ids 来源的 URL；importScripts 会自动还原，
       // 原生动态 import 不会。使用其 URL 转换器统一还原为浏览器真实的 Blob 来源。
-      return typeof window.vpn_rewrite_url === 'function' ? window.vpn_rewrite_url(url) : url;
+      return typeof pageWindow.vpn_rewrite_url === 'function' ? pageWindow.vpn_rewrite_url(url) : url;
     };
     // JS 明确按 UTF-8 解码，WASM/模型保持二进制；禁止把 ArrayBuffer 隐式转为字符串。
     const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -98,7 +109,7 @@ async function initialize(state) {
       moduleUrl: objectUrl(decoder.decode(assets.module), 'text/javascript'),
       wasmUrl: objectUrl(assets.wasm, 'application/wasm'),
     });
-    state.worker = new Worker(objectUrl(source, 'text/javascript'));
+    state.worker = new pageWindow.Worker(objectUrl(source, 'text/javascript'));
     state.worker.onmessage = ({ data }) => {
       const id = data.type === 'ready' ? 0 : data.id;
       const pending = state.pending.get(id);
@@ -183,11 +194,11 @@ async function detectImage(state, source, displayWidth, displayHeight) {
 function stop(state, error) {
   if (state.controller.signal.aborted) return;
   state.controller.abort(error);
-  window.removeEventListener('pagehide', state.onPageHide);
+  state.pageWindow.removeEventListener('pagehide', state.onPageHide);
   state.worker?.terminate();
   for (const pending of state.pending.values()) pending.reject(error);
   state.pending.clear();
-  for (const url of state.urls) URL.revokeObjectURL(url);
+  for (const url of state.urls) state.pageWindow.URL.revokeObjectURL(url);
   state.urls.length = 0;
   if (active === state) active = null;
 }

@@ -61,3 +61,63 @@ test('fetchWithTimeout clears its timer after success', async () => {
   const response = { ok: true };
   assert.equal(await fetchWithTimeout(async () => response, '/test'), response);
 });
+
+test('fetchWithTimeout covers stalled response bodies and abort-ignoring wrappers', async () => {
+  let requestSignal;
+  await assert.rejects(
+    fetchWithTimeout(
+      async (_input, init) => {
+        requestSignal = init.signal;
+        return { text: () => new Promise(() => {}) };
+      },
+      '/test',
+      {},
+      { timeoutMs: 5, consumeResponse: (response) => response.text() }
+    ),
+    { name: 'TimeoutError' }
+  );
+  assert.equal(requestSignal.aborted, true);
+});
+
+test('fetchWithTimeout keeps caller cancellation active after headers arrive', async () => {
+  const controller = new AbortController();
+  const request = fetchWithTimeout(
+    async () => ({ text: () => new Promise(() => {}) }),
+    '/test',
+    { signal: controller.signal },
+    {
+      consumeResponse(response) {
+        controller.abort();
+        return response.text();
+      },
+    }
+  );
+  await assert.rejects(request, { name: 'AbortError' });
+});
+
+test('fetchWithTimeout returns consumed response data and preserves reader errors', async () => {
+  assert.deepEqual(
+    await fetchWithTimeout(
+      async () => ({ json: async () => ({ value: 42 }) }),
+      '/test',
+      {},
+      {
+        consumeResponse: (response) => response.json(),
+      }
+    ),
+    { value: 42 }
+  );
+  await assert.rejects(
+    fetchWithTimeout(
+      async () => ({}),
+      '/test',
+      {},
+      {
+        consumeResponse() {
+          throw new SyntaxError('invalid response');
+        },
+      }
+    ),
+    { name: 'SyntaxError', message: 'invalid response' }
+  );
+});

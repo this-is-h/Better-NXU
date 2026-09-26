@@ -21,8 +21,8 @@
 | `Jwgl.autoLogin`             |            `false` | 新安装默认关闭；已有用户已保存的值保持不变，需在设置中主动开启 |
 | `Jwgl.courseBeautify`        |             `true` | 自动美化课表                                                   |
 | `Jwgl.customMenu`            | `['全部学期成绩']` | 教务自定义菜单                                                 |
-| `TuanWei.autoDownload`       |            `false` | 历史兼容，当前未实现                                           |
-| `TuanWei.autoDownloadClose`  |            `false` | 历史兼容，当前未实现                                           |
+| `TuanWei.autoDownload`       |            `false` | 团委直连附件页自动识别验证码并下载                             |
+| `TuanWei.autoDownloadClose`  |            `false` | 自动下载完成回调后关闭附件页，依赖自动下载开关                 |
 | `firstSet`                   |                `0` | 是否关闭过首次配置提示                                         |
 | `configVersion`              |                `0` | 已确认的配置结构版本                                           |
 | `icsId`                      |        `undefined` | 当前账号门户课表分享 ID 缓存                                   |
@@ -122,7 +122,8 @@ header 的 Base64URL 文本同时作为 AES-GCM AAD，因此篡改 header、密�
 | 学工 `getStuBaseInfo.do`       | 验证导出者身份              | 用户确认的学号、现有登录 cookie                                           |
 | 教师查询代理接口               | 查询工号                    | 教师姓名关键词、页码                                                      |
 | `v1.hitokoto.cn`               | 点击版本号显示一言          | 不发送业务凭证                                                            |
-| Tesseract worker/core/lang CDN | OCR 运行时                  | 下载静态资源；验证码图片仍由当前教务页面读取                              |
+| Tesseract worker/core/lang CDN | OCR 运行时                  | 下载静态资源；团委经 GM 匿名下载并校验 SHA384，验证码在本地识别           |
+| 团委附件下载端点               | 验证验证码、获取附件        | 同源 fetch 携带本页会话和验证码，禁止重定向；仅接受有效附件响应           |
 | `cdn.jsdelivr.net`             | IDS 滑块 ORT/WASM/ONNX 模型 | GM 匿名下载固定版本静态资源并校验 SHA384；不发送账号、cookie 或验证码图片 |
 
 工具页会在后台打开信息门户和学工系统代理页并在约 5 秒后尝试关闭，用于建立所需登录态。该动作不绕过学校认证。
@@ -131,7 +132,8 @@ header 的 Base64URL 文本同时作为 AES-GCM AAD，因此篡改 header、密�
 
 - `GM_getValue` / `GM.setValue` / `GM.setValues`：配置、凭证、课表 ID、密钥；旧式写 API 仅作兼容回退。
 - `GM_getResourceText` / `GM_addElement` / `GM_addStyle`：读取固定资源、把可执行资源注入真实页面、注入样式；GM 注入路径可绕过 CSP。
-- `GM_openInTab` / `window.close`：设置页、后台预热和失败页关闭。
+- `GM_openInTab` / `window.close`：设置页、后台预热、失败页与团委下载完成后的关闭。
+- `GM_download`：将已验证的团委附件转换为 data URL，以 browser 模式保存，完成回调后才能自动关页；不将附件传至第三方。
 - `GM.xmlHttpRequest`：ICS/一言及滑块静态资源等受权限控制的请求；滑块资源显式使用 `anonymous: true`。
 - 原生 `<a download>`：下载运行时生成的课表 Blob URL，并在完成后回收 Object URL。
 - `GM_setClipboard`：教师工号、知网/万方选区、密钥复制。

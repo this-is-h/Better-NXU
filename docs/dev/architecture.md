@@ -10,7 +10,7 @@ Better NXU 同时增强 WebVPN、统一身份认证、教务系统、信息门�
 - 安装脚本必须保持单文件，不含 SystemJS 或动态 chunk。
 - 依赖 ScriptCat `@run-at document-idle` 的“所有内容加载完成”保证，入口不再重复等待 `readyState`。
 - 运行在 ScriptCat `@inject-into page` 模型下，共享存储域为 `h.nxu`。
-- 当前元数据固定为 10 个 `@match`、15 个 `@grant`、7 个 `@require`、8 个 `@resource`、4 个 `@connect`，并包含完整 `==UserConfig==`。
+- 当前元数据固定为 16 个 `@match`、16 个 `@grant`、7 个 `@require`、8 个 `@resource`、5 个 `@connect`，并包含完整 `==UserConfig==`。
 
 ## 2. 启动与分发
 
@@ -75,27 +75,28 @@ utils -----------------> 浏览器基础 API（不依赖上层）
 
 路由是有序首命中表。更具体或更敏感的路由必须放在宽泛路由之前。
 
-| site/page                     | 主要命中条件                                                    | 行为                                 |
-| ----------------------------- | --------------------------------------------------------------- | ------------------------------------ |
-| `sslvpn/settings`             | `sslvpn.nxu.edu.cn/h/settings`                                  | 接管页面，渲染设置中心               |
-| `sslvpn/about`                | `sslvpn.nxu.edu.cn/h/about`                                     | 接管页面，渲染项目说明与更新日志     |
-| `jwgl/login`                  | 教务域名、教务 IP 或 WebVPN 代理；`index.action`/`login.action` | 自动登录和 OCR                       |
-| `jwgl/home`                   | 同上；`cas.action`/`home.action`                                | 注入“全部学期成绩”菜单               |
-| `jwgl/course-table-container` | `courseTableForStd.action?method=stdHome`                       | iframe 高度同步                      |
-| `jwgl/course-table`           | `courseTableForStd.action?method=courseTable`                   | 课表美化与导出栏                     |
-| `weixin/fast-login`           | `open.weixin.qq.com` 且 URL 含 `nxu.edu`                        | 强制 `fast_login=1` 并点击快速登录   |
-| `ids/login`                   | IDS 直连或 WebVPN 真实主机为 IDS 的登录路径                     | 自动登录或显示填充按钮               |
-| `ids/re-auth`                 | IDS 二次认证路径                                                | 可选微信快速二次认证                 |
-| `ids/callback`                | IDS 回调或 WebVPN 代理微信扫码页                                | 修复授权回跳                         |
-| `webvpn/home`                 | WebVPN 根路径                                                   | 菜单、搜索浮球、抢课/工具/自定义卡片 |
-| `webvpn/knowledges-copy`      | 代理知网/万方指定 HTML 阅读路径                                 | 选中文本自动复制                     |
-| `webvpn/tools`                | `/wengine-vpn/failed` 且页面含 `地址：/h/tools`                 | 接管为小工具页                       |
-| `webvpn/failed`               | 同一失败路径但不是工具标记                                      | 按配置尝试关闭标签页                 |
-| `sysaq/login`                 | 直连或代理 `/lab-platform/`                                     | 跳转登录页                           |
-| `sysaq/auth`                  | 直连或代理 `/lab-platform/login`                                | 点击统一身份认证                     |
-| `portal/hall`                 | 直连 `portal.nxu.edu.cn` 或 WebVPN 真实主机为该域名             | 门户 SPA 卡片注入                    |
-| `pingjiao/notify`             | 两个评教任务路径                                                | 提示尚未实现，不自动评教             |
-| `tuanwei/notify`              | 团委全站                                                        | 兼容占位，不做下载或 UI 操作         |
+| site/page                     | 主要命中条件                                                                                  | 行为                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `sslvpn/settings`             | `sslvpn.nxu.edu.cn/h/settings`                                                                | 接管页面，渲染设置中心               |
+| `sslvpn/about`                | `sslvpn.nxu.edu.cn/h/about`                                                                   | 接管页面，渲染项目说明与更新日志     |
+| `jwgl/login`                  | 教务域名、教务 IP 或 WebVPN 代理；`index.action`/`login.action`                               | 自动登录和 OCR                       |
+| `jwgl/home`                   | 同上；`cas.action`/`home.action`                                                              | 注入“全部学期成绩”菜单               |
+| `jwgl/course-table-container` | `courseTableForStd.action?method=stdHome`                                                     | iframe 高度同步                      |
+| `jwgl/course-table`           | `courseTableForStd.action?method=courseTable`                                                 | 课表美化与导出栏                     |
+| `weixin/fast-login`           | `open.weixin.qq.com` 且 URL 含 `nxu.edu`                                                      | 强制 `fast_login=1` 并点击快速登录   |
+| `ids/login`                   | IDS 直连或 WebVPN 真实主机为 IDS 的登录路径                                                   | 自动登录或显示填充按钮               |
+| `ids/re-auth`                 | IDS 二次认证路径                                                                              | 可选微信快速二次认证                 |
+| `ids/callback`                | IDS 回调或 WebVPN 代理微信扫码页                                                              | 修复授权回跳                         |
+| `webvpn/home`                 | WebVPN 根路径                                                                                 | 菜单、搜索浮球、抢课/工具/自定义卡片 |
+| `cnki/reader`                 | 直连、zylib 或 WebVPN 下 `kns.cnki.net`/`www.cnki.net` 的 `/reader/xml`、`/xmlRead/trialRead` | 无缺口滑块拖动、选中文字复制         |
+| `wanfang/reader`              | 直连、zylib 或 WebVPN 下 `f.wanfangdata.com.cn/online/pc/periodical_html`                     | 选中文字自动复制                     |
+| `webvpn/tools`                | WebVPN 的 `/h/tools`，或 `/wengine-vpn/failed` 且页面含工具地址标记                           | 接管为小工具页                       |
+| `webvpn/failed`               | 同一失败路径但不是工具标记                                                                    | 按配置尝试关闭标签页                 |
+| `sysaq/login`                 | 直连或代理 `/lab-platform/`                                                                   | 跳转登录页                           |
+| `sysaq/auth`                  | 直连或代理 `/lab-platform/login`                                                              | 点击统一身份认证                     |
+| `portal/hall`                 | 直连 `portal.nxu.edu.cn` 或 WebVPN 真实主机为该域名                                           | 门户 SPA 卡片注入                    |
+| `pingjiao/notify`             | 两个评教任务路径                                                                              | 提示尚未实现，不自动评教             |
+| `tuanwei/download`            | 团委直连 `/system/_content/download.jsp`，含附件类型、owner 和 wbfileid 参数                  | 验证码识别、下载与可选关页           |
 
 WebVPN 代理 URL 形如：
 
@@ -137,7 +138,11 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 3. OCR 初始化最长 45 秒、识别最长 30 秒，任何失败都保留手动输入路径并终止 worker。
 4. 课表页先注入导出栏，再按 `Jwgl.courseBeautify` 重建课程单元格。
 5. 美化和导出共用 `parseCourseCellFromJwgl()`，避免两套解析规则漂移。
-6. 子 iframe 美化完成后向父页面发送 `COURSE_BEAUTIFY_CHANGED`，父页面重新计算高度。
+6. 父页面在 iframe 加载后、收到该 iframe 的 `COURSE_BEAUTIFY_CHANGED` 通知时重新计算高度；跨源读取失败时保留已有高度。监听器随页面生命周期清理。
+
+### 团委附件下载
+
+`tuanwei/pages/download.page.js` 按两个历史配置开关启用。`tesseract-local.js` 经 GM 匿名下载并校验固定 SHA384 的 worker、内嵌 WASM core 和语言包，再使用本地 Blob URL，适配学校 CSP。验证码只从当前 `#codeimg` 绘制到 Canvas，不重新请求验证码接口。自动点击确定时临时拦截该次导航，使用同源 fetch 获取并验证附件，再交给 `GM_download` 的 browser 模式保存 data URL；只有完成回调到达才按设置关页。手动操作保留原处理器，重试最多三次，离页时取消并清理资源。
 
 ### 课表工具
 
@@ -147,12 +152,18 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 
 直连和 WebVPN 代理共用 `sites/portal/pages/hall.page.js`；该 page 在每次 SPA 导航时实时解析 pathname 或代理 realPath，再调用站点内 `runtime/spa-history.js` 的 `patchPortalHistory()` 与 `injectPortalHall()`。history 补丁只安装一次，导航回调存入集合；并发注入通过 in-flight Promise 合并。不能用“页面生命周期永久已注入”标志，因为从 `#/hall` 切走时 Vue 会销毁卡片，切回必须重新注入。
 
+### 文献阅读页
+
+`utils/library-reader.js` 集中管理平台主机、阅读路径和能力，解析直连、zylib 和已识别 WebVPN 的阅读位置，并为 Vite 生成阅读页匹配范围。`router.js` 根据平台表生成路由，`composables/library-reader.js` 统一编排能力；新增仅复制的平台无需另建 page。知网、万方保留薄 page 入口，知网 page 注入专用滑块实现。zylib 解析只用于阅读增强，不改变认证上下文。
+
+`composables/reader-copy.js` 管理选区复制，`utils/slider-drag.js` 只负责鼠标拖动；IDS 的缺口识别、重试和知网的无缺口控件发现留在各自站点内。知网不初始化识别模型，合成拖动事件也不会触发复制。
+
 ## 7. 用户脚本运行时资源
 
 | 类型        | 资源                    | 用途与加载方式                                      |
 | ----------- | ----------------------- | --------------------------------------------------- |
 | `@require`  | h.notification + bridge | toast 与 ScriptCat 配置入口，桥接到真实 page window |
-| `@require`  | Vue 3.5.22              | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果     |
+| `@require`  | Vue 3.5.43 生产版       | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果     |
 | `@require`  | snapdom + bridge        | 图片导出                                            |
 | `@require`  | XLSX + bridge           | Excel 导出                                          |
 | `@resource` | FontAwesome CSS         | toast 与页面图标，注入前修正 webfont 相对路径       |

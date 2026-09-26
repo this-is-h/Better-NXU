@@ -6,7 +6,7 @@
  * 入口/被谁调用：sites/jwgl/pages/login.page.js（jwglLogin 启用自动登录时调）
  *
  * 抽取边界：1.x `GetVerificationCode(web)` 一个函数分发 WebVPN/Jwgl/TuanWei 三类验证码 url。2.0 拆模块后，
- *  各 site 自带验证码 url 不同（webvpn ids 走 webvpn 代理 captcha、jwgl 走 `captcha/image.action`、tuanwei 已停用），
+ *  各 site 自带验证码 url 不同（jwgl 走 `captcha/image.action`；团委识别页面已显示的图片），
  *  故不做通用分发器，仅迁 jwgl 分支为本模块 `readJwglCaptcha`。WebVPN ids 登录的验证码在 ids-login 主干另行处理
  * （1.x ids 走 `hasLegacyAuthCaptcha` 人工填，不 OCR）。
  *

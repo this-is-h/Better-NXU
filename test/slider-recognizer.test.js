@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 
 const gm = {};
-document[globalThis.__MONKEY_WINDOW_KEY__] = { GM: gm };
+// ScriptCat's installed script window is distinct from the real page window.
+const pageWindow = Object.create(globalThis);
+document[globalThis.__MONKEY_WINDOW_KEY__] = { GM: gm, unsafeWindow: pageWindow };
 const { SLIDER_ASSETS } = await import('../src/libraries/slider-resources.js');
 const { buildLocalSliderWorker, getSliderRecognizer, disposeSliderRecognizer } =
   await import('../src/libraries/slider-recognizer.js');
@@ -179,7 +181,7 @@ test('WebVPN masked Blob URLs are normalized for native module imports and clean
   const revoked = [];
   const originalRewrite = window.vpn_rewrite_url;
   window.vpn_rewrite_url = function (url) {
-    assert.equal(this, window);
+    assert.equal(this, pageWindow);
     normalized.push(url);
     return url.replace('blob:https://ids.nxu.edu.cn/', 'blob:https://webvpn.nxu.edu.cn/');
   };
@@ -200,6 +202,84 @@ test('WebVPN masked Blob URLs are normalized for native module imports and clean
   assert.doesNotMatch(source, /blob:https:\/\/ids.nxu.edu.cn/);
   rec.dispose();
   assert.deepEqual(revoked, normalized);
+});
+
+test('installed sandbox uses page Blob, URL and Worker together with the page-only URL rewriter', async (t) => {
+  const revoked = [];
+  const normalized = [];
+  const SandboxWorker = globalThis.Worker;
+  Object.assign(pageWindow, {
+    Blob: globalThis.Blob,
+    URL: {
+      createObjectURL(blob) {
+        assert.equal(this, pageWindow.URL);
+        blobs.push(blob);
+        return `blob:https://ids.nxu.edu.cn/${blobs.length}`;
+      },
+      revokeObjectURL(url) {
+        assert.equal(this, pageWindow.URL);
+        revoked.push(url);
+      },
+    },
+    vpn_rewrite_url(url) {
+      assert.equal(this, pageWindow);
+      normalized.push(url);
+      return url.replace('blob:https://ids.nxu.edu.cn/', 'blob:https://webvpn.nxu.edu.cn/');
+    },
+    Worker: class extends SandboxWorker {
+      constructor(url) {
+        if (!url.startsWith('blob:https://webvpn.nxu.edu.cn/')) {
+          throw new DOMException('Worker script cannot be accessed from origin', 'SecurityError');
+        }
+        super(url);
+      }
+    },
+  });
+  t.after(() => {
+    disposeSliderRecognizer();
+    for (const key of ['Blob', 'URL', 'Worker', 'vpn_rewrite_url']) delete pageWindow[key];
+  });
+  assert.equal(typeof window.vpn_rewrite_url, 'undefined');
+  assert.throws(() => new pageWindow.Worker('blob:https://ids.nxu.edu.cn/4'), { name: 'SecurityError' });
+  t.mock.method(globalThis, 'Worker', function () {
+    throw new Error('sandbox Worker must not be used');
+  });
+  t.mock.method(globalThis, 'Blob', function () {
+    throw new Error('sandbox Blob must not be used');
+  });
+  t.mock.method(URL, 'createObjectURL', () => {
+    throw new Error('sandbox URL must not be used');
+  });
+  const rec = await getSliderRecognizer();
+  assert.equal(workers[0].url, 'blob:https://webvpn.nxu.edu.cn/4');
+  const source = await blobs[3].text();
+  assert.doesNotMatch(source, /blob:https:\/\/ids.nxu.edu.cn/);
+  assert.match(source, /"mjs":"blob:https:\/\/webvpn.nxu.edu.cn\/2"/);
+  assert.deepEqual(
+    (await rec.detect({ data: new Uint8ClampedArray(4), width: 1, height: 1 })).box,
+    detection.box
+  );
+  rec.dispose();
+  assert.deepEqual(revoked, normalized);
+  assert.equal(workers[0].terminated, true);
+  assert.equal(listeners.size, 0);
+});
+
+test('Worker constructor failure revokes all allocated URLs and allows a new initialization', async (t) => {
+  const Worker = globalThis.Worker;
+  const replacement = t.mock.method(globalThis, 'Worker', function () {
+    throw new DOMException('Worker script cannot be accessed from origin', 'SecurityError');
+  });
+  await assert.rejects(
+    getSliderRecognizer(),
+    (error) => error.code === 'SLIDER_RECOGNIZER_UNAVAILABLE' && /cannot be accessed/.test(error.message)
+  );
+  assert.equal(urls.size, 0);
+  assert.equal(listeners.size, 0);
+  replacement.mock.restore();
+  assert.equal(globalThis.Worker, Worker);
+  await getSliderRecognizer();
+  assert.equal(workers.length, 1);
 });
 
 test('worker init error id=0 rejects immediately, cleans up and permits retry', async () => {

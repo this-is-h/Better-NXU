@@ -55,6 +55,8 @@
 
 IDS 滑块若出现 `ort.min.js` 的 MIME 类型为 `text/html` 的错误，请更新脚本后刷新 WebVPN 登录页。新版通过 ScriptCat 后台下载并校验滑块资源，不再经 WebVPN 代理 CDN。首次下载较大；若提示下载或完整性校验失败，可刷新后重试或手动拖动滑块。
 
+如果 `pnpm dev` 中滑块正常，而安装脚本报 `Failed to construct 'Worker' ... cannot be accessed from origin`，请运行 `pnpm build`，在 ScriptCat 中更新 `dist/better-nxu.user.js`，停用开发脚本后完整刷新登录页。修复版从真实页面取得 WebVPN 地址转换器及配套 Blob/Worker API。分别检查 IDS 直连和 WebVPN 的首次识别、再次识别与失败后的手动操作；开发环境通过不能代替安装版验证。
+
 若报 `Unexpected identifier 'ArrayBuffer'`，也是 WebVPN 兼容问题：旧版创建 JavaScript Blob 时未先将二进制解码为文本。更新后需刷新整个登录页，使旧 Worker 和页面模块重新加载；使用 `pnpm dev` 调试时也需要刷新页面。
 
 若出现 `Unexpected token` 或 `Failed to fetch dynamically imported module: blob:https://ids.nxu.edu.cn/...`，说明 WebVPN 改写了本地模块或其 Blob 来源。更新后的脚本会保留模块内容并还原真实 Blob 地址；请完整刷新登录页后重试。
@@ -158,9 +160,21 @@ OCR 不是安全验证绕过，只是读取当前页面验证码，准确率受�
 - 检查浏览器是否阻止 iframe 或跨页面访问；
 - 学校可能更改了 `iframe#template-container`、`div.city_sort` 或 `div.sortItem` 结构，需要脚本更新。
 
+### WebVPN 导出图片的周次文字重叠
+
+更新脚本后重新打开课表页并重新导出。此问题来自教室行在截图中意外换行，末尾数字覆盖了下一行周次。脚本现已避免复制样式时小数宽度缩小，保留原有字体和正常换行；已生成的旧图片需要重新导出。
+
 ## 17. 知网/万方选中文字没有复制
 
-该功能只匹配 WebVPN 代理的特定 HTML/XML 阅读路径。PDF 阅读器、普通详情页、图片和新出现的其他路径不会触发。
+### 开发脚本报 `__vite-plugin-monkey.entry.js` MIME 错误
+
+若正在使用 `pnpm dev`，并看到入口请求变成 `https://kns.cnki.net/__vite-plugin-monkey.entry.js`、由 Service Worker 返回 `text/html`，这是 zylib 代理接管本地开发请求造成的，脚本主程序尚未启动。
+
+运行 `pnpm build`，在 ScriptCat 中停用 `server:Better NXU`，安装或更新 `dist/better-nxu.user.js`，然后完整刷新阅读页。仅启用一份 Better NXU，确认 Network 中不再请求该开发入口。不要注销 zylib 的 Service Worker，阅读页面本身也依赖它。持续修改代码时可使用 `pnpm dev:build`；构建完成后仍需更新 ScriptCat 中的脚本，详见[开发说明](../dev/development.md#zylib-阅读页的开发入口-mime-错误)。
+
+### 已安装构建脚本，但没有复制提示
+
+该功能匹配直连、校园网 zylib 和 WebVPN 代理的指定 HTML/XML 阅读路径：知网 `kns.cnki.net`/`www.cnki.net` 的 `/reader/xml`、`/xmlRead/trialRead`，以及万方 `f.wanfangdata.com.cn/online/pc/periodical_html`。zylib 阅读地址必须包含有效且唯一的 `__proto__`、`__host__` 参数，或使用指向阅读页的 `/-----https://目标主机/路径` 入口。PDF 阅读器、普通详情页、图片和其他路径不会触发。
 
 进入支持页面时应看到“已开启复制”提示。浏览器或系统拒绝剪贴板权限时，检查 ScriptCat 的 `GM_setClipboard` 权限。无选区或只点击不拖选不会复制。
 
@@ -170,7 +184,11 @@ OCR 不是安全验证绕过，只是读取当前页面验证码，准确率受�
 
 ## 19. 评教和团委功能为什么没有执行
 
-自动评教尚未实现，评教任务页只提示手动完成。团委附件验证码识别/自动下载也未实现，脚本在团委站点不执行操作。设置中灰色团委项是兼容占位，不代表即将自动运行。
+自动评教尚未实现，评教任务页只提示手动完成。
+
+团委附件下载需在设置页“团委官网页面设置”中开启自动下载；要下载后关页，还需开启自动关闭。仅支持直连官网的附件验证码页。若出现 OCR 资源下载失败，检查 ScriptCat 是否允许访问 `unpkg.com`；若保存失败，检查下载权限，也可手动填写验证码后点击原确定按钮。
+
+验证码识别最多尝试三次，键盘输入、点击验证码图片或手动点击确定会接管流程。脚本在收到下载完成回调前保留页面；浏览器拒绝关页时可以手动关闭。部分 ScriptCat 版本也会把用户取消下载报告为成功，因此自动关页以管理器回调为准，不能独立检查磁盘文件；如需逐次选择保存位置并确认结果，可关闭自动关页。
 
 ## 20. 如何重置设置
 

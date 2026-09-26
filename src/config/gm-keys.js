@@ -20,8 +20,8 @@
  *  - username/password 默认 undefined（用户首次配置前无值）。
  *  - 两组 autoLogin 默认 false；已有用户已持久化的 true/false 不会被覆盖。
  *  - customCard/customMenu/qualityJson 默认数组；旧值中的已下线卡片名称会被渲染层忽略但不强制删除。
- *  - firstSet=0 / configVersion=0（与 ConfigVersion=7 比对触发首启/升级引导，见 config-version.js）。
- *  - TuanWei.autoDownload*：1.x case 已注释、业务未消费（01 §4 备注），此处保留兼容（C3）。
+ *  - firstSet=0 / configVersion=0（与 ConfigVersion 比对触发首启/升级引导，见 config-version.js）。
+ *  - TuanWei.autoDownload*：附件验证码下载与下载后关闭页面，默认关闭，保留已有显式值。
  */
 export const GM_VALUE_DEFAULTS = Object.freeze({
   'WebVPN.username': undefined,

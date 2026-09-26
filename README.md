@@ -65,11 +65,8 @@
 ### 5. 团委官网
 
 - ✔️已实现（🔹为部分实现或存在问题）
-  - 暂无
-- 📅计划中
-  - 暂无
-- ⛔无法实现（技术限制，可能是暂时的）
-  - 下载附件自动识别验证码并下载（似乎因CSP限制无法加载tessact.js）
+  - 附件下载页使用 Tesseract 自动识别验证码并点击确定，最多尝试三次，失败时保留手动下载。
+  - 可在下载完成回调后自动关闭附件页面。请在设置页“团委官网页面设置”中开启自动下载和自动关闭；两项默认关闭。
 
 ## ⭐️关于我们
 
@@ -92,6 +89,6 @@
 - 右：QQ交流群
 
 <div style="display: flex; justify-content: center; align-items: center;">
-  <img src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/issue.png" style="width: 49%;padding: 10px;" referrerpolicy="no-referrer"/>
-  <img src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/group.png" style="width: 49%;padding: 10px;" referrerpolicy="no-referrer"/>
+  <img referrerpolicy="no-referrer" src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/issue.png" style="width: 49%;padding: 10px;"/>
+  <img referrerpolicy="no-referrer" src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/group.png" style="width: 49%;padding: 10px;"/>
 </div>

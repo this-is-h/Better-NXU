@@ -10,7 +10,7 @@
 # 依赖说明：
 #  - 包管理器：pnpm（本项目构建统一用 pnpm；lock 文件为 pnpm-lock.yaml，须入库）。
 #  - 首次使用前：仓库需含 pnpm-lock.yaml，否则 `--frozen-lockfile` 会失败。
-#  - Node 22：vite 8 要求 node ^20.19 || >=22.12。
+#  - Node 22：完整工具链要求 ^22.13.0 || >=24.0.0；CI 使用最新 Node 22 补丁。
 #
 # 产物去向：构建产物提交回 main 分支（github-actions[bot] 作者）。若 main 有分支保护
 #      规则拒绝 bot 推送，请在规则中放行该提交或改用 Releases/Artifact 方式分发。

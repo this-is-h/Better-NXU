@@ -1,5 +1,6 @@
 /**
  * Execute a fetch request with an internal timeout while preserving an optional caller signal.
+ * Pass options.consumeResponse to keep timeout/cancellation active while reading the response body.
  * Timeout failures use the stable `TimeoutError` name so callers can provide operation-specific text.
  */
 export async function fetchWithTimeout(fetchImpl, input, init = {}, options = {}) {
@@ -7,7 +8,7 @@ export async function fetchWithTimeout(fetchImpl, input, init = {}, options = {}
 
   const requestedTimeout = Number(options.timeoutMs);
   const timeoutMs = Number.isFinite(requestedTimeout) && requestedTimeout > 0 ? requestedTimeout : 15000;
-  const externalSignal = options.signal;
+  const externalSignal = options.signal ?? init.signal;
   const controller = new AbortController();
   let timedOut = false;
 
@@ -24,8 +25,21 @@ export async function fetchWithTimeout(fetchImpl, input, init = {}, options = {}
     controller.abort();
   }, timeoutMs);
 
+  let rejectOnAbort;
+  const interrupted = new Promise((_resolve, reject) => {
+    rejectOnAbort = () => reject(controller.signal.reason);
+    controller.signal.addEventListener('abort', rejectOnAbort, { once: true });
+  });
+  const execute = async () => {
+    const response = await fetchImpl(input, { ...init, signal: controller.signal });
+    controller.signal.throwIfAborted();
+    return typeof options.consumeResponse === 'function' ? options.consumeResponse(response) : response;
+  };
+
   try {
-    return await fetchImpl(input, { ...init, signal: controller.signal });
+    const result = await Promise.race([execute(), interrupted]);
+    controller.signal.throwIfAborted();
+    return result;
   } catch (error) {
     if (timedOut) {
       const timeoutError = new Error(`请求在 ${timeoutMs}ms 内未完成`, { cause: error });
@@ -40,6 +54,7 @@ export async function fetchWithTimeout(fetchImpl, input, init = {}, options = {}
     throw error;
   } finally {
     clearTimeout(timer);
+    controller.signal.removeEventListener('abort', rejectOnAbort);
     externalSignal?.removeEventListener('abort', abortFromCaller);
   }
 }

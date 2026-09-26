@@ -7,12 +7,12 @@
  * 加载模型：所有 page 使用静态 import，构建保持一个无需额外运行时的用户脚本文件。
  *
  * 须保留的 1.x 判定形态（当前路由约束见 docs/dev/architecture.md）：
- *  - `202.201.128.234*` 用 hostname 子串判定兜住 :8080~:8083 端口变体（B6 入表时）。
+ *  - `202.201.128.234` 使用精确 hostname，端口不影响匹配（B6 入表时）。
  *  - `open.weixin.qq.com` 须 URL 含 `nxu.edu` 守卫才命中（1.x 行 2354）。
- *  - `tuanwei.nxu.edu.cn` 命中后空操作占位（与 1.x case 整段注释逐字维度一致；B8 已入）。
+ *  - `tuanwei.nxu.edu.cn` 仅附件下载端点启用验证码识别与下载。
  *  - `sslvpn.nxu.edu.cn`：/h/settings、/h/about 命中（设置/关于仅 sslvpn，需求4）；其它 path 不命中。
- *  - `webvpn.nxu.edu.cn`：/wengine-vpn/failed + body 含 /h/tools → tools；其它 /wengine-vpn/failed → failed；
- *    知网/万方阅读页；代理 sysaq/ids/weixin/portal 各按 realHost 命中；最后 default → home（B7 入表时）。
+ *  - `webvpn.nxu.edu.cn`：/h/tools 或带工具标记的失败页 → tools；其它失败页 → failed；
+ *    知网/万方阅读页；代理 sysaq/ids/weixin/portal 各按 realHost 命中；仅根路径 → home。
  */
 import { MyConsole } from './utils/console.js';
 import { getContext } from './context.js';
@@ -28,16 +28,25 @@ import { register as registerJwglHome } from './sites/jwgl/pages/home.page.js';
 import { register as registerJwglCourseTableContainer } from './sites/jwgl/pages/course-table-container.page.js';
 import { register as registerJwglCourseTable } from './sites/jwgl/pages/course-table.page.js';
 import { register as registerWebvpnHome } from './sites/webvpn/pages/home.page.js';
-import { register as registerWebvpnKnowledgesCopy } from './sites/webvpn/pages/knowledges-copy.page.js';
+import { register as registerCnkiReader } from './sites/cnki/pages/reader.page.js';
+import { register as registerWanfangReader } from './sites/wanfang/pages/reader.page.js';
 import { register as registerWebvpnFailed } from './sites/webvpn/pages/failed.page.js';
 import { register as registerWebvpnTools } from './sites/webvpn/pages/tools.page.js';
 import { register as registerSysaqLogin } from './sites/sysaq/pages/login.page.js';
 import { register as registerSysaqAuth } from './sites/sysaq/pages/auth.page.js';
 import { register as registerPingjiaoNotify } from './sites/pingjiao/pages/notify.page.js';
-import { register as registerTuanweiNotify } from './sites/tuanwei/pages/notify.page.js';
+import { register as registerTuanweiDownload } from './sites/tuanwei/pages/download.page.js';
 import { register as registerPortalHall } from './sites/portal/pages/hall.page.js';
 import { isWebVpnRealHost, WEBVPN_HOST_TOKENS } from './utils/webvpn-url.js';
-import { isWebVpnIdsLoginRoute, isWebVpnIdsReAuthRoute } from './utils/route-guards.js';
+import { LIBRARY_READER_PLATFORMS, resolveLibraryReader } from './utils/library-reader.js';
+import { createLibraryReaderRegistration } from './composables/library-reader.js';
+import {
+  isWebVpnIdsLoginRoute,
+  isWebVpnIdsReAuthRoute,
+  isWebVpnToolsRoute,
+  isWebVpnFailedRoute,
+  isTuanweiDownloadRoute,
+} from './utils/route-guards.js';
 
 /**
  * 判当前是否为 jwgl 教务系统任意一种命中形态（直连 jwgl.nxu.edu.cn / IP 202.201.128.234 含端口变体 /
@@ -45,7 +54,7 @@ import { isWebVpnIdsLoginRoute, isWebVpnIdsReAuthRoute } from './utils/route-gua
  * @returns {boolean}
  */
 function isJwglSite(ctx) {
-  // 直连 jwgl.nxu.edu.cn 或 IP 子串判定兜端口（02 §7.2，1.x 行 2570 default 用 indexOf 子串）。
+  // hostname 不含端口，教务域名和 IP 均精确比较。
   if (ctx.host === 'jwgl.nxu.edu.cn' || ctx.isJwglIp) return true;
   // webvpn 代理：realHost 为 jwgl.nxu.edu.cn 或 202.201.128.234（1.x 行 2366 isWebVpnRealHost 二选一）。
   if (
@@ -69,14 +78,18 @@ function jwglPathOrUrl(ctx) {
 }
 
 const console = MyConsole('[路由]');
+const readerRegistrations = new Map([
+  ['cnki', registerCnkiReader],
+  ['wanfang', registerWanfangReader],
+]);
 
 /**
  * 命中判定表：有序数组，每项 { site, page, module, test(ctx) }。
  * module 为已静态 import 的 page 模块（含 register）。顺序敏感——更具体的判定须排在更宽泛判定前。
  *
  * 已落地：sslvpn(settings/about)、jwgl(login/home/course-table-container/course-table)、
- *         weixin(fast-login)、ids(login/re-auth/callback)、webvpn(home/knowledges-copy/failed/tools)、
- *         sysaq(login/auth 直连+代理)、pingjiao(notify)、tuanwei(notify)、portal(hall 直连+代理)。
+ *         weixin(fast-login)、ids(login/re-auth/callback)、webvpn(home/failed/tools)、cnki(reader)、wanfang(reader)、
+ *         sysaq(login/auth 直连+代理)、pingjiao(notify)、tuanwei(download)、portal(hall 直连+代理)。
  *         sslvpn settings/about 为真实分发（B9 并入 sslvpn/pages，无 shared 转发层）。详见各 entry 注释。
  * webvpn 代理 ids/weixin 三分支（见下 webvpn-via-ids-* entry，2026-08-01 补）：1.x webvpn case 行 2386-2398
  *   原本就是 webvpn host 下复用 ids/weixin page 的登录/二次确认/扫码能力。2.0 此前漏建——webvpn 代理下访问
@@ -85,7 +98,7 @@ const console = MyConsole('[路由]');
  *   排在 webvpn home 之前抢命中（host 为 webvpn.nxu.edu.cn，与 ids/weixin 直连 entry 天然互斥）。
  *   注意：webvpn 代理 jwgl 已在本表命中（见 jwgl 各 entry 的 webvpn 分支，isJwglSite），webvpn default home
  *   须排在 jwgl entry 之后，避免代理 jwgl 被误判进 home。
- * 路由表已覆盖当前全部 10 个 @match；高风险 IDS 代理路由另经 route-guards 做严格主机/路径校验。
+ * 路由表覆盖校园站点与文献阅读页；高风险 IDS 代理路由另经 route-guards 做严格主机/路径校验。
  */
 const JUDGE_TABLE = [
   // === sslvpn：仅承载 settings/about 两页的分发（需求4：设置/关于仅 sslvpn 命中）===
@@ -195,7 +208,7 @@ const JUDGE_TABLE = [
   // === webvpn 代理 ids/weixin 三分支（1.x webvpn case 行 2386-2398 复用 ids/weixin page）===
   // webvpn host 下命中 ids 登录页/二次确认页/微信扫码页时，复用直连 ids/weixin 同一组 page（其内逻辑与代理/直连
   // 形态无关：idsLogin 填账号提交 / re-auth 调 reAuthByCombined / callback 内按 ctx 再分流扫码 vs 修复）。
-  // 须排在 webvpn home/knowledges-copy/failed/tools 之前——代理 ids 登录页 host 为 webvpn.nxu.edu.cn，
+  // 须排在 WebVPN 普通页面之前——代理 ids 登录页 host 为 webvpn.nxu.edu.cn，
   // 不抢在 home 前会被 isWebvpnHost 判定吞掉。与 ids 直连 entry（host==='ids.nxu.edu.cn'）天然互斥，序无歧义。
   //
   // ① webvpn-via-ids login：1.x 行 2386-2388 判定逐字。OR 四选一触发登录页判定：
@@ -240,60 +253,37 @@ const JUDGE_TABLE = [
     register: registerWebvpnHome,
     test: (c) => c.isWebvpnHost && (c.url === 'https://webvpn.nxu.edu.cn/' || c.path === '/'),
   },
-  // knowledges-copy：知网/万方 HTML 阅读页"自由复制"注入（1.x 行 2405-2415）。
-  //  须排在 home 之后：知网/万方是 webvpn 代理其它站点（realHost=kns.cnki.net/www.cnki.net/f.wanfangdata.com.cn，
-  //  非主域 webvpn.nxu.edu.cn），与 home 的 isWebvpnHost 判定互斥，顺序无歧义；放此位按 1.x webvpn 分支原文顺序。
-  // ① 知网：realHost 为 kns.cnki.net 或 www.cnki.net；realPath 含 '/xmlRead/trialRead'（老阅读页，1.x 行 2407）
-  //   或 '/reader/xml'（新阅读页路径，2026-08-01 实测 webvpn 代理 kns 时 path 落 /https/<token>/reader/xml，
-  //   realPath=/reader/xml，1.x 未处理、2.0 起补此命中，自由复制逻辑对新老阅读页通用）。
-  // ② 万方：realHost 为 f.wanfangdata.com.cn 且 realPath 含 '/online/pc/periodical_html'。两者同走 knowledges-copy page。
-  {
-    site: 'webvpn',
-    page: 'knowledges-copy',
-    register: registerWebvpnKnowledgesCopy,
-    test: (c) => {
-      const cnkiHost =
-        isWebVpnRealHost(c.vpnContext, 'kns.cnki.net') || isWebVpnRealHost(c.vpnContext, 'www.cnki.net');
-      const realPath = c.vpnContext?.realPath || '';
-      if (cnkiHost) {
-        return realPath.indexOf('/xmlRead/trialRead') !== -1 || realPath.indexOf('/reader/xml') !== -1;
-      }
-      return (
-        isWebVpnRealHost(c.vpnContext, 'f.wanfangdata.com.cn') &&
-        realPath.indexOf('/online/pc/periodical_html') !== -1
-      );
-    },
-  },
-  // tools：'/wengine-vpn/failed' 且 body 含 '地址：/h/tools' → 小工具页（1.x 行 2417-2420 → webvpnHTools）。
+  // 直连、zylib 和 WebVPN 共用平台规则；新增复制平台自动获得路由。
+  ...LIBRARY_READER_PLATFORMS.map(({ id }) => ({
+    site: id,
+    page: 'reader',
+    register: readerRegistrations.get(id) || createLibraryReaderRegistration(id),
+    test: (c) => resolveLibraryReader(c)?.id === id,
+  })),
+  // tools：直接 /h/tools，或带专用地址标记的旧失败页入口。
   //  须排在 failed 前——同 path、靠 body 标记互斥（failed test 含 `=== -1` 判定）。tools.page.js 为
   //  1.x 行 4774-7203 全量拆迁（教师查询/个人课表/多人空课表/密钥管理，SFC 化 + 共享 schedule/crypto/协商层）。
   {
     site: 'webvpn',
     page: 'tools',
     register: registerWebvpnTools,
-    test: (c) =>
-      c.isWebvpnHost &&
-      c.path === '/wengine-vpn/failed' &&
-      document.body.innerHTML.indexOf('地址：/h/tools') !== -1,
+    test: (c) => isWebVpnToolsRoute(c, document.body?.innerHTML || ''),
   },
   // failed：'/wengine-vpn/failed' 未识别失败页（1.x 行 2416-2424）。子分支：body 含 '地址：/h/tools' 走 tools
   //  page（见上 entry），不含则走本 failed page（errorHtml 自动关窗）。须在 home 后——path 为
-  //  /wengine-vpn/failed，与 home 的 path==='/' 互斥；与 knowledges-copy（realHost 被代理站）亦互斥，序无歧义。
+  //  /wengine-vpn/failed，与 home 的 path==='/' 互斥；与文献阅读页（独立真实主机）亦互斥，序无歧义。
   {
     site: 'webvpn',
     page: 'failed',
     register: registerWebvpnFailed,
-    test: (c) =>
-      c.isWebvpnHost &&
-      c.path === '/wengine-vpn/failed' &&
-      document.body.innerHTML.indexOf('地址：/h/tools') === -1,
+    test: (c) => isWebVpnFailedRoute(c, document.body?.innerHTML || ''),
   },
 
   // === webvpn 代理 sysaq：实验室安全教育平台（1.x 行 2425-2434）===
   // webvpn 代理 sysaq.nxu.edu.cn，命中后按 realPath 细分 login/auth（注入逻辑与直连 sysaq 同一组
   //  sites/sysaq/pages/{login,auth}.page.js，仅判定来源 path 不同）。
   //  须在 webvpn home 后——realHost=sysaq（非主域 webvpn.nxu.edu.cn），与 home 的 isWebvpnHost 判定互斥、
-  //  与 knowledges-copy（realHost 为 cnki/wanfang）亦互斥，序无歧义。放 tools/failed 后：sysaq 页 path 非
+  //  与文献阅读页（真实主机为 cnki/wanfang）亦互斥，序无歧义。放 tools/failed 后：sysaq 页 path 非
   //  /wengine-vpn/failed，tools/failed 不命中，与本 entry 互斥；与 1.x webvpn 分支行序大体对应（cnki/wanfang/
   //  failed/sysaq/portal），实因各 agent entry host/path 互斥，顺序不构成正确性约束。
   // login：realPath 精确 '/lab-platform/'（1.x 行 2427）→ 点"点击登录"跳 /lab-platform/login。
@@ -374,14 +364,12 @@ const JUDGE_TABLE = [
     test: (c) => c.host === 'portal.nxu.edu.cn',
   },
 
-  // === tuanwei：团委系统 tuanwei.nxu.edu.cn（1.x 行 2557-2568 case 整段被注释）===
-  // 03 §2 B8 验收 5：1.x case 已注释（不执行业务逻辑），2.0 也仅 toast 未实现、不下载、不 eval、不 throw。
-  // 全站命中（1.x 原注释块也无 path 前置）。tuanwei 仅供姿态占位（config 保留 TuanWei.autoDownload* 兼容无消费）。
+  // 团委附件仅允许直连的精确下载路径与必要参数；普通文章页保持原样。
   {
     site: 'tuanwei',
-    page: 'notify',
-    register: registerTuanweiNotify,
-    test: (c) => c.host === 'tuanwei.nxu.edu.cn',
+    page: 'download',
+    register: registerTuanweiDownload,
+    test: isTuanweiDownloadRoute,
   },
 ];
 
