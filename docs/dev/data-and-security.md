@@ -149,6 +149,7 @@ header 的 Base64URL 文本同时作为 AES-GCM AAD，因此篡改 header、密�
 - 只有完全由源码常量组成的模板允许 `innerHTML`；一旦加入外部或 GM 数据，改为节点 API。
 - README/CHANGELOG 先由 marked 解析，再由 DOMPurify 白名单消毒。解析器或消毒器任一缺失时，只显示转义文本。
 - 外链统一补 `target=_blank` 和 `rel=noopener noreferrer`；非 HTTP(S) Markdown 链接移除 `href`。
+- 门户系统模式卡片需调用页面的 `window.open(url, '_blank')`，让门户/代理包装器完成新窗口 `sessionStorage` 初始化，再同步将返回窗口的 `opener` 置空。该路径使用浏览器默认 referrer 策略；传入 `noopener,noreferrer` 会使原生 `open` 返回空句柄，导致包装器报错。直开模式仍使用 `GM_openInTab`。
 - 选区复制日志只记录字符长度，不记录正文或 HTML。
 
 ## 7. 威胁与残余风险

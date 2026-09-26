@@ -88,7 +88,7 @@ test('CNKI observes late controls, uses full scaled travel and never resubmits t
   assert.equal(calls.length, 1);
   assert.equal(calls[0].handle, handle);
   assert.equal(calls[0].distance, 520);
-  assert.equal(calls[0].eventTarget, f.doc);
+  assert.equal(calls[0].eventTarget, handle);
   for (let i = 0; i < 5; i++) {
     f.changed();
     f.frame();

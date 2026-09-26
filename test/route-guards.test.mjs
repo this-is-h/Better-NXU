@@ -49,7 +49,13 @@ test('IDS guards reject lookalike paths on other proxied hosts', () => {
 
 test('reader routes match direct and proxied canonical reading paths', () => {
   for (const host of ['kns.cnki.net', 'www.cnki.net']) {
-    for (const path of ['/reader/xml', '/reader/xml/', '/xmlRead/trialRead.aspx']) {
+    for (const path of [
+      '/reader/read',
+      '/reader/read/',
+      '/reader/xml',
+      '/reader/xml/',
+      '/xmlRead/trialRead.aspx',
+    ]) {
       const url = `https://${host}${path}?id=fixture#section`;
       for (const ctx of [contextFor(url), contextFor(buildWebVpnUrl(url))]) {
         assert.equal(isCnkiReaderRoute(ctx), true);
@@ -67,6 +73,9 @@ test('reader routes match direct and proxied canonical reading paths', () => {
 test('reader routes reject lookalike hosts, paths and unknown proxy tokens', () => {
   for (const url of [
     'https://kns.cnki.net.example/reader/xml',
+    'https://kns.cnki.net.example/reader/read',
+    'https://kns.cnki.net/reader/read-other',
+    'https://kns.cnki.net/unrelated/reader/read',
     'https://kns.cnki.net/reader/xml-other',
     'https://kns.cnki.net/unrelated/reader/xml',
     'https://www.cnki.net/?next=/reader/xml',

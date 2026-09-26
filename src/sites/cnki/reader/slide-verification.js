@@ -35,7 +35,8 @@ export function installCnkiSlider({ doc = document, drag = dragSlider, onError =
     const controller = new AbortController();
     active = controller;
     void Promise.resolve()
-      .then(() => drag({ handle, track, distance, eventTarget: doc, signal: controller.signal }))
+      // 从滑块冒泡到轨道/document；直接发给 document 会漏掉控件上的移动和释放监听。
+      .then(() => drag({ handle, track, distance, eventTarget: handle, signal: controller.signal }))
       .catch((error) => {
         if (!controller.signal.aborted) onError(error);
       })

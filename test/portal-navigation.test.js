@@ -54,16 +54,73 @@ test('system cards use the portal opener and preserve explicit environment URLs'
       (item) => item.navigation !== 'direct'
     )) {
       const calls = [];
+      const opened = { opener: {} };
       openPortalCard(card, {
         portalUrl,
-        pageWindow: { open: (...args) => calls.push(args) },
+        pageWindow: {
+          open: (...args) => {
+            calls.push(args);
+            return opened;
+          },
+        },
         openInTab: () => assert.fail('system links use the page'),
       });
-      assert.deepEqual(calls, [
-        [resolvePortalCardLink(card, portalUrl).url, '_blank', 'noopener,noreferrer'],
-      ]);
+      assert.deepEqual(calls, [[resolvePortalCardLink(card, portalUrl).url, '_blank']]);
+      assert.equal(opened.opener, null);
     }
   }
+});
+
+test('portal open hook can initialize session storage before the opener is detached', () => {
+  for (const portalUrl of [campus, webvpn]) {
+    let initialized = false;
+    let openCalls = 0;
+    let opener = {};
+    const child = {
+      sessionStorage: {
+        setItem: () => {
+          initialized = true;
+        },
+      },
+      set opener(value) {
+        assert.equal(initialized, true);
+        opener = value;
+      },
+    };
+    const pageWindow = {
+      open(_url, _target, features = '') {
+        assert.equal(this, pageWindow);
+        openCalls++;
+        // 模拟页面在原生 open 之后初始化新窗口；旧 features 会使这里发生空引用。
+        const opened = /noopener|noreferrer/.test(features) ? null : child;
+        opened.sessionStorage.setItem('fixture', 'ready');
+        return opened;
+      },
+    };
+    assert.equal(openPortalCard({ url: 'https://example.com/' }, { portalUrl, pageWindow }), child);
+    assert.equal(openCalls, 1);
+    assert.equal(opener, null);
+  }
+});
+
+test('portal null handles are safe and genuine opener failures propagate without opening twice', () => {
+  const card = { url: 'https://example.com/' };
+  assert.equal(openPortalCard(card, { portalUrl: campus, pageWindow: { open: () => null } }), null);
+  let calls = 0;
+  assert.throws(
+    () =>
+      openPortalCard(card, {
+        portalUrl: campus,
+        pageWindow: {
+          open: () => {
+            calls++;
+            throw new Error('open failed');
+          },
+        },
+      }),
+    /open failed/
+  );
+  assert.equal(calls, 1);
 });
 
 test('direct mode can choose distinct environment URLs, including a fixed WebVPN destination on campus', () => {
