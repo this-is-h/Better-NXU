@@ -68,7 +68,7 @@ onMounted(() => {
             <img
               style="margin-right: 10px; width: 24px; height: 24px; border-radius: 999px"
               referrerpolicy="no-referrer"
-              src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/Karl.png"
+              src="https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/Karl.jpg"
             />
           </template>
         </van-cell>
