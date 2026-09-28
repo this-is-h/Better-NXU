@@ -124,7 +124,7 @@ export function dragSlider({
         }
       };
       // 末段移动、指针释放和鼠标释放分开，让控件有时间更新验证状态。
-      if (feedback && isPending()) releaseTimer = setTimeout(releaseMouse, 100 + Math.random() * 400);
+      if (feedback && isPending()) releaseTimer = setTimeout(releaseMouse, 60 + Math.random() * 40);
       else releaseMouse();
     };
     const feedbackTick = (now) => {
@@ -148,16 +148,21 @@ export function dragSlider({
       }
       const remaining = goal - offset;
       const ratio = Math.abs(remaining) / distance;
-      const step = moveCount === 0 ? 20 : ratio > 0.5 ? 5 : ratio > 0.25 ? 3 : ratio > 0.1 ? 2 : 0;
+      // 末段按剩余距离收敛，只在贴近端点时使用小步，避免整段逐个亚像素挪动。
+      const tailStep = Math.min(3, Math.max(0.75, Math.abs(remaining) * 0.35));
+      const step = moveCount === 0 ? 20 : ratio > 0.5 ? 5 : ratio > 0.25 ? 3 : ratio > 0.1 ? 2 : tailStep;
       const delta = (step + 0.5 + Math.random() * 0.5) * (remaining < 0 ? -1 : 1);
       let delay =
         ratio > 0.5
           ? 0.2 + Math.random() * 0.3
           : ratio > 0.1
             ? 8 + Math.random() * 4
-            : 18 + Math.random() * 5;
-      if (distance <= 100) delay *= 5;
-      else if (distance <= 130) delay *= 2;
+            : 10 + Math.random() * 4;
+      // 短轨道的整体减速不再叠加到末端校正；每次仍等待下一帧读取实际位移。
+      if (ratio > 0.1) {
+        if (distance <= 100) delay *= 5;
+        else if (distance <= 130) delay *= 2;
+      }
       nextMoveAt = now + delay;
       moveCount++;
       move(x + delta, startY + Math.sin(moveCount / 8) * verticalOffset);

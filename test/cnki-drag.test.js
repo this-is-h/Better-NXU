@@ -13,6 +13,7 @@ function fixture(
     fractional = false,
     supportsPointer = true,
     completeOnMove = null,
+    travel = 260,
   } = {}
 ) {
   const frames = new Map();
@@ -52,6 +53,7 @@ function fixture(
       constructor(type, fields) {
         this.type = type;
         Object.assign(this, fields);
+        this.timeStamp = now;
         if (fractional) this.clientX = Math.floor(this.clientX);
       }
     },
@@ -71,7 +73,7 @@ function fixture(
   const doc = { ...node(), defaultView: view, documentElement: {} };
   const track = {
     ...node(doc),
-    getBoundingClientRect: () => ({ left: 10, width: 300 * scale }),
+    getBoundingClientRect: () => ({ left: 10, width: (travel + 40) * scale }),
   };
   const handle = {
     ...node(track),
@@ -135,8 +137,8 @@ function fixture(
         })
       );
     },
-    frame() {
-      now += 32;
+    frame(elapsed = 32) {
+      now += elapsed;
       const ready = [...frames.values()];
       frames.clear();
       ready.forEach((callback) => callback(now));
@@ -311,5 +313,36 @@ test('CNKI success during movement retires the control without warning or draggi
       assert.equal(f.emitted.length, count);
       stop();
     }
+  }
+});
+
+test('CNKI finishes the last ten percent promptly while preserving endpoint verification', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(Math, 'random', () => 0.5);
+  for (const travel of [60, 120, 260, 520]) {
+    const f = fixture('track', { travel, limit: travel });
+    const errors = [];
+    const stop = installCnkiSlider({ doc: f.doc, onError: (error) => errors.push(error.message) });
+    f.frame(16);
+    await flush();
+    for (let i = 0; i < 310 && f.state().pressed; i++) {
+      f.frame(16);
+      t.mock.timers.tick(16);
+    }
+    await flush();
+    assert.deepEqual(errors, [], `travel=${travel}`);
+    assert.equal(f.completed(), 1, `travel=${travel}`);
+    assert.equal(f.state().offset, travel);
+    const start = f.emitted.find((event) => event.type === 'mousedown');
+    const tail = f.emitted.find(
+      (event) => event.type === 'mousemove' && event.clientX - start.clientX >= travel * 0.9
+    );
+    const end = f.emitted.at(-1);
+    assert.equal(end.type, 'mouseup');
+    assert.ok(
+      end.timeStamp - tail.timeStamp <= 500,
+      `last 10% took ${end.timeStamp - tail.timeStamp}ms for ${travel}px`
+    );
+    stop();
   }
 });
