@@ -147,7 +147,7 @@ header 的 Base64URL 文本同时作为 AES-GCM AAD，因此篡改 header、密�
 
 - 课程名、教师、教室、接口字段等动态数据必须用 `textContent` 或 Vue 文本插值。
 - 只有完全由源码常量组成的模板允许 `innerHTML`；一旦加入外部或 GM 数据，改为节点 API。
-- README/CHANGELOG 先由 marked 解析，再由 DOMPurify 白名单消毒。解析器或消毒器任一缺失时，只显示转义文本。
+- README/CHANGELOG 先由 marked 解析，再由 DOMPurify 白名单消毒。图片保留 `referrerpolicy` 属性，支持 `no-referrer` 外链图片。`div` 和 `img` 的内联样式仅允许 flex 显示、水平/垂直对齐、宽度及内边距，并限制为白名单值；事件属性、其他样式、CSS URL 和函数均被过滤。解析器或消毒器任一缺失时，只显示转义文本。
 - 外链统一补 `target=_blank` 和 `rel=noopener noreferrer`；非 HTTP(S) Markdown 链接移除 `href`。
 - 门户系统模式卡片需调用页面的 `window.open(url, '_blank')`，让门户/代理包装器完成新窗口 `sessionStorage` 初始化，再同步将返回窗口的 `opener` 置空。该路径使用浏览器默认 referrer 策略；传入 `noopener,noreferrer` 会使原生 `open` 返回空句柄，导致包装器报错。直开模式仍使用 `GM_openInTab`。
 - 选区复制日志只记录字符长度，不记录正文或 HTML。
