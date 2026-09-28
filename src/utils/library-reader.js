@@ -7,7 +7,8 @@ export const LIBRARY_READER_PLATFORMS = Object.freeze([
   {
     id: 'cnki',
     hosts: ['kns.cnki.net', 'www.cnki.net'],
-    paths: ['/reader/xml', '/xmlRead/trialRead'],
+    // /reader/read 在同一文档内改写成 /reader/xml，必须在初始入口就安装阅读增强。
+    paths: ['/reader/read', '/reader/xml', '/xmlRead/trialRead'],
     copy: true,
     slider: true,
   },

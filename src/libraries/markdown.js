@@ -21,6 +21,11 @@ function getMarkdownRuntime() {
       'dompurify-js',
       (pageWindow) => (typeof pageWindow.DOMPurify?.sanitize === 'function' ? pageWindow.DOMPurify : null),
     );
+    DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+      if (data.attrName !== 'style') return;
+      data.attrValue = sanitizeMarkdownStyle(node.tagName, data.attrValue);
+      data.keepAttr = data.attrValue !== '';
+    });
     markdownRuntime = { marked, DOMPurify };
   } catch (error) {
     console('Markdown 运行时资源加载失败，降级为纯文本', error, 'error');
@@ -32,7 +37,7 @@ function getMarkdownRuntime() {
 /**
  * DOMPurify 配置：白名单标签/属性，禁用 script/iframe/on* 与其它危险内容。
  * 与 1.x renderMarkdownSafely 的 allowedTags（A/BLOCKQUOTE/BR/CODE/EM/H1-H4/LI/OL/P/PRE/STRONG/UL）对齐，
- * 并额外放开 marked 常见输出（H5/H6/HR/TABLE 系列/TITLE 不含）。属性仅放 class/href/rel/target（与 1.x 一致）。
+ * 并额外放开 marked 常见输出（H5/H6/HR/TABLE 系列/TITLE 不含）。属性及内联布局样式按白名单保留。
  */
 const PURIFY_CONFIG = {
   ALLOWED_TAGS: [
@@ -42,10 +47,30 @@ const PURIFY_CONFIG = {
     'span', 'div', 'img',
     'table', 'thead', 'tbody', 'tr', 'th', 'td', 'del', 'sup', 'sub',
   ],
-  ALLOWED_ATTR: ['class', 'href', 'rel', 'target', 'src', 'alt', 'title'],
+  ALLOWED_ATTR: ['class', 'href', 'rel', 'target', 'src', 'alt', 'title', 'referrerpolicy', 'style'],
   // 禁止 data: / javascript: 链接、防 XSSsrc 绕过（img 来源 markdown 一般为外链图标）。
-  FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick'],
 };
+
+const LAYOUT_STYLES = {
+  display: /^(?:flex|inline-flex)$/,
+  'justify-content': /^(?:center|flex-start|flex-end|space-between|space-around|space-evenly)$/,
+  'align-items': /^(?:center|flex-start|flex-end|stretch|baseline)$/,
+  width: /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|%|em|rem))$/,
+  padding: /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|%|em|rem))(?:\s+(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|%|em|rem))){0,3}$/,
+};
+
+export function sanitizeMarkdownStyle(tagName, cssText) {
+  if (!/^(?:div|img)$/i.test(tagName)) return '';
+  return String(cssText || '').split(';').flatMap((declaration) => {
+    const colon = declaration.indexOf(':');
+    if (colon < 0) return [];
+    const property = declaration.slice(0, colon).trim().toLowerCase();
+    const value = declaration.slice(colon + 1).trim().toLowerCase();
+    if (!Object.hasOwn(LAYOUT_STYLES, property) || !LAYOUT_STYLES[property].test(value)) return [];
+    return `${property}: ${value}`;
+  }).join('; ');
+}
 
 /**
  * 渲染 markdown 到目标元素：marked.parse → DOMPurify.sanitize → 写入 target，

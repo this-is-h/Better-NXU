@@ -40,6 +40,24 @@ test('library platforms share reader capabilities across direct, zylib and WebVP
   }
 });
 
+test('CNKI read entry and XML view both resolve before and after same-document navigation', () => {
+  for (const host of ['kns.cnki.net', 'www.cnki.net']) {
+    for (const wrap of [
+      (url) => url,
+      campusUrl,
+      buildWebVpnUrl,
+      (url) => `https://zylib.nxu.edu.cn/-----${url}`,
+    ]) {
+      for (const path of ['/reader/read', '/reader/xml']) {
+        assert.equal(resolveLibraryReader(wrap(`https://${host}${path}`))?.id, 'cnki');
+        assert.equal(resolveLibraryReader(wrap(`https://${host}${path}-other`)), null);
+        assert.equal(resolveLibraryReader(wrap(`https://${host}/unrelated${path}`)), null);
+      }
+      assert.equal(resolveLibraryReader(wrap('https://example.com/reader/read')), null);
+    }
+  }
+});
+
 test('zylib entry URLs recognize only supported reading pages', () => {
   assert.equal(
     resolveLibraryReader('https://zylib.nxu.edu.cn/-----https://kns.cnki.net/reader/xml')?.id,
@@ -108,7 +126,9 @@ test('new copying platforms use the same resolver and metadata is limited to con
   ]) {
     assert.equal(resolveLibraryReader(url, [platform]), platform);
   }
-  assert.equal(LIBRARY_READER_MATCHES.length, 6);
+  assert.equal(LIBRARY_READER_MATCHES.length, 8);
   assert.equal(LIBRARY_READER_MATCHES.includes('*://zylib.nxu.edu.cn/*'), true);
+  assert.equal(LIBRARY_READER_MATCHES.includes('*://kns.cnki.net/reader/read*'), true);
+  assert.equal(LIBRARY_READER_MATCHES.includes('*://www.cnki.net/reader/read*'), true);
   assert.equal(LIBRARY_READER_MATCHES.includes('*://www.cnki.net/*'), false);
 });

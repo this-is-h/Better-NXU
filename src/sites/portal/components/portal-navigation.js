@@ -25,5 +25,9 @@ export function openPortalCard(card, { portalUrl, pageWindow, openInTab }) {
     if (typeof openInTab !== 'function') throw new Error('直接打开链接需要 ScriptCat 的 GM_openInTab 权限');
     return openInTab(url, { active: true, insert: true });
   }
-  return pageWindow.open(url, '_blank', 'noopener,noreferrer');
+  // 门户/代理的 open 包装器还会访问新窗口的 sessionStorage。
+  // noopener/noreferrer 使原生 open 返回 null；先让包装器完成，再同步断开 opener。
+  const opened = pageWindow.open(url, '_blank');
+  if (opened) opened.opener = null;
+  return opened;
 }
