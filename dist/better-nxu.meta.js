@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Better NXU
 // @namespace      https://thisish.com/
-// @version        2.0.2
+// @version        2.0.3
 // @author         H
 // @description    这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match          *://webvpn.nxu.edu.cn/*
@@ -15,8 +15,10 @@
 // @match          *://ids.nxu.edu.cn/*
 // @match          *://open.weixin.qq.com/*
 // @match          *://zylib.nxu.edu.cn/*
+// @match          *://kns.cnki.net/reader/read*
 // @match          *://kns.cnki.net/reader/xml*
 // @match          *://kns.cnki.net/xmlRead/trialRead*
+// @match          *://www.cnki.net/reader/read*
 // @match          *://www.cnki.net/reader/xml*
 // @match          *://www.cnki.net/xmlRead/trialRead*
 // @match          *://f.wanfangdata.com.cn/online/pc/periodical_html*

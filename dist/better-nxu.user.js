@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      2.0.2
+// @version      2.0.3
 // @author       H
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match        *://webvpn.nxu.edu.cn/*
@@ -15,8 +15,10 @@
 // @match        *://ids.nxu.edu.cn/*
 // @match        *://open.weixin.qq.com/*
 // @match        *://zylib.nxu.edu.cn/*
+// @match        *://kns.cnki.net/reader/read*
 // @match        *://kns.cnki.net/reader/xml*
 // @match        *://kns.cnki.net/xmlRead/trialRead*
+// @match        *://www.cnki.net/reader/read*
 // @match        *://www.cnki.net/reader/xml*
 // @match        *://www.cnki.net/xmlRead/trialRead*
 // @match        *://f.wanfangdata.com.cn/online/pc/periodical_html*
@@ -1071,9 +1073,10 @@ self.onmessage = async (e) => {
 		state.urls.length = 0;
 		if (active === state) active = null;
 	}
-	function dragSlider({ handle, track, distance, eventTarget = handle?.ownerDocument, signal, timeoutMs = 5e3 }) {
+	function dragSlider({ handle, track, distance, eventTarget = handle?.ownerDocument, feedback = false, signal, timeoutMs = 5e3, isPending = () => true }) {
 		return new Promise((resolve, reject) => {
 			signal?.throwIfAborted();
+			if (!isPending()) return resolve();
 			const doc = handle?.ownerDocument;
 			const view = doc?.defaultView;
 			if (!doc || !view || !track || !eventTarget || !handle.isConnected || !handle.getClientRects().length) throw new Error("滑块控件不可用");
@@ -1085,37 +1088,140 @@ self.onmessage = async (e) => {
 			const durationMs = Math.min(700, Math.max(420, 320 + distance * 1.4) + Math.random() * 40);
 			const verticalOffset = (Math.random() < .5 ? -1 : 1) * (1 + Math.random() * 2);
 			const startedAt = view.performance.now();
+			const origin = rect.left - track.getBoundingClientRect().left;
 			let lastMoveAt = startedAt;
 			let animationFrame;
+			let releaseTimer;
 			let pressed = false;
+			let pointerPressed = false;
 			let finished = false;
-			const emit = (target, type, x, y, buttons) => target.dispatchEvent(new view.MouseEvent(type, {
-				bubbles: true,
-				cancelable: true,
-				view,
-				button: 0,
-				buttons,
-				clientX: x,
-				clientY: y
-			}));
+			let releasing = false;
+			let x = startX;
+			let y = startY;
+			let goal = distance + 5;
+			let correcting = false;
+			let previousOffset = 0;
+			let stalled = 0;
+			let moveCount = 0;
+			let nextMoveAt = startedAt;
+			const emit = (target, type, x, y, buttons) => {
+				const isPointer = type.startsWith("pointer");
+				const Event = isPointer ? view.PointerEvent : view.MouseEvent;
+				target.dispatchEvent(new Event(type, {
+					bubbles: true,
+					cancelable: true,
+					view,
+					button: 0,
+					buttons,
+					clientX: x,
+					clientY: y,
+					screenX: (view.screenX || 0) + x,
+					screenY: (view.screenY || 0) + y,
+					...isPointer ? {
+						pointerId: 1,
+						pointerType: "touch",
+						isPrimary: true
+					} : {}
+				}));
+			};
+			const emitCleanup = (type, x, y, buttons) => {
+				const detached = eventTarget !== doc && eventTarget.isConnected === false;
+				emit(eventTarget, type, x, y, buttons);
+				if (detached) emit(doc, type, x, y, buttons);
+			};
+			const move = (nextX, nextY) => {
+				x = nextX;
+				y = nextY;
+				if (pointerPressed) emit(eventTarget, "pointermove", x, y, 1);
+				if (!finished && isPending()) emit(eventTarget, "mousemove", x, y, 1);
+			};
 			const finish = (error) => {
 				if (finished) return;
+				const failed = error && isPending();
 				finished = true;
 				view.cancelAnimationFrame(animationFrame);
 				clearTimeout(deadline);
+				clearTimeout(releaseTimer);
 				signal?.removeEventListener("abort", abort);
-				if (error && pressed) try {
-					emit(eventTarget, "mousemove", startX, startY, 1);
-					emit(eventTarget, "mouseup", startX, startY, 0);
-				} catch {}
-				error ? reject(error) : resolve();
+				if (error && (pressed || pointerPressed)) {
+					const events = [
+						...failed && pointerPressed ? ["pointermove"] : [],
+						...failed && pressed ? ["mousemove"] : [],
+						...pointerPressed ? [failed ? "pointercancel" : "pointerup"] : [],
+						...pressed ? ["mouseup"] : []
+					];
+					for (const type of events) try {
+						emitCleanup(type, failed ? startX : x, failed ? startY : y, type.endsWith("move") ? 1 : 0);
+					} catch {}
+				}
+				failed ? reject(error) : resolve();
 			};
 			const abort = () => finish(signal.reason ?? new Error("滑块拖动已取消"));
+			const release = () => {
+				if (releasing || finished) return;
+				releasing = true;
+				if (pointerPressed) {
+					emitCleanup("pointerup", x, y, 0);
+					pointerPressed = false;
+				}
+				if (finished) return;
+				const releaseMouse = () => {
+					if (finished) return;
+					try {
+						emitCleanup("mouseup", x, y, 0);
+						pressed = false;
+						finish();
+					} catch (error) {
+						finish(error);
+					}
+				};
+				if (feedback && isPending()) releaseTimer = setTimeout(releaseMouse, 60 + Math.random() * 40);
+				else releaseMouse();
+			};
+			const feedbackTick = (now) => {
+				if (now < nextMoveAt) return;
+				const offset = handle.getBoundingClientRect().left - track.getBoundingClientRect().left - origin;
+				if (!Number.isFinite(offset)) throw new Error("无法读取滑块位置");
+				stalled = moveCount > 0 && Math.abs(offset - previousOffset) < .01 ? stalled + 1 : 0;
+				previousOffset = offset;
+				if (stalled >= 6 && offset < distance - 1) throw new Error("滑块未到达末端，请手动完成验证");
+				if ((correcting ? Math.abs(goal - offset) <= 1 : offset > goal + 1) || stalled >= 6) {
+					if (correcting) {
+						release();
+						return true;
+					}
+					goal = stalled >= 6 ? offset : distance;
+					correcting = true;
+					stalled = 0;
+				}
+				const remaining = goal - offset;
+				const ratio = Math.abs(remaining) / distance;
+				const tailStep = Math.min(3, Math.max(.75, Math.abs(remaining) * .35));
+				const delta = ((moveCount === 0 ? 20 : ratio > .5 ? 5 : ratio > .25 ? 3 : ratio > .1 ? 2 : tailStep) + .5 + Math.random() * .5) * (remaining < 0 ? -1 : 1);
+				let delay = ratio > .5 ? .2 + Math.random() * .3 : ratio > .1 ? 8 + Math.random() * 4 : 10 + Math.random() * 4;
+				if (ratio > .1) {
+					if (distance <= 100) delay *= 5;
+					else if (distance <= 130) delay *= 2;
+				}
+				nextMoveAt = now + delay;
+				moveCount++;
+				move(x + delta, startY + Math.sin(moveCount / 8) * verticalOffset);
+				return false;
+			};
 			const tick = (now) => {
 				if (finished) return;
 				try {
 					signal?.throwIfAborted();
-					if (!handle.isConnected) throw new Error("滑块控件已移除或隐藏");
+					if (!isPending()) {
+						release();
+						return;
+					}
+					if (!handle.isConnected || doc.hidden) throw new Error("滑块控件已移除或隐藏");
+					if (feedback) {
+						if (!handle.getClientRects().length) throw new Error("滑块控件已移除或隐藏");
+						if (!feedbackTick(now) && !finished) animationFrame = view.requestAnimationFrame(tick);
+						return;
+					}
 					const progress = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
 					if (progress < 1 && now - lastMoveAt < 20) {
 						animationFrame = view.requestAnimationFrame(tick);
@@ -1123,14 +1229,11 @@ self.onmessage = async (e) => {
 					}
 					if (!handle.getClientRects().length) throw new Error("滑块控件已移除或隐藏");
 					const eased = progress * progress * (3 - 2 * progress);
-					emit(eventTarget, "mousemove", startX + distance * eased, startY + Math.sin(progress * Math.PI) * verticalOffset, 1);
+					move(startX + distance * eased, startY + Math.sin(progress * Math.PI) * verticalOffset);
 					lastMoveAt = now;
 					if (finished) return;
-					if (progress === 1) {
-						pressed = false;
-						emit(eventTarget, "mouseup", startX + distance, startY, 0);
-						finish();
-					} else animationFrame = view.requestAnimationFrame(tick);
+					if (progress === 1) release();
+					else animationFrame = view.requestAnimationFrame(tick);
 				} catch (error) {
 					finish(error);
 				}
@@ -1138,6 +1241,11 @@ self.onmessage = async (e) => {
 			const deadline = setTimeout(() => finish(new Error("滑块拖动超时，请手动完成验证")), timeoutMs);
 			signal?.addEventListener("abort", abort, { once: true });
 			try {
+				if (feedback && typeof view.PointerEvent === "function") {
+					pointerPressed = true;
+					emit(handle, "pointerdown", startX, startY, 1);
+				}
+				if (finished) return;
 				pressed = true;
 				emit(handle, "mousedown", startX, startY, 1);
 				if (!finished) animationFrame = view.requestAnimationFrame(tick);
@@ -1341,7 +1449,11 @@ self.onmessage = async (e) => {
 	var LIBRARY_READER_PLATFORMS = Object.freeze([{
 		id: "cnki",
 		hosts: ["kns.cnki.net", "www.cnki.net"],
-		paths: ["/reader/xml", "/xmlRead/trialRead"],
+		paths: [
+			"/reader/read",
+			"/reader/xml",
+			"/xmlRead/trialRead"
+		],
 		copy: true,
 		slider: true
 	}, {
@@ -7949,9 +8061,16 @@ self.onmessage = async (e) => {
 		if (runtimeLoadAttempted) return markdownRuntime;
 		runtimeLoadAttempted = true;
 		try {
+			const marked = evaluatePageResource("marked-js", (pageWindow) => typeof pageWindow.marked?.parse === "function" ? pageWindow.marked : null);
+			const DOMPurify = evaluatePageResource("dompurify-js", (pageWindow) => typeof pageWindow.DOMPurify?.sanitize === "function" ? pageWindow.DOMPurify : null);
+			DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+				if (data.attrName !== "style") return;
+				data.attrValue = sanitizeMarkdownStyle(node.tagName, data.attrValue);
+				data.keepAttr = data.attrValue !== "";
+			});
 			markdownRuntime = {
-				marked: evaluatePageResource("marked-js", (pageWindow) => typeof pageWindow.marked?.parse === "function" ? pageWindow.marked : null),
-				DOMPurify: evaluatePageResource("dompurify-js", (pageWindow) => typeof pageWindow.DOMPurify?.sanitize === "function" ? pageWindow.DOMPurify : null)
+				marked,
+				DOMPurify
 			};
 		} catch (error) {
 			console$24("Markdown 运行时资源加载失败，降级为纯文本", error, "error");
@@ -7999,15 +8118,34 @@ self.onmessage = async (e) => {
 			"target",
 			"src",
 			"alt",
-			"title"
+			"title",
+			"referrerpolicy",
+			"style"
 		],
 		FORBID_ATTR: [
-			"style",
 			"onerror",
 			"onload",
 			"onclick"
 		]
 	};
+	var LAYOUT_STYLES = {
+		display: /^(?:flex|inline-flex)$/,
+		"justify-content": /^(?:center|flex-start|flex-end|space-between|space-around|space-evenly)$/,
+		"align-items": /^(?:center|flex-start|flex-end|stretch|baseline)$/,
+		width: /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|%|em|rem))$/,
+		padding: /^(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|%|em|rem))(?:\s+(?:0|(?:\d+(?:\.\d+)?|\.\d+)(?:px|%|em|rem))){0,3}$/
+	};
+	function sanitizeMarkdownStyle(tagName, cssText) {
+		if (!/^(?:div|img)$/i.test(tagName)) return "";
+		return String(cssText || "").split(";").flatMap((declaration) => {
+			const colon = declaration.indexOf(":");
+			if (colon < 0) return [];
+			const property = declaration.slice(0, colon).trim().toLowerCase();
+			const value = declaration.slice(colon + 1).trim().toLowerCase();
+			if (!Object.hasOwn(LAYOUT_STYLES, property) || !LAYOUT_STYLES[property].test(value)) return [];
+			return `${property}: ${value}`;
+		}).join("; ");
+	}
 	function renderMarkdown(target, markdown) {
 		if (!target) return;
 		const source = String(markdown || "");
@@ -8148,7 +8286,7 @@ self.onmessage = async (e) => {
 											"border-radius": "999px"
 										},
 										referrerpolicy: "no-referrer",
-										src: "https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/Karl.png"
+										src: "https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/assets/img/Karl.jpg"
 									}, null, -1)])]),
 									_: 1
 								}),
@@ -10989,17 +11127,18 @@ self.onmessage = async (e) => {
 		const existing = installations.get(doc);
 		if (existing) return existing;
 		const view = doc.defaultView;
-		const handled = new WeakSet();
+		const handled = new WeakMap();
 		let attempts = 0;
 		let active = null;
 		let frame = null;
+		let cooldown = null;
 		let stopped = false;
 		const scan = () => {
 			frame = null;
-			if (stopped || active || attempts >= MAX_ATTEMPTS || doc.hidden) return;
+			if (stopped || active || cooldown !== null || attempts >= MAX_ATTEMPTS || doc.hidden) return;
 			const handle = doc.querySelector(".slider-wrapper #js-handler.handler");
 			const track = handle?.closest(".slider-wrapper");
-			if (!track || handled.has(handle) || !handle.getClientRects().length) return;
+			if (!track || !handle.getClientRects().length) return;
 			if (!handle.classList.contains("handler_bg")) return;
 			const rect = handle.getBoundingClientRect();
 			const trackRect = track.getBoundingClientRect();
@@ -11007,27 +11146,54 @@ self.onmessage = async (e) => {
 			const left = trackRect.left + (track.clientLeft || 0) * scale;
 			const distance = (track.clientWidth ? track.clientWidth * scale : trackRect.width) - rect.width;
 			if (distance <= 0 || rect.width <= 0 || Math.abs(rect.left - left) > 1) return;
-			handled.add(handle);
+			const previous = handled.get(handle);
+			if (previous && (!previous.reset || previous.failed)) return;
+			const state = {
+				track,
+				origin: rect.left - trackRect.left,
+				moved: false,
+				reset: false,
+				failed: false
+			};
+			handled.set(handle, state);
 			attempts++;
 			const controller = new AbortController();
 			active = controller;
+			const isPending = () => handle.isConnected && doc.querySelector(".slider-wrapper #js-handler.handler") === handle && handle.classList.contains("handler_bg") && handle.getClientRects().length > 0;
 			Promise.resolve().then(() => drag({
 				handle,
 				track,
 				distance,
-				eventTarget: doc,
-				signal: controller.signal
+				feedback: true,
+				eventTarget: handle,
+				signal: controller.signal,
+				isPending
 			})).catch((error) => {
-				if (!controller.signal.aborted) onError(error);
+				state.failed = isPending();
+				if (controller.signal.aborted) handled.delete(handle);
+				if (!controller.signal.aborted && state.failed) onError(error);
 			}).finally(() => {
 				if (active === controller) active = null;
-				schedule();
+				if (stopped) return;
+				cooldown = setTimeout(() => {
+					cooldown = null;
+					schedule();
+				}, 1e3);
 			});
 		};
 		const schedule = () => {
-			if (!stopped && !active && attempts < MAX_ATTEMPTS && frame === null) frame = view.requestAnimationFrame(scan);
+			if (!stopped && !active && cooldown === null && attempts < MAX_ATTEMPTS && frame === null) frame = view.requestAnimationFrame(scan);
 		};
-		const observer = new view.MutationObserver(schedule);
+		const observer = new view.MutationObserver(() => {
+			const handle = doc.querySelector(".slider-wrapper #js-handler.handler");
+			const state = handle && handled.get(handle);
+			if (state && handle.getClientRects().length) {
+				const offset = handle.getBoundingClientRect().left - state.track.getBoundingClientRect().left - state.origin;
+				if (Math.abs(offset) > 1) state.moved = true;
+				else if (state.moved && handle.classList.contains("handler_bg")) state.reset = true;
+			}
+			schedule();
+		});
 		const onUserPress = (event) => {
 			if (event.isTrusted && event.target?.closest(".slider-wrapper")) stop();
 		};
@@ -11035,16 +11201,23 @@ self.onmessage = async (e) => {
 			active?.abort();
 			if (!event.persisted) stop();
 		};
+		const onVisibilityChange = () => {
+			if (doc.hidden) active?.abort();
+			else schedule();
+		};
 		const stop = () => {
 			if (stopped) return;
 			stopped = true;
 			observer.disconnect();
 			if (frame !== null) view.cancelAnimationFrame(frame);
 			frame = null;
+			clearTimeout(cooldown);
+			cooldown = null;
 			active?.abort();
+			doc.removeEventListener("pointerdown", onUserPress, true);
 			doc.removeEventListener("mousedown", onUserPress, true);
 			doc.removeEventListener("touchstart", onUserPress, true);
-			doc.removeEventListener("visibilitychange", schedule);
+			doc.removeEventListener("visibilitychange", onVisibilityChange);
 			view.removeEventListener("resize", schedule);
 			view.removeEventListener("pageshow", schedule);
 			view.removeEventListener("pagehide", onPageHide);
@@ -11060,9 +11233,10 @@ self.onmessage = async (e) => {
 				"hidden"
 			]
 		});
+		doc.addEventListener("pointerdown", onUserPress, true);
 		doc.addEventListener("mousedown", onUserPress, true);
 		doc.addEventListener("touchstart", onUserPress, true);
-		doc.addEventListener("visibilitychange", schedule);
+		doc.addEventListener("visibilitychange", onVisibilityChange);
 		view.addEventListener("resize", schedule);
 		view.addEventListener("pageshow", schedule);
 		view.addEventListener("pagehide", onPageHide);
@@ -13799,7 +13973,9 @@ self.onmessage = async (e) => {
 				insert: true
 			});
 		}
-		return pageWindow.open(url, "_blank", "noopener,noreferrer");
+		const opened = pageWindow.open(url, "_blank");
+		if (opened) opened.opener = null;
+		return opened;
 	}
 	var console$4 = MyConsole("[portal.hall]");
 	var inflightPortalInject = null;
