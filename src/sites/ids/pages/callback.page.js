@@ -60,7 +60,12 @@ function redirectToWeixinScan(query) {
 function redirectToFixedCallback(query) {
   // 1.x 行 2721-2724：无 "授权失败" 警告则不处理（成功走自然流）。
   const warning = document.querySelector('#welcome.warn');
-  if (!warning || !warning.textContent.includes('授权失败')) return;
+  if (
+    !warning ||
+    !warning.textContent.includes('授权失败') ||
+    !warning.textContent.includes('Fail to bind your account')
+  )
+    return;
   toast('info', '请稍候...');
   toast('info', '尝试跳转至正确页面');
   const callback = new URL('https://ids.nxu.edu.cn/authserver/callback');
