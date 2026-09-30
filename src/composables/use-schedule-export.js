@@ -37,7 +37,7 @@ import { EXPORT_CANCELLED, scheduleOperationError } from '../utils/errors.js';
 /**
  * 弹粘贴密钥框校验并导入公/私钥。对应 1.x requestScheduleKey 行 1704-1754。
  * @param {'public'|'private'} type 公钥=粘贴接收方加密密钥；私钥=粘贴对应解密密钥
- * @param {{initialValue?:string, filename?:string}} [options] initialValue 预填文本；filename 仅 private 用于提示文案
+ * @param {{initialValue?:string, filename?:string, dialogOptions?:object}} [options] initialValue 预填文本；filename 仅 private 用于提示文案
  * @returns {Promise<{pem:string, importedKey:object}|null>} confirm 返 {pem,importedKey}；取消/overlay close 返 null
  */
 export async function requestScheduleKey(type, options = {}) {
@@ -51,6 +51,7 @@ export async function requestScheduleKey(type, options = {}) {
     // 1.x 行 1709-1748：showConfirmDialog + 自定义 render message（含说明 + Field 文本域）。
     // beforeClose 返回 false 阻止关闭（用于校验/导入），true 放行。
     const action = await showConfirmDialog({
+      ...options.dialogOptions,
       title: isPublic ? '粘贴接收方的加密密钥' : '需要对应的解密密钥',
       messageAlign: 'left',
       confirmButtonText: isPublic ? '使用此加密密钥' : '解密文件',
@@ -109,12 +110,13 @@ export async function requestScheduleKey(type, options = {}) {
  * 取消粘贴抛 EXPORT_CANCELLED。对应 1.x selectScheduleExportPublicKey 行 1756-1776。
  * @returns {Promise<string>} PEM 公钥（用户取消则 reject EXPORT_CANCELLED）
  */
-export async function selectScheduleExportPublicKey() {
+export async function selectScheduleExportPublicKey(dialogOptions = {}) {
   // 1.x 行 1757：读当前 keypair（GM 键名经 crypto/storageKey 锁定，C3）。
   const currentKeyPair = getGMValue(storageKey);
   if (currentKeyPair?.publicKey) {
     try {
       const action = await showConfirmDialog({
+        ...dialogOptions,
         title: '选择接收人的加密密钥',
         message:
           '使用当前加密密钥：只有本页当前解密密钥能打开。\n\n粘贴接收方加密密钥：把加密课表发给对方时使用。',
@@ -130,7 +132,7 @@ export async function selectScheduleExportPublicKey() {
     }
   }
   // 1.x 行 1773-1775：无当前密钥或用户选粘贴 → requestScheduleKey('public')；取消抛 EXPORT_CANCELLED。
-  const provided = await requestScheduleKey('public');
+  const provided = await requestScheduleKey('public', { dialogOptions });
   if (!provided) throw scheduleOperationError(EXPORT_CANCELLED, '已取消加密导出');
   return provided.pem;
 }
@@ -141,13 +143,14 @@ export async function selectScheduleExportPublicKey() {
  * @param {object} schedule 课表对象（将经 crypto.normalize 规范化）
  * @returns {Promise<{encrypted:boolean, content:string}>} encrypted=true 为加密信封 JSON，false 为明文 schedule JSON
  */
-export async function prepareScheduleExport(schedule) {
+export async function prepareScheduleExport(schedule, dialogOptions = {}) {
   // 1.x 行 1779：先规范化（保证 owner/meta/schemaVersion 等字段稳定）。
   const normalized = normalize(schedule);
   let encrypt = false;
   try {
     // 1.x 行 1782-1790：弹"加密/直接"确认框。confirm=加密导出；cancel=直接导出；overlay 不关（closeOnClickOverlay:false）。
     const action = await showConfirmDialog({
+      ...dialogOptions,
       title: '导出课表 JSON',
       message: '直接导出可被任何拿到文件的人查看；加密导出只有持有对应解密密钥的人可以打开。',
       messageAlign: 'left',
@@ -164,7 +167,7 @@ export async function prepareScheduleExport(schedule) {
     return { encrypted: false, content: JSON.stringify(normalized) };
   }
   // 1.x 行 1797-1799：加密导出 = 选公钥 → 信封加密 → JSON 化信封。
-  const publicKey = await selectScheduleExportPublicKey();
+  const publicKey = await selectScheduleExportPublicKey(dialogOptions);
   const envelope = await encryptSchedule(normalized, publicKey);
   return { encrypted: true, content: JSON.stringify(envelope) };
 }

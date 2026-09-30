@@ -161,6 +161,28 @@ test('WebVPN captures inline styles, fix foreignObject, and restore state', asyn
   assert.equal(Serializer.prototype.serializeToString, originalSerialize);
 });
 
+test('WebVPN captures sticky headers at their original position and restores their styles', async () => {
+  const { child, pageWindow, root } = createEnvironment();
+  child.computedValues.position = 'sticky';
+  child.computedValues.top = '0px';
+  child.setAttribute('style', 'grid-row: 1;');
+  await assert.rejects(
+    downloadSnapdomImage({
+      target: root,
+      fixWebVpn: true,
+      pageWindow,
+      snapdom: {
+        async download() {
+          assert.match(child.style.cssText, /position: static/);
+          throw new Error('capture failed');
+        },
+      },
+    }),
+    /capture failed/
+  );
+  assert.equal(child.getAttribute('style'), 'grid-row: 1;');
+});
+
 test('WebVPN capture failures still restore styles and serializer', async () => {
   const { child, pageWindow, root, Serializer } = createEnvironment();
   const originalSerialize = Serializer.prototype.serializeToString;

@@ -6,7 +6,7 @@
  *               UI + 响应式状态；本模块无副作用、不依赖组件响应式状态，可独立测试）
  *
  * 拆分边界（P3）：
- *  - 纯函数：getTotalWeeks/courseColor/splitConsecutivePeriods/buildPersonalCourseEntries/
+ *  - 纯函数：getTotalWeeks/buildCourseColors/splitConsecutivePeriods/buildPersonalCourseEntries/
  *    buildPersonalCourseLayout/isOnlineLesson/getLessonAvailability/formatAvailabilityWeeks/buildPersonalFreeGrid
  *  - 常量：personalDays/personalPeriodRows（原 ToolsApp 内模块级，随纯逻辑一并迁出，模板仍经 ToolsApp import 可见）
  *  - 注意：getTotalWeeks 原在 ToolsApp 有默认参数 `data = personalSchedule.value`（依赖组件响应式），抽离后改为
@@ -48,13 +48,15 @@ export function getTotalWeeks(data) {
   );
 }
 
-/** 课程颜色（按 id 哈希取色板，1.x 行 6245-6249）。 */
-export function courseColor(id) {
-  const colors = ['#4a6bdf', '#07c160', '#ee0a24', '#ff976a', '#7232dd', '#1989fa', '#8b5a2b'];
-  const hash = String(id || '')
-    .split('')
-    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
+function buildCourseColors(courses) {
+  const ids = [...new Set(courses.map((course) => course.id))].sort();
+  return new Map(
+    ids.map((id, index) => {
+      const hue = (220 + index * 137.508) % 360;
+      const lightness = [40, 32, 48][index % 3];
+      return [id, `hsl(${hue.toFixed(3)} 65% ${lightness}%)`];
+    })
+  );
 }
 
 /** 连续节次分段（1.x 行 6686-6694）。 */
@@ -77,6 +79,7 @@ export function splitConsecutivePeriods(periods) {
 /** 个人课表课程条目（按课程/星期/节次分组 + 教师/教室变体，1.x 行 6695-6766）。 */
 export function buildPersonalCourseEntries(data, week = 0) {
   const maps = getMaps(data);
+  const colors = buildCourseColors(data.courses);
   const groups = new Map();
   data.lessons
     .filter((lesson) => !week || lesson.week === week)
@@ -92,13 +95,13 @@ export function buildPersonalCourseEntries(data, week = 0) {
           weekday: lesson.weekday,
           periods,
           periodText: lesson.periodText || formatPeriods(periods),
-          color: courseColor(lesson.courseId),
+          color: colors.get(lesson.courseId),
           variants: new Map(),
         });
       }
       const group = groups.get(groupKey);
       const teacherKey = [...teachers].sort().join('、');
-      const variantKey = [lesson.scheduleId, teacherKey, detail.room].join('|');
+      const variantKey = JSON.stringify([teacherKey, detail.room]);
       if (!group.variants.has(variantKey)) {
         group.variants.set(variantKey, {
           key: variantKey,
@@ -149,7 +152,6 @@ export function buildPersonalCourseEntries(data, week = 0) {
   });
 }
 
-/** 个人课表布局（连续节次块 + 时间重叠检测，1.x 行 6767-6841）。 */
 export function buildPersonalCourseLayout(entries) {
   const blocksByDay = new Map();
   entries.forEach((entry) =>
@@ -178,8 +180,9 @@ export function buildPersonalCourseLayout(entries) {
         .sort(
           (left, right) =>
             left.startPeriod - right.startPeriod ||
-            left.endPeriod - right.endPeriod ||
-            left.name.localeCompare(right.name, 'zh-Hans-CN')
+            right.endPeriod - left.endPeriod ||
+            left.name.localeCompare(right.name, 'zh-Hans-CN') ||
+            left.key.localeCompare(right.key)
         );
       const components = [];
       let component = [];
@@ -198,21 +201,49 @@ export function buildPersonalCourseLayout(entries) {
       components.forEach((items) => {
         const startPeriod = Math.min(...items.map((item) => item.startPeriod));
         const endPeriod = Math.max(...items.map((item) => item.endPeriod));
+        const columnEnds = [];
+        const positionedEntries = items.map((item) => {
+          let column = columnEnds.findIndex((end) => end < item.startPeriod);
+          if (column === -1) column = columnEnds.length;
+          columnEnds[column] = item.endPeriod;
+          return {
+            ...item,
+            column: column + 1,
+            gridStyle: {
+              gridColumn: String(column + 1),
+              gridRow: `${item.startPeriod - startPeriod + 1} / span ${item.endPeriod - item.startPeriod + 1}`,
+            },
+          };
+        });
         result.push({
           key: [weekday, startPeriod, endPeriod, ...items.map((item) => item.key)].join('|'),
           weekday,
           startPeriod,
           endPeriod,
           hasTimeOverlap: items.length > 1,
-          entries: items,
+          columnCount: columnEnds.length,
+          entries: positionedEntries,
           gridStyle: {
             gridColumn: String(weekday + 1),
             gridRow: `${startPeriod + 1} / span ${endPeriod - startPeriod + 1}`,
+            gridTemplateColumns: `repeat(${columnEnds.length}, minmax(0, 1fr))`,
           },
         });
       });
     });
   return result;
+}
+
+export function buildPersonalCourseGridStyle(layout) {
+  const dayWidths = personalDays.map(
+    ({ number }) =>
+      130 *
+      Math.max(1, ...layout.filter((group) => group.weekday === number).map((group) => group.columnCount))
+  );
+  return {
+    minWidth: `${92 + dayWidths.reduce((sum, width) => sum + width, 0) + 9}px`,
+    gridTemplateColumns: ['92px', ...dayWidths.map((width) => `minmax(${width}px, 1fr)`)].join(' '),
+  };
 }
 
 /** 判定某 lesson 是否线上可协调（尔雅课，1.x 行 6843-6846）。 */

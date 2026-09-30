@@ -171,7 +171,11 @@
               </van-tabs>
             </div>
             <div class="personal-schedule-capture">
-              <div ref="personalCourseCapture" class="personal-table-capture">
+              <div
+                ref="personalCourseCapture"
+                class="personal-table-capture"
+                :style="{ minWidth: personalCourseGridStyle.minWidth }"
+              >
                 <div v-if="personalLoading" class="personal-empty-state">
                   <van-loading size="28px" vertical>正在获取课表</van-loading>
                 </div>
@@ -179,7 +183,7 @@
                   v-else-if="!personalSchedule"
                   :description="personalError || '暂无课表，请输入链接或上传 JSON'"
                 />
-                <div v-else class="personal-course-grid">
+                <div v-else class="personal-course-grid" :style="personalCourseGridStyle">
                   <div class="personal-course-grid-corner">节次 / 时间</div>
                   <div
                     v-for="day in personalDays"
@@ -214,26 +218,10 @@
                       v-for="entry in group.entries"
                       :key="entry.key"
                       class="personal-course-card"
-                      :style="{ borderLeftColor: entry.color }"
+                      :style="{ ...entry.gridStyle, '--course-color': entry.color }"
                     >
-                      <div class="personal-course-header">
-                        <div class="personal-course-name">{{ entry.name }}</div>
-                        <!--<span
-                          v-if="entry.variants.length > 1"
-                          class="personal-course-variant-count"
-                          :class="{ overlap: entry.hasOverlappingVariants }"
-                        >{{ entry.hasOverlappingVariants ? '同周多安排' : entry.variants.length + ' 种安排' }}</span>-->
-                      </div>
-                      <template v-if="entry.variants.length === 1">
-                        <div v-if="entry.variants[0].teacherText" class="personal-course-meta">
-                          教师：{{ entry.variants[0].teacherText }}
-                        </div>
-                        <div v-if="entry.variants[0].room" class="personal-course-meta">
-                          教室：{{ entry.variants[0].room }}
-                        </div>
-                        <div class="personal-course-meta">周次：{{ entry.variants[0].weeksText }}</div>
-                      </template>
-                      <div v-else class="personal-course-variants">
+                      <div class="personal-course-name">{{ entry.name }}</div>
+                      <div class="personal-course-variants">
                         <div
                           v-for="variant in entry.variants"
                           :key="variant.key"
@@ -243,9 +231,7 @@
                           <div class="personal-course-variant-detail">{{ variant.detailText }}</div>
                         </div>
                       </div>
-                      <div v-if="entry.periodText" class="personal-course-meta">
-                        节次：{{ entry.periodText }}
-                      </div>
+                      <div class="personal-course-periods">第 {{ entry.periodText }} 节</div>
                     </div>
                   </div>
                 </div>
@@ -525,6 +511,7 @@ import {
   getTotalWeeks,
   buildPersonalCourseEntries,
   buildPersonalCourseLayout,
+  buildPersonalCourseGridStyle,
   getLessonAvailability,
   formatAvailabilityWeeks,
   buildPersonalFreeGrid,
@@ -1198,6 +1185,7 @@ const personalCourseLayout = computed(() => {
   if (!data) return [];
   return buildPersonalCourseLayout(buildPersonalCourseEntries(data, Number(selectedCourseWeek.value)));
 });
+const personalCourseGridStyle = computed(() => buildPersonalCourseGridStyle(personalCourseLayout.value));
 
 const personalStats = computed(() => {
   const data = personalSchedule.value;

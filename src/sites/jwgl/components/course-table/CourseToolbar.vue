@@ -36,3 +36,10 @@ const exportExcel = () => props.onExportExcel();
     <van-button plain type="primary" size="small" @click="exportExcel">Excel表格</van-button>
   </div>
 </template>
+
+<style>
+.van-dialog.h-course-export-dialog {
+  top: 32px;
+  transform: none;
+}
+</style>
