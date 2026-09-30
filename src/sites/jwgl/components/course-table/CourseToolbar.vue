@@ -39,7 +39,7 @@ const exportExcel = () => props.onExportExcel();
 
 <style>
 .van-dialog.h-course-export-dialog {
-  top: 32px;
+  top: 128px;
   transform: none;
 }
 </style>
