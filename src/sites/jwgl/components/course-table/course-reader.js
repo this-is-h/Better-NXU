@@ -230,7 +230,10 @@ async function hExportJson() {
       'debug'
     );
     // 1.x 行 3344：prepareScheduleExport 选 加密/直接 导出（密钥协商 Vant 弹窗）。
-    const result = await prepareScheduleExport(schedule);
+    const result = await prepareScheduleExport(schedule, {
+      className: 'h-course-export-dialog',
+      transition: 'van-fade',
+    });
     await downloadTextFile(result.content, getJwglExportFilename(schedule, 'json'));
     console('[JSON 导出] 导出完成', { encrypted: result.encrypted }, 'info');
     showNotify({

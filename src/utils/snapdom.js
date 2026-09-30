@@ -77,6 +77,7 @@ function serializeComputedStyle(element, pageWindow, buffer) {
   for (const property of CAPTURE_STYLE_PROPERTIES) {
     let value = computed.getPropertyValue(property);
     if (!value) continue;
+    if (property === 'position' && value === 'sticky') value = 'static';
     // 计算宽度的小数序列化后可能略小于真实布局宽度（如 68.015625 → 68.0156px）。
     // 再次布局时会向下量化；教室末尾因此换行，而已固定的单行高度会让它覆盖周次。
     // 向上取整像素宽度，避免多次复制样式累计缩窄；保留字体和原有换行规则。

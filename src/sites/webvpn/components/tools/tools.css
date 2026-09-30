@@ -533,6 +533,11 @@
   background: #f7f8fa;
 }
 
+.personal-course-scroll {
+  margin: 12px;
+  padding: 0;
+}
+
 .personal-table-capture {
   width: 100%;
   min-width: 1002px;
@@ -544,6 +549,7 @@
 }
 
 .personal-course-grid {
+  box-sizing: border-box;
   width: 100%;
   min-width: 1002px;
   display: grid;
@@ -565,7 +571,16 @@
 }
 
 .personal-course-grid-corner,
+.personal-course-grid-day,
+.personal-course-grid-period {
+  box-shadow: 0 0 0 1px #ebedf0;
+}
+
+.personal-course-grid-corner,
 .personal-course-grid-day {
+  position: sticky;
+  top: 1px;
+  z-index: 4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -576,11 +591,16 @@
 }
 
 .personal-course-grid-corner {
+  left: 1px;
+  z-index: 5;
   grid-column: 1;
   grid-row: 1;
 }
 
 .personal-course-grid-period {
+  position: sticky;
+  left: 1px;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -635,57 +655,39 @@
 }
 
 .personal-course-card {
-  margin-bottom: 5px;
+  min-width: 0;
+  margin: 3px 0;
   padding: 7px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
   border-radius: 6px;
-  border-left: 3px solid #4a6bdf;
-  background: #edf3ff;
+  border-left: 4px solid var(--course-color);
+  background: color-mix(in srgb, var(--course-color) 10%, white);
   color: #2d3748;
   line-height: 1.35;
   text-align: left;
   word-break: break-word;
 }
 
-.personal-course-card:last-child {
-  margin-bottom: 0;
-}
-
 .personal-course-stack {
   z-index: 2;
   min-width: 0;
   align-self: stretch;
-  margin-top: 3px;
-  margin-right: 3px;
-  margin-bottom: 3px;
-  margin-left: 3px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 4px;
-  box-sizing: border-box;
-}
-
-.personal-course-stack > .personal-course-card {
-  width: 100%;
-  min-height: 0;
-  flex: 0 0 auto;
-  margin-bottom: 0;
+  margin: 0 3px;
+  display: grid;
+  grid-template-rows: subgrid;
+  column-gap: 4px;
+  row-gap: 1px;
   box-sizing: border-box;
 }
 
 .personal-course-name {
-  flex: 1;
   min-width: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #2949b8;
-}
-
-.personal-course-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 5px;
+  color: #2d3748;
 }
 
 .personal-course-variant-count {
@@ -706,7 +708,8 @@
 
 .personal-course-variants {
   margin-top: 5px;
-  border-top: 1px solid #d9e1f2;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
 }
 
 .personal-course-variant {
@@ -714,11 +717,11 @@
 }
 
 .personal-course-variant + .personal-course-variant {
-  border-top: 1px dashed #d9e1f2;
+  border-top: 1px dashed #cbd5e1;
 }
 
 .personal-course-variant-weeks {
-  color: #4a6bdf;
+  color: #475569;
   font-size: 11px;
   font-weight: 600;
 }
@@ -729,8 +732,8 @@
   font-size: 11px;
 }
 
-.personal-course-meta {
-  margin-top: 2px;
+.personal-course-periods {
+  margin-top: 5px;
   color: #646566;
   font-size: 11px;
 }
