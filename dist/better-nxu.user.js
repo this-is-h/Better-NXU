@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      2.0.3
+// @version      2.0.4
 // @author       H
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match        *://webvpn.nxu.edu.cn/*
@@ -199,7 +199,7 @@ SOFTWARE.
 			else (document.head || document.documentElement).appendChild(document.createElement("style")).append(c);
 		})(t);
 	};
-	_css(" .better-nxu-auth-fill[data-v-acbd53d7]{z-index:99999;color:#fff;cursor:pointer;background:#3a8bff;border:1px solid #2878d7;border-radius:4px;padding:9px 12px;font-size:14px;position:fixed;bottom:20px;right:16px;box-shadow:0 3px 10px #0000002e}.wrdvpn-navbar__user__menu[data-v-d0855931]{display:none}.wrdvpn-navbar__user:hover .wrdvpn-navbar__user__menu[data-v-d0855931]{display:block}\n/*$vite$:1*/ ");
+	_css(" .better-nxu-auth-fill[data-v-acbd53d7]{z-index:99999;color:#fff;cursor:pointer;background:#3a8bff;border:1px solid #2878d7;border-radius:4px;padding:9px 12px;font-size:14px;position:fixed;bottom:20px;right:16px;box-shadow:0 3px 10px #0000002e}.van-dialog.h-course-export-dialog{top:128px;transform:none}.wrdvpn-navbar__user__menu[data-v-d0855931]{display:none}.wrdvpn-navbar__user:hover .wrdvpn-navbar__user__menu[data-v-d0855931]{display:block}\n/*$vite$:1*/ ");
 	function MyConsole(scope) {
 		return function log(message, detail = "", level = "log") {
 			if (level === "debug" && globalThis.__BETTER_NXU_DEBUG__ !== true) return;
@@ -8771,6 +8771,7 @@ self.onmessage = async (e) => {
 		for (const property of CAPTURE_STYLE_PROPERTIES) {
 			let value = computed.getPropertyValue(property);
 			if (!value) continue;
+			if (property === "position" && value === "sticky") value = "static";
 			if (property === "width" && /^\d+(?:\.\d+)?px$/.test(value)) value = `${Math.ceil(Number.parseFloat(value))}px`;
 			try {
 				buffer.setProperty(property, value);
@@ -10087,6 +10088,7 @@ self.onmessage = async (e) => {
 		let importedKey = null;
 		try {
 			if (await showConfirmDialog({
+				...options.dialogOptions,
 				title: isPublic ? "粘贴接收方的加密密钥" : "需要对应的解密密钥",
 				messageAlign: "left",
 				confirmButtonText: isPublic ? "使用此加密密钥" : "解密文件",
@@ -10125,10 +10127,11 @@ self.onmessage = async (e) => {
 			return null;
 		}
 	}
-	async function selectScheduleExportPublicKey() {
+	async function selectScheduleExportPublicKey(dialogOptions = {}) {
 		const currentKeyPair = getGMValue(storageKey);
 		if (currentKeyPair?.publicKey) try {
 			if (await showConfirmDialog({
+				...dialogOptions,
 				title: "选择接收人的加密密钥",
 				message: "使用当前加密密钥：只有本页当前解密密钥能打开。\n\n粘贴接收方加密密钥：把加密课表发给对方时使用。",
 				messageAlign: "left",
@@ -10137,15 +10140,16 @@ self.onmessage = async (e) => {
 				closeOnClickOverlay: false
 			}) === "confirm") return currentKeyPair.publicKey;
 		} catch {}
-		const provided = await requestScheduleKey("public");
+		const provided = await requestScheduleKey("public", { dialogOptions });
 		if (!provided) throw scheduleOperationError(EXPORT_CANCELLED, "已取消加密导出");
 		return provided.pem;
 	}
-	async function prepareScheduleExport(schedule) {
+	async function prepareScheduleExport(schedule, dialogOptions = {}) {
 		const normalized = normalize(schedule);
 		let encrypt = false;
 		try {
 			encrypt = await showConfirmDialog({
+				...dialogOptions,
 				title: "导出课表 JSON",
 				message: "直接导出可被任何拿到文件的人查看；加密导出只有持有对应解密密钥的人可以打开。",
 				messageAlign: "left",
@@ -10158,7 +10162,7 @@ self.onmessage = async (e) => {
 			encrypted: false,
 			content: JSON.stringify(normalized)
 		};
-		const envelope = await encryptSchedule(normalized, await selectScheduleExportPublicKey());
+		const envelope = await encryptSchedule(normalized, await selectScheduleExportPublicKey(dialogOptions));
 		return {
 			encrypted: true,
 			content: JSON.stringify(envelope)
@@ -10361,7 +10365,10 @@ self.onmessage = async (e) => {
 				courseCount: schedule.courses.length,
 				lessonCount: schedule.lessons.length
 			}, "debug");
-			const result = await prepareScheduleExport(schedule);
+			const result = await prepareScheduleExport(schedule, {
+				className: "h-course-export-dialog",
+				transition: "van-fade"
+			});
 			await downloadTextFile(result.content, getJwglExportFilename(schedule, "json"));
 			console$16("[JSON 导出] 导出完成", { encrypted: result.encrypted }, "info");
 			showNotify({
@@ -11251,7 +11258,7 @@ self.onmessage = async (e) => {
 		console$11("按 WebVPN.autoClose 配置自动关闭失败页");
 		closeCurrentTab();
 	}
-	var tools_css_default = _style("#main,#main .schedule-manager,#main .schedule-manager *{box-sizing:border-box}#main{width:calc(100% - 80px);height:calc(100% - 46px);padding-right:20px;position:absolute;top:46px;left:80px;overflow:hidden}#main>div{box-sizing:border-box;width:100%;height:100%;display:none}#main>div.show{display:block}#searchTeacher>.credits-bar{box-sizing:border-box;color:#000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:1000;white-space:nowrap;background:#ffffff1a;border-radius:30px;align-items:center;gap:8px;margin:0;padding:10px 25px;font-size:.9rem;animation:.6s ease-out slideUp;display:flex;position:fixed;bottom:20px;left:calc(50% + 64px);transform:translate(-50%);box-shadow:0 4px 12px #00000026}#searchTeacher .van-cell-group{padding-bottom:60px}.schedule-manager{flex-direction:column;height:100%;display:flex;overflow:hidden}.schedule-manager-tab{background:#f7f8fa;padding:12px}.schedule-manager-actions{border-bottom:1px solid #e1e4e8;flex:none;justify-content:space-between;align-items:center;gap:12px;padding:4px 8px 12px;display:flex}.schedule-manager-hint{color:#6b7280;font-size:13px}.add-btn{color:#fff;cursor:pointer;background:#4a6bdf;border:none;border-radius:6px;align-items:center;gap:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.add-btn:hover{background:#3a5bc7}.add-btn:disabled{cursor:not-allowed;opacity:.55}.export-container{margin-right:15px;position:relative}.export-btn{color:#fff;cursor:pointer;background:#a0a0a0;border:none;border-radius:6px;align-items:center;gap:5px;margin-right:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.export-btn:hover{background:#5b5b5b}.export-dropdown{z-index:100;background:#fff;border-radius:6px;min-width:120px;padding:8px 0;position:absolute;top:100%;right:0;box-shadow:0 4px 12px #0000001a}.export-dropdown div{cursor:pointer;color:#4a5568;padding:8px 16px;transition:background-color .2s}.export-dropdown div:hover{color:#4a6bdf;background-color:#f0f4ff}.file-list-header{background:0 0;border-bottom:1px solid #e1e4e8;padding:15px 20px}.file-list-header h3{color:#4a5568;margin-top:0;margin-bottom:10px;font-size:16px;font-weight:600}.files-display{flex-wrap:wrap;gap:8px;display:flex}.file-tag{color:#4a5568;background:#edf2f7;border-radius:20px;align-items:center;gap:6px;padding:6px 12px;font-size:13px;display:flex}.tag-delete-btn{color:#718096;cursor:pointer;background:0 0;border:none;border-radius:50%;justify-content:center;align-items:center;width:16px;height:16px;font-size:14px;display:flex}.tag-delete-btn:hover{color:#e53e3e;background:#fff5f5}.main-content{flex-direction:column;flex:1;display:flex;overflow:hidden}.schedule-container{flex:1;padding:12px 0 0;overflow:auto}.schedule-table{border-collapse:collapse;table-layout:fixed;background:#fff;width:100%}.schedule-table th,.schedule-table td{text-align:center;border:1px solid #e1e4e8;padding:12px}.schedule-table th{color:#4a5568;background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-table th.time-header{width:80px;font-weight:600;background-color:#f0f4ff!important}.period-cell{background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-cell{vertical-align:top;min-height:80px;padding:8px}.file-item-display{color:#2b6cb0;word-break:break-all;background:#ebf4ff;border-radius:4px;margin-bottom:4px;padding:6px 8px;font-size:13px}.file-item-display.file-item-all-free{color:#07c160;background:#e8f8ef;font-weight:600}.file-item-display.file-item-online-only{color:#ad6800;background:#fff7e6;font-weight:600}.availability-summary{color:#646566;margin-top:6px;font-size:11px;font-weight:600}.availability-summary.status-free{color:#078b47}.availability-summary.status-online{color:#ad6800}.availability-summary.status-none{color:#c41d7f}.empty-cell{color:#a0aec0;justify-content:center;align-items:center;height:100%;font-size:12px;display:flex}.visually-hidden{clip:rect(0, 0, 0, 0)!important;white-space:nowrap!important;border:0!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;position:absolute!important;overflow:hidden!important}@media (width<=768px){.schedule-table{font-size:12px}.schedule-table th,.schedule-table td{padding:6px}}.personal-schedule-page{background:#f7f8fa;flex-direction:column;min-width:0;height:100%;display:flex;overflow:hidden}#main>.personal-schedule-page.show{display:flex}.personal-schedule-toolbar{background:#fff;border-bottom:1px solid #ebedf0;flex-wrap:wrap;flex:none;align-items:center;gap:12px;padding:8px 12px;display:flex}.personal-link-search-form{flex:420px;min-width:240px}.personal-link-search{width:100%;padding:0}.personal-schedule-actions{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.personal-schedule-tabs{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.personal-schedule-tabs>.van-tabs__wrap{flex:none}.personal-schedule-tabs>.van-tabs__content{flex:1;min-height:0}.personal-schedule-tabs>.van-tabs__content>.van-tab__panel{height:100%;overflow:hidden}.schedule-key-page{background:#f7f8fa;height:100%;padding:12px 16px;overflow:auto}.schedule-key-content{width:100%;max-width:100%}.schedule-key-guide{color:#4b5563;border-left:4px solid #1989fa;margin-bottom:18px;padding:8px 12px;line-height:1.65}.schedule-key-guide p{margin:4px 0}.schedule-key-empty{flex-direction:column;align-items:center;padding-bottom:24px;display:flex}.schedule-key-section{border-top:1px solid #ebedf0;padding:16px 0}.schedule-private-key-section{border-color:#ebedf0}.schedule-key-section-title{justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;display:flex}.schedule-key-section-title strong,.schedule-key-section-title span{display:block}.schedule-key-section-title span{color:#6b7280;margin-top:3px;font-size:13px}.schedule-key-buttons{flex-wrap:wrap;justify-content:flex-end;gap:8px;display:flex}.schedule-key-text{resize:vertical;color:#334155;word-break:break-all;background:#f8fafc;border:1px solid #dcdfe6;border-radius:8px;width:100%;padding:10px;font:12px/1.5 Consolas,Monaco,monospace}.schedule-private-key-text{background:#fff}.schedule-private-key-hidden{color:#6b7280;text-align:center;background:#f3f4f6;padding:24px 12px}.schedule-key-regenerate{justify-content:flex-end;margin-top:18px;display:flex}.personal-panel-shell{flex-direction:column;height:100%;min-height:0;display:flex}.personal-week-filter{background:#fff;border-bottom:1px solid #f0f1f2;flex:none;padding:6px 12px;overflow:hidden}.personal-week-axis{--van-radius-sm:var(--van-radius-max);--van-tabs-card-height:32px}.personal-week-axis>.van-tabs__wrap{justify-content:center;align-items:center;display:flex}.personal-week-axis .van-tabs__nav--card{max-width:100%;margin:0}.personal-week-axis .van-tabs__nav--card .van-tab{min-width:64px}.personal-schedule-capture{background:#f7f8fa;flex:1;min-height:0;padding:12px;overflow:auto}.personal-table-capture{width:100%;min-width:1002px;min-height:100%}.personal-stats-capture{min-height:100%}.personal-course-grid{background:#ebedf0;border-radius:8px;grid-template-rows:38px repeat(10,minmax(52px,auto));grid-template-columns:92px repeat(7,minmax(130px,1fr));gap:1px;width:100%;min-width:1002px;padding:1px;display:grid;box-shadow:0 2px 10px #0000000d}.personal-course-grid-corner,.personal-course-grid-day,.personal-course-grid-period,.personal-course-grid-cell{box-sizing:border-box;min-width:0}.personal-course-grid-corner,.personal-course-grid-day{color:#4a5568;background:#f0f4ff;justify-content:center;align-items:center;font-size:13px;font-weight:600;display:flex}.personal-course-grid-corner{grid-area:1/1}.personal-course-grid-period{color:#4a5568;text-align:center;background:#f8f9ff;flex-direction:column;justify-content:center;align-items:center;padding:4px;font-size:11px;display:flex}.personal-course-grid-cell{z-index:1;background:#fff}.personal-table{table-layout:fixed;border-spacing:0;border-collapse:separate;background:#fff;border-radius:8px;width:100%;min-width:980px;overflow:hidden;box-shadow:0 2px 10px #0000000d}.personal-table th,.personal-table td{text-align:center;vertical-align:top;border-bottom:1px solid #ebedf0;border-right:1px solid #ebedf0;padding:6px}.personal-table thead th{color:#4a5568;background:#f0f4ff;height:38px;font-size:13px}.personal-table .personal-period-cell{color:#4a5568;vertical-align:middle;background:#f8f9ff;width:92px;min-width:92px;font-size:12px}.personal-course-card{color:#2d3748;text-align:left;word-break:break-word;background:#edf3ff;border-left:3px solid #4a6bdf;border-radius:6px;margin-bottom:5px;padding:7px 6px;line-height:1.35}.personal-course-card:last-child{margin-bottom:0}.personal-course-stack{z-index:2;box-sizing:border-box;flex-direction:column;justify-content:flex-start;align-self:stretch;gap:4px;min-width:0;margin:3px;display:flex}.personal-course-stack>.personal-course-card{box-sizing:border-box;flex:none;width:100%;min-height:0;margin-bottom:0}.personal-course-name{color:#2949b8;flex:1;min-width:0;font-size:13px;font-weight:600}.personal-course-header{justify-content:space-between;align-items:flex-start;gap:5px;display:flex}.personal-course-variant-count{color:#4a6bdf;white-space:nowrap;background:#dfe7ff;border-radius:999px;flex:none;padding:1px 5px;font-size:10px;line-height:1.5}.personal-course-variant-count.overlap{color:#d46b08;background:#fff3e0}.personal-course-variants{border-top:1px solid #d9e1f2;margin-top:5px}.personal-course-variant{padding:5px 0}.personal-course-variant+.personal-course-variant{border-top:1px dashed #d9e1f2}.personal-course-variant-weeks{color:#4a6bdf;font-size:11px;font-weight:600}.personal-course-variant-detail{color:#646566;margin-top:1px;font-size:11px}.personal-course-meta{color:#646566;margin-top:2px;font-size:11px}.personal-free-cell{color:#1989fa;white-space:pre-line;justify-content:center;align-items:center;min-height:52px;font-size:12px;line-height:1.45;display:flex}.personal-not-free{color:#c8c9cc}.personal-all-term-free{color:#07c160;font-weight:600}.personal-online-only{color:#ad6800;font-weight:600}.personal-empty-state{justify-content:center;align-items:center;height:100%;min-height:260px;display:flex}.personal-stats{height:100%;padding:12px;overflow:auto}.personal-stat-grid{grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:12px;display:grid}.personal-stat-card,.personal-chart-card{background:#fff;border-radius:8px;padding:14px;box-shadow:0 2px 10px #0000000d}.personal-stat-value{color:#4a6bdf;margin-top:4px;font-size:26px;font-weight:700}.personal-stat-label,.personal-stat-unit{color:#969799;font-size:12px}.personal-chart-card h3{color:#323233;margin:0 0 12px;font-size:16px}.personal-week-bars{align-items:flex-end;gap:8px;min-height:210px;padding:8px 4px 0;display:flex;overflow-x:auto}.personal-week-bar-item{text-align:center;color:#969799;flex:1 0 36px;min-width:36px;font-size:11px}.personal-week-bar-track{justify-content:center;align-items:flex-end;height:160px;display:flex}.personal-week-bar{background:linear-gradient(#6f8df3,#4a6bdf);border-radius:5px 5px 0 0;width:22px;min-height:2px}.personal-week-bar-value{color:#4a6bdf;margin-bottom:3px;font-weight:600}@media (width<=900px){.personal-schedule-toolbar{flex-direction:column;align-items:stretch;gap:6px}.personal-link-search-form{flex-basis:auto;width:100%;min-width:0}.schedule-manager-actions{flex-direction:column;align-items:stretch}.schedule-manager-actions>div{justify-content:flex-start!important}.personal-stat-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.schedule-key-page{padding:10px}.schedule-key-section-title{flex-direction:column;align-items:stretch}.schedule-key-buttons{justify-content:flex-start}}");
+	var tools_css_default = _style("#main,#main .schedule-manager,#main .schedule-manager *{box-sizing:border-box}#main{width:calc(100% - 80px);height:calc(100% - 46px);padding-right:20px;position:absolute;top:46px;left:80px;overflow:hidden}#main>div{box-sizing:border-box;width:100%;height:100%;display:none}#main>div.show{display:block}#searchTeacher>.credits-bar{box-sizing:border-box;color:#000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:1000;white-space:nowrap;background:#ffffff1a;border-radius:30px;align-items:center;gap:8px;margin:0;padding:10px 25px;font-size:.9rem;animation:.6s ease-out slideUp;display:flex;position:fixed;bottom:20px;left:calc(50% + 64px);transform:translate(-50%);box-shadow:0 4px 12px #00000026}#searchTeacher .van-cell-group{padding-bottom:60px}.schedule-manager{flex-direction:column;height:100%;display:flex;overflow:hidden}.schedule-manager-tab{background:#f7f8fa;padding:12px}.schedule-manager-actions{border-bottom:1px solid #e1e4e8;flex:none;justify-content:space-between;align-items:center;gap:12px;padding:4px 8px 12px;display:flex}.schedule-manager-hint{color:#6b7280;font-size:13px}.add-btn{color:#fff;cursor:pointer;background:#4a6bdf;border:none;border-radius:6px;align-items:center;gap:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.add-btn:hover{background:#3a5bc7}.add-btn:disabled{cursor:not-allowed;opacity:.55}.export-container{margin-right:15px;position:relative}.export-btn{color:#fff;cursor:pointer;background:#a0a0a0;border:none;border-radius:6px;align-items:center;gap:5px;margin-right:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.export-btn:hover{background:#5b5b5b}.export-dropdown{z-index:100;background:#fff;border-radius:6px;min-width:120px;padding:8px 0;position:absolute;top:100%;right:0;box-shadow:0 4px 12px #0000001a}.export-dropdown div{cursor:pointer;color:#4a5568;padding:8px 16px;transition:background-color .2s}.export-dropdown div:hover{color:#4a6bdf;background-color:#f0f4ff}.file-list-header{background:0 0;border-bottom:1px solid #e1e4e8;padding:15px 20px}.file-list-header h3{color:#4a5568;margin-top:0;margin-bottom:10px;font-size:16px;font-weight:600}.files-display{flex-wrap:wrap;gap:8px;display:flex}.file-tag{color:#4a5568;background:#edf2f7;border-radius:20px;align-items:center;gap:6px;padding:6px 12px;font-size:13px;display:flex}.tag-delete-btn{color:#718096;cursor:pointer;background:0 0;border:none;border-radius:50%;justify-content:center;align-items:center;width:16px;height:16px;font-size:14px;display:flex}.tag-delete-btn:hover{color:#e53e3e;background:#fff5f5}.main-content{flex-direction:column;flex:1;display:flex;overflow:hidden}.schedule-container{flex:1;padding:12px 0 0;overflow:auto}.schedule-table{border-collapse:collapse;table-layout:fixed;background:#fff;width:100%}.schedule-table th,.schedule-table td{text-align:center;border:1px solid #e1e4e8;padding:12px}.schedule-table th{color:#4a5568;background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-table th.time-header{width:80px;font-weight:600;background-color:#f0f4ff!important}.period-cell{background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-cell{vertical-align:top;min-height:80px;padding:8px}.file-item-display{color:#2b6cb0;word-break:break-all;background:#ebf4ff;border-radius:4px;margin-bottom:4px;padding:6px 8px;font-size:13px}.file-item-display.file-item-all-free{color:#07c160;background:#e8f8ef;font-weight:600}.file-item-display.file-item-online-only{color:#ad6800;background:#fff7e6;font-weight:600}.availability-summary{color:#646566;margin-top:6px;font-size:11px;font-weight:600}.availability-summary.status-free{color:#078b47}.availability-summary.status-online{color:#ad6800}.availability-summary.status-none{color:#c41d7f}.empty-cell{color:#a0aec0;justify-content:center;align-items:center;height:100%;font-size:12px;display:flex}.visually-hidden{clip:rect(0, 0, 0, 0)!important;white-space:nowrap!important;border:0!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;position:absolute!important;overflow:hidden!important}@media (width<=768px){.schedule-table{font-size:12px}.schedule-table th,.schedule-table td{padding:6px}}.personal-schedule-page{background:#f7f8fa;flex-direction:column;min-width:0;height:100%;display:flex;overflow:hidden}#main>.personal-schedule-page.show{display:flex}.personal-schedule-toolbar{background:#fff;border-bottom:1px solid #ebedf0;flex-wrap:wrap;flex:none;align-items:center;gap:12px;padding:8px 12px;display:flex}.personal-link-search-form{flex:420px;min-width:240px}.personal-link-search{width:100%;padding:0}.personal-schedule-actions{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.personal-schedule-tabs{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.personal-schedule-tabs>.van-tabs__wrap{flex:none}.personal-schedule-tabs>.van-tabs__content{flex:1;min-height:0}.personal-schedule-tabs>.van-tabs__content>.van-tab__panel{height:100%;overflow:hidden}.schedule-key-page{background:#f7f8fa;height:100%;padding:12px 16px;overflow:auto}.schedule-key-content{width:100%;max-width:100%}.schedule-key-guide{color:#4b5563;border-left:4px solid #1989fa;margin-bottom:18px;padding:8px 12px;line-height:1.65}.schedule-key-guide p{margin:4px 0}.schedule-key-empty{flex-direction:column;align-items:center;padding-bottom:24px;display:flex}.schedule-key-section{border-top:1px solid #ebedf0;padding:16px 0}.schedule-private-key-section{border-color:#ebedf0}.schedule-key-section-title{justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;display:flex}.schedule-key-section-title strong,.schedule-key-section-title span{display:block}.schedule-key-section-title span{color:#6b7280;margin-top:3px;font-size:13px}.schedule-key-buttons{flex-wrap:wrap;justify-content:flex-end;gap:8px;display:flex}.schedule-key-text{resize:vertical;color:#334155;word-break:break-all;background:#f8fafc;border:1px solid #dcdfe6;border-radius:8px;width:100%;padding:10px;font:12px/1.5 Consolas,Monaco,monospace}.schedule-private-key-text{background:#fff}.schedule-private-key-hidden{color:#6b7280;text-align:center;background:#f3f4f6;padding:24px 12px}.schedule-key-regenerate{justify-content:flex-end;margin-top:18px;display:flex}.personal-panel-shell{flex-direction:column;height:100%;min-height:0;display:flex}.personal-week-filter{background:#fff;border-bottom:1px solid #f0f1f2;flex:none;padding:6px 12px;overflow:hidden}.personal-week-axis{--van-radius-sm:var(--van-radius-max);--van-tabs-card-height:32px}.personal-week-axis>.van-tabs__wrap{justify-content:center;align-items:center;display:flex}.personal-week-axis .van-tabs__nav--card{max-width:100%;margin:0}.personal-week-axis .van-tabs__nav--card .van-tab{min-width:64px}.personal-schedule-capture{background:#f7f8fa;flex:1;min-height:0;padding:12px;overflow:auto}.personal-course-scroll{margin:12px;padding:0}.personal-table-capture{width:100%;min-width:1002px;min-height:100%}.personal-stats-capture{min-height:100%}.personal-course-grid{box-sizing:border-box;background:#ebedf0;border-radius:8px;grid-template-rows:38px repeat(10,minmax(52px,auto));grid-template-columns:92px repeat(7,minmax(130px,1fr));gap:1px;width:100%;min-width:1002px;padding:1px;display:grid;box-shadow:0 2px 10px #0000000d}.personal-course-grid-corner,.personal-course-grid-day,.personal-course-grid-period,.personal-course-grid-cell{box-sizing:border-box;min-width:0}.personal-course-grid-corner,.personal-course-grid-day,.personal-course-grid-period{box-shadow:0 0 0 1px #ebedf0}.personal-course-grid-corner,.personal-course-grid-day{z-index:4;color:#4a5568;background:#f0f4ff;justify-content:center;align-items:center;font-size:13px;font-weight:600;display:flex;position:sticky;top:1px}.personal-course-grid-corner{z-index:5;grid-area:1/1;left:1px}.personal-course-grid-period{z-index:3;color:#4a5568;text-align:center;background:#f8f9ff;flex-direction:column;justify-content:center;align-items:center;padding:4px;font-size:11px;display:flex;position:sticky;left:1px}.personal-course-grid-cell{z-index:1;background:#fff}.personal-table{table-layout:fixed;border-spacing:0;border-collapse:separate;background:#fff;border-radius:8px;width:100%;min-width:980px;overflow:hidden;box-shadow:0 2px 10px #0000000d}.personal-table th,.personal-table td{text-align:center;vertical-align:top;border-bottom:1px solid #ebedf0;border-right:1px solid #ebedf0;padding:6px}.personal-table thead th{color:#4a5568;background:#f0f4ff;height:38px;font-size:13px}.personal-table .personal-period-cell{color:#4a5568;vertical-align:middle;background:#f8f9ff;width:92px;min-width:92px;font-size:12px}.personal-course-card{box-sizing:border-box;border-left:4px solid var(--course-color);background:color-mix(in srgb, var(--course-color) 10%, white);color:#2d3748;text-align:left;word-break:break-word;border-radius:6px;flex-direction:column;justify-content:center;min-width:0;margin:3px 0;padding:7px 6px;line-height:1.35;display:flex}.personal-course-stack{z-index:2;grid-template-rows:subgrid;box-sizing:border-box;align-self:stretch;gap:1px 4px;min-width:0;margin:0 3px;display:grid}.personal-course-name{color:#2d3748;min-width:0;font-size:13px;font-weight:600}.personal-course-variant-count{color:#4a6bdf;white-space:nowrap;background:#dfe7ff;border-radius:999px;flex:none;padding:1px 5px;font-size:10px;line-height:1.5}.personal-course-variant-count.overlap{color:#d46b08;background:#fff3e0}.personal-course-variants{border-top:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1;margin-top:5px}.personal-course-variant{padding:5px 0}.personal-course-variant+.personal-course-variant{border-top:1px dashed #cbd5e1}.personal-course-variant-weeks{color:#475569;font-size:11px;font-weight:600}.personal-course-variant-detail{color:#646566;margin-top:1px;font-size:11px}.personal-course-periods{color:#646566;margin-top:5px;font-size:11px}.personal-free-cell{color:#1989fa;white-space:pre-line;justify-content:center;align-items:center;min-height:52px;font-size:12px;line-height:1.45;display:flex}.personal-not-free{color:#c8c9cc}.personal-all-term-free{color:#07c160;font-weight:600}.personal-online-only{color:#ad6800;font-weight:600}.personal-empty-state{justify-content:center;align-items:center;height:100%;min-height:260px;display:flex}.personal-stats{height:100%;padding:12px;overflow:auto}.personal-stat-grid{grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:12px;display:grid}.personal-stat-card,.personal-chart-card{background:#fff;border-radius:8px;padding:14px;box-shadow:0 2px 10px #0000000d}.personal-stat-value{color:#4a6bdf;margin-top:4px;font-size:26px;font-weight:700}.personal-stat-label,.personal-stat-unit{color:#969799;font-size:12px}.personal-chart-card h3{color:#323233;margin:0 0 12px;font-size:16px}.personal-week-bars{align-items:flex-end;gap:8px;min-height:210px;padding:8px 4px 0;display:flex;overflow-x:auto}.personal-week-bar-item{text-align:center;color:#969799;flex:1 0 36px;min-width:36px;font-size:11px}.personal-week-bar-track{justify-content:center;align-items:flex-end;height:160px;display:flex}.personal-week-bar{background:linear-gradient(#6f8df3,#4a6bdf);border-radius:5px 5px 0 0;width:22px;min-height:2px}.personal-week-bar-value{color:#4a6bdf;margin-bottom:3px;font-weight:600}@media (width<=900px){.personal-schedule-toolbar{flex-direction:column;align-items:stretch;gap:6px}.personal-link-search-form{flex-basis:auto;width:100%;min-width:0}.schedule-manager-actions{flex-direction:column;align-items:stretch}.schedule-manager-actions>div{justify-content:flex-start!important}.personal-stat-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.schedule-key-page{padding:10px}.schedule-key-section-title{flex-direction:column;align-items:stretch}.schedule-key-buttons{justify-content:flex-start}}");
 	var personalDays = Array.from({ length: 7 }, (_, index) => ({
 		number: index + 1,
 		text: weekdayText(index + 1)
@@ -11267,17 +11274,17 @@ self.onmessage = async (e) => {
 		if (!data) return 0;
 		return Number(data.meta?.weekRange?.end) || Math.max(0, ...data.lessons.map((lesson) => Number(lesson.week) || 0));
 	}
-	function courseColor(id) {
-		const colors = [
-			"#4a6bdf",
-			"#07c160",
-			"#ee0a24",
-			"#ff976a",
-			"#7232dd",
-			"#1989fa",
-			"#8b5a2b"
-		];
-		return colors[String(id || "").split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length];
+	function buildCourseColors(courses) {
+		const ids = [...new Set(courses.map((course) => course.id))].sort();
+		return new Map(ids.map((id, index) => {
+			const hue = (220 + index * 137.508) % 360;
+			const lightness = [
+				40,
+				32,
+				48
+			][index % 3];
+			return [id, `hsl(${hue.toFixed(3)} 65% ${lightness}%)`];
+		}));
 	}
 	function splitConsecutivePeriods(periods) {
 		const values = [...new Set((periods || []).map(Number))].filter((period) => Number.isInteger(period) && period >= 1 && period <= 10).sort((left, right) => left - right);
@@ -11291,6 +11298,7 @@ self.onmessage = async (e) => {
 	}
 	function buildPersonalCourseEntries(data, week = 0) {
 		const maps = getMaps(data);
+		const colors = buildCourseColors(data.courses);
 		const groups = new Map();
 		data.lessons.filter((lesson) => !week || lesson.week === week).forEach((lesson) => {
 			const detail = getLessonDetail(maps, lesson);
@@ -11307,16 +11315,12 @@ self.onmessage = async (e) => {
 				weekday: lesson.weekday,
 				periods,
 				periodText: lesson.periodText || formatPeriods(periods),
-				color: courseColor(lesson.courseId),
+				color: colors.get(lesson.courseId),
 				variants: new Map()
 			});
 			const group = groups.get(groupKey);
 			const teacherKey = [...teachers].sort().join("、");
-			const variantKey = [
-				lesson.scheduleId,
-				teacherKey,
-				detail.room
-			].join("|");
+			const variantKey = JSON.stringify([teacherKey, detail.room]);
 			if (!group.variants.has(variantKey)) group.variants.set(variantKey, {
 				key: variantKey,
 				teacherText: detail.teacherText || "",
@@ -11372,7 +11376,7 @@ self.onmessage = async (e) => {
 		}));
 		const result = [];
 		[...blocksByDay.keys()].sort((left, right) => left - right).forEach((weekday) => {
-			const dayBlocks = blocksByDay.get(weekday).sort((left, right) => left.startPeriod - right.startPeriod || left.endPeriod - right.endPeriod || left.name.localeCompare(right.name, "zh-Hans-CN"));
+			const dayBlocks = blocksByDay.get(weekday).sort((left, right) => left.startPeriod - right.startPeriod || right.endPeriod - left.endPeriod || left.name.localeCompare(right.name, "zh-Hans-CN") || left.key.localeCompare(right.key));
 			const components = [];
 			let component = [];
 			let componentEnd = 0;
@@ -11389,6 +11393,20 @@ self.onmessage = async (e) => {
 			components.forEach((items) => {
 				const startPeriod = Math.min(...items.map((item) => item.startPeriod));
 				const endPeriod = Math.max(...items.map((item) => item.endPeriod));
+				const columnEnds = [];
+				const positionedEntries = items.map((item) => {
+					let column = columnEnds.findIndex((end) => end < item.startPeriod);
+					if (column === -1) column = columnEnds.length;
+					columnEnds[column] = item.endPeriod;
+					return {
+						...item,
+						column: column + 1,
+						gridStyle: {
+							gridColumn: String(column + 1),
+							gridRow: `${item.startPeriod - startPeriod + 1} / span ${item.endPeriod - item.startPeriod + 1}`
+						}
+					};
+				});
 				result.push({
 					key: [
 						weekday,
@@ -11400,15 +11418,27 @@ self.onmessage = async (e) => {
 					startPeriod,
 					endPeriod,
 					hasTimeOverlap: items.length > 1,
-					entries: items,
+					columnCount: columnEnds.length,
+					entries: positionedEntries,
 					gridStyle: {
 						gridColumn: String(weekday + 1),
-						gridRow: `${startPeriod + 1} / span ${endPeriod - startPeriod + 1}`
+						gridRow: `${startPeriod + 1} / span ${endPeriod - startPeriod + 1}`,
+						gridTemplateColumns: `repeat(${columnEnds.length}, minmax(0, 1fr))`
 					}
 				});
 			});
 		});
 		return result;
+	}
+	function buildPersonalCourseGridStyle(layout) {
+		const dayWidths = personalDays.map(({ number }) => {
+			const columns = Math.max(0, ...layout.filter((group) => group.weekday === number).map((group) => group.columnCount));
+			return columns ? columns * 130 : 56;
+		});
+		return {
+			minWidth: `${92 + dayWidths.reduce((sum, width) => sum + width, 0) + 9}px`,
+			gridTemplateColumns: ["92px", ...dayWidths.map((width) => `minmax(${width}px, 1fr)`)].join(" ")
+		};
 	}
 	function isOnlineLesson(maps, lesson) {
 		const detail = getLessonDetail(maps, lesson);
@@ -11994,99 +12024,79 @@ self.onmessage = async (e) => {
 		key: 0,
 		class: "personal-week-filter"
 	};
-	var _hoisted_23 = { class: "personal-schedule-capture" };
+	var _hoisted_23 = { class: "personal-schedule-capture personal-course-scroll" };
 	var _hoisted_24 = {
 		key: 0,
 		class: "personal-empty-state"
 	};
-	var _hoisted_25 = {
-		key: 2,
-		class: "personal-course-grid"
-	};
-	var _hoisted_26 = { class: "personal-course-header" };
-	var _hoisted_27 = { class: "personal-course-name" };
-	var _hoisted_28 = {
-		key: 0,
-		class: "personal-course-meta"
-	};
-	var _hoisted_29 = {
-		key: 1,
-		class: "personal-course-meta"
-	};
-	var _hoisted_30 = { class: "personal-course-meta" };
+	var _hoisted_25 = { class: "personal-course-name" };
+	var _hoisted_26 = { class: "personal-course-variants" };
+	var _hoisted_27 = { class: "personal-course-variant-weeks" };
+	var _hoisted_28 = { class: "personal-course-variant-detail" };
+	var _hoisted_29 = { class: "personal-course-periods" };
+	var _hoisted_30 = { class: "personal-panel-shell" };
 	var _hoisted_31 = {
-		key: 1,
-		class: "personal-course-variants"
-	};
-	var _hoisted_32 = { class: "personal-course-variant-weeks" };
-	var _hoisted_33 = { class: "personal-course-variant-detail" };
-	var _hoisted_34 = {
-		key: 2,
-		class: "personal-course-meta"
-	};
-	var _hoisted_35 = { class: "personal-panel-shell" };
-	var _hoisted_36 = {
 		key: 0,
 		class: "personal-week-filter"
 	};
-	var _hoisted_37 = { class: "personal-schedule-capture" };
-	var _hoisted_38 = {
+	var _hoisted_32 = { class: "personal-schedule-capture" };
+	var _hoisted_33 = {
 		key: 1,
 		class: "personal-table",
 		"aria-label": "个人空闲时间表"
 	};
-	var _hoisted_39 = {
+	var _hoisted_34 = {
 		scope: "row",
 		class: "personal-period-cell"
 	};
-	var _hoisted_40 = ["aria-label"];
-	var _hoisted_41 = { class: "schedule-manager schedule-manager-tab" };
-	var _hoisted_42 = { class: "schedule-manager-actions" };
-	var _hoisted_43 = { style: {
+	var _hoisted_35 = ["aria-label"];
+	var _hoisted_36 = { class: "schedule-manager schedule-manager-tab" };
+	var _hoisted_37 = { class: "schedule-manager-actions" };
+	var _hoisted_38 = { style: {
 		"display": "flex",
 		"align-items": "center"
 	} };
-	var _hoisted_44 = { class: "export-container" };
-	var _hoisted_45 = {
+	var _hoisted_39 = { class: "export-container" };
+	var _hoisted_40 = {
 		key: 0,
 		class: "export-dropdown"
 	};
-	var _hoisted_46 = ["disabled"];
-	var _hoisted_47 = { class: "main-content" };
-	var _hoisted_48 = {
+	var _hoisted_41 = ["disabled"];
+	var _hoisted_42 = { class: "main-content" };
+	var _hoisted_43 = {
 		key: 0,
 		class: "file-list-header"
 	};
-	var _hoisted_49 = { class: "files-display" };
-	var _hoisted_50 = ["onClick"];
-	var _hoisted_51 = { class: "schedule-container" };
-	var _hoisted_52 = {
+	var _hoisted_44 = { class: "files-display" };
+	var _hoisted_45 = ["onClick"];
+	var _hoisted_46 = { class: "schedule-container" };
+	var _hoisted_47 = {
 		scope: "row",
 		class: "period-cell"
 	};
-	var _hoisted_53 = { key: 0 };
-	var _hoisted_54 = {
+	var _hoisted_48 = { key: 0 };
+	var _hoisted_49 = {
 		key: 1,
 		class: "empty-cell"
 	};
-	var _hoisted_55 = { class: "schedule-key-page" };
-	var _hoisted_56 = { class: "schedule-key-content" };
-	var _hoisted_57 = {
+	var _hoisted_50 = { class: "schedule-key-page" };
+	var _hoisted_51 = { class: "schedule-key-content" };
+	var _hoisted_52 = {
 		key: 0,
 		class: "schedule-key-empty"
 	};
-	var _hoisted_58 = { class: "schedule-key-section" };
-	var _hoisted_59 = { class: "schedule-key-section-title" };
-	var _hoisted_60 = ["value"];
-	var _hoisted_61 = { class: "schedule-key-section schedule-private-key-section" };
-	var _hoisted_62 = { class: "schedule-key-section-title" };
-	var _hoisted_63 = { class: "schedule-key-buttons" };
-	var _hoisted_64 = ["value"];
-	var _hoisted_65 = {
+	var _hoisted_53 = { class: "schedule-key-section" };
+	var _hoisted_54 = { class: "schedule-key-section-title" };
+	var _hoisted_55 = ["value"];
+	var _hoisted_56 = { class: "schedule-key-section schedule-private-key-section" };
+	var _hoisted_57 = { class: "schedule-key-section-title" };
+	var _hoisted_58 = { class: "schedule-key-buttons" };
+	var _hoisted_59 = ["value"];
+	var _hoisted_60 = {
 		key: 1,
 		class: "schedule-private-key-hidden"
 	};
-	var _hoisted_66 = { class: "schedule-key-regenerate" };
+	var _hoisted_61 = { class: "schedule-key-regenerate" };
 	var MAX_TEACHER_PAGES = 100;
 	var _sfc_main = {
 		__name: "ToolsApp",
@@ -12688,6 +12698,7 @@ self.onmessage = async (e) => {
 				if (!data) return [];
 				return buildPersonalCourseLayout(buildPersonalCourseEntries(data, Number(selectedCourseWeek.value)));
 			});
+			const personalCourseGridStyle = (0, vue.computed)(() => buildPersonalCourseGridStyle(personalCourseLayout.value));
 			const personalStats = (0, vue.computed)(() => {
 				const data = personalSchedule.value;
 				if (!data) return {
@@ -13161,7 +13172,8 @@ self.onmessage = async (e) => {
 									}, 8, ["active"])])) : (0, vue.createCommentVNode)("", true), (0, vue.createElementVNode)("div", _hoisted_23, [(0, vue.createElementVNode)("div", {
 										ref_key: "personalCourseCapture",
 										ref: personalCourseCapture,
-										class: "personal-table-capture"
+										class: "personal-table-capture",
+										style: (0, vue.normalizeStyle)({ minWidth: personalCourseGridStyle.value.minWidth })
 									}, [personalLoading.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_24, [(0, vue.createVNode)((0, vue.unref)(Loading), {
 										size: "28px",
 										vertical: ""
@@ -13171,7 +13183,11 @@ self.onmessage = async (e) => {
 									})])) : !personalSchedule.value ? ((0, vue.openBlock)(), (0, vue.createBlock)((0, vue.unref)(Empty), {
 										key: 1,
 										description: personalError.value || "暂无课表，请输入链接或上传 JSON"
-									}, null, 8, ["description"])) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_25, [
+									}, null, 8, ["description"])) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", {
+										key: 2,
+										class: "personal-course-grid",
+										style: (0, vue.normalizeStyle)(personalCourseGridStyle.value)
+									}, [
 										_cache[26] || (_cache[26] = (0, vue.createElementVNode)("div", { class: "personal-course-grid-corner" }, "节次 / 时间", -1)),
 										((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)((0, vue.unref)(personalDays), (day) => {
 											return (0, vue.openBlock)(), (0, vue.createElementBlock)("div", {
@@ -13210,31 +13226,30 @@ self.onmessage = async (e) => {
 												return (0, vue.openBlock)(), (0, vue.createElementBlock)("div", {
 													key: entry.key,
 													class: "personal-course-card",
-													style: (0, vue.normalizeStyle)({ borderLeftColor: entry.color })
+													style: (0, vue.normalizeStyle)({
+														...entry.gridStyle,
+														"--course-color": entry.color
+													})
 												}, [
-													(0, vue.createElementVNode)("div", _hoisted_26, [(0, vue.createElementVNode)("div", _hoisted_27, (0, vue.toDisplayString)(entry.name), 1)]),
-													entry.variants.length === 1 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, { key: 0 }, [
-														entry.variants[0].teacherText ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_28, " 教师：" + (0, vue.toDisplayString)(entry.variants[0].teacherText), 1)) : (0, vue.createCommentVNode)("", true),
-														entry.variants[0].room ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_29, " 教室：" + (0, vue.toDisplayString)(entry.variants[0].room), 1)) : (0, vue.createCommentVNode)("", true),
-														(0, vue.createElementVNode)("div", _hoisted_30, "周次：" + (0, vue.toDisplayString)(entry.variants[0].weeksText), 1)
-													], 64)) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_31, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(entry.variants, (variant) => {
+													(0, vue.createElementVNode)("div", _hoisted_25, (0, vue.toDisplayString)(entry.name), 1),
+													(0, vue.createElementVNode)("div", _hoisted_26, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(entry.variants, (variant) => {
 														return (0, vue.openBlock)(), (0, vue.createElementBlock)("div", {
 															key: variant.key,
 															class: "personal-course-variant"
-														}, [(0, vue.createElementVNode)("div", _hoisted_32, (0, vue.toDisplayString)(variant.weeksText), 1), (0, vue.createElementVNode)("div", _hoisted_33, (0, vue.toDisplayString)(variant.detailText), 1)]);
-													}), 128))])),
-													entry.periodText ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_34, " 节次：" + (0, vue.toDisplayString)(entry.periodText), 1)) : (0, vue.createCommentVNode)("", true)
+														}, [(0, vue.createElementVNode)("div", _hoisted_27, (0, vue.toDisplayString)(variant.weeksText), 1), (0, vue.createElementVNode)("div", _hoisted_28, (0, vue.toDisplayString)(variant.detailText), 1)]);
+													}), 128))]),
+													(0, vue.createElementVNode)("div", _hoisted_29, "第 " + (0, vue.toDisplayString)(entry.periodText) + " 节", 1)
 												], 4);
 											}), 128))], 4);
 										}), 128))
-									]))], 512)])])]),
+									], 4))], 4)])])]),
 									_: 1
 								}),
 								(0, vue.createVNode)((0, vue.unref)(Tab), {
 									title: "个人空课表",
 									name: "personal-free"
 								}, {
-									default: (0, vue.withCtx)(() => [(0, vue.createElementVNode)("div", _hoisted_35, [personalSchedule.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_36, [(0, vue.createVNode)((0, vue.unref)(Tabs), {
+									default: (0, vue.withCtx)(() => [(0, vue.createElementVNode)("div", _hoisted_30, [personalSchedule.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_31, [(0, vue.createVNode)((0, vue.unref)(Tabs), {
 										ref_key: "personalFreeWeekTabsRef",
 										ref: personalFreeWeekTabsRef,
 										active: selectedFreeWeek.value,
@@ -13251,14 +13266,14 @@ self.onmessage = async (e) => {
 											}, null, 8, ["name", "title"]);
 										}), 128))]),
 										_: 1
-									}, 8, ["active"])])) : (0, vue.createCommentVNode)("", true), (0, vue.createElementVNode)("div", _hoisted_37, [(0, vue.createElementVNode)("div", {
+									}, 8, ["active"])])) : (0, vue.createCommentVNode)("", true), (0, vue.createElementVNode)("div", _hoisted_32, [(0, vue.createElementVNode)("div", {
 										ref_key: "personalFreeCapture",
 										ref: personalFreeCapture,
 										class: "personal-table-capture"
 									}, [!personalSchedule.value ? ((0, vue.openBlock)(), (0, vue.createBlock)((0, vue.unref)(Empty), {
 										key: 0,
 										description: "暂无课表数据"
-									})) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("table", _hoisted_38, [
+									})) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("table", _hoisted_33, [
 										_cache[28] || (_cache[28] = (0, vue.createElementVNode)("caption", { class: "visually-hidden" }, " 按星期和节次展示完全空闲、仅有线上课程可协调或有课状态 ", -1)),
 										(0, vue.createElementVNode)("thead", null, [(0, vue.createElementVNode)("tr", null, [_cache[27] || (_cache[27] = (0, vue.createElementVNode)("th", {
 											scope: "col",
@@ -13270,7 +13285,7 @@ self.onmessage = async (e) => {
 											}, (0, vue.toDisplayString)(day.text), 1);
 										}), 128))])]),
 										(0, vue.createElementVNode)("tbody", null, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)((0, vue.unref)(personalPeriodRows), (row) => {
-											return (0, vue.openBlock)(), (0, vue.createElementBlock)("tr", { key: row.key }, [(0, vue.createElementVNode)("th", _hoisted_39, [(0, vue.createElementVNode)("div", null, "第 " + (0, vue.toDisplayString)(row.label) + " 节", 1), (0, vue.createElementVNode)("div", null, (0, vue.toDisplayString)(row.time), 1)]), ((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)((0, vue.unref)(personalDays), (day) => {
+											return (0, vue.openBlock)(), (0, vue.createElementBlock)("tr", { key: row.key }, [(0, vue.createElementVNode)("th", _hoisted_34, [(0, vue.createElementVNode)("div", null, "第 " + (0, vue.toDisplayString)(row.label) + " 节", 1), (0, vue.createElementVNode)("div", null, (0, vue.toDisplayString)(row.time), 1)]), ((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)((0, vue.unref)(personalDays), (day) => {
 												return (0, vue.openBlock)(), (0, vue.createElementBlock)("td", { key: day.number }, [(0, vue.createElementVNode)("div", {
 													class: (0, vue.normalizeClass)(["personal-free-cell", {
 														"personal-not-free": !personalFreeGrid.value[row.key][day.number].isFree,
@@ -13278,7 +13293,7 @@ self.onmessage = async (e) => {
 														"personal-online-only": personalFreeGrid.value[row.key][day.number].hasOnline
 													}]),
 													"aria-label": personalFreeGrid.value[row.key][day.number].ariaLabel
-												}, (0, vue.toDisplayString)(personalFreeGrid.value[row.key][day.number].text), 11, _hoisted_40)]);
+												}, (0, vue.toDisplayString)(personalFreeGrid.value[row.key][day.number].text), 11, _hoisted_35)]);
 											}), 128))]);
 										}), 128))])
 									]))], 512)])])]),
@@ -13288,22 +13303,22 @@ self.onmessage = async (e) => {
 									title: "空课表生成",
 									name: "multi-free"
 								}, {
-									default: (0, vue.withCtx)(() => [(0, vue.createElementVNode)("div", _hoisted_41, [(0, vue.createElementVNode)("div", _hoisted_42, [_cache[31] || (_cache[31] = (0, vue.createElementVNode)("span", { class: "schedule-manager-hint" }, "前往教务系统导出 JSON 文件后在此添加", -1)), (0, vue.createElementVNode)("div", _hoisted_43, [(0, vue.createElementVNode)("div", _hoisted_44, [(0, vue.createElementVNode)("div", {
+									default: (0, vue.withCtx)(() => [(0, vue.createElementVNode)("div", _hoisted_36, [(0, vue.createElementVNode)("div", _hoisted_37, [_cache[31] || (_cache[31] = (0, vue.createElementVNode)("span", { class: "schedule-manager-hint" }, "前往教务系统导出 JSON 文件后在此添加", -1)), (0, vue.createElementVNode)("div", _hoisted_38, [(0, vue.createElementVNode)("div", _hoisted_39, [(0, vue.createElementVNode)("div", {
 										class: "export-btn",
 										onClick: toggleExportMenu
-									}, [_cache[29] || (_cache[29] = (0, vue.createElementVNode)("span", null, "导出", -1)), showExportMenu.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_45, [(0, vue.createElementVNode)("div", { onClick: exportToExcel }, "导出为Excel"), (0, vue.createElementVNode)("div", { onClick: exportToImage }, "导出为图片")])) : (0, vue.createCommentVNode)("", true)])]), (0, vue.createElementVNode)("button", {
+									}, [_cache[29] || (_cache[29] = (0, vue.createElementVNode)("span", null, "导出", -1)), showExportMenu.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_40, [(0, vue.createElementVNode)("div", { onClick: exportToExcel }, "导出为Excel"), (0, vue.createElementVNode)("div", { onClick: exportToImage }, "导出为图片")])) : (0, vue.createCommentVNode)("", true)])]), (0, vue.createElementVNode)("button", {
 										class: "add-btn",
 										disabled: multiScheduleLoading.value,
 										onClick: triggerFileInput
-									}, [..._cache[30] || (_cache[30] = [(0, vue.createElementVNode)("span", null, "+", -1), (0, vue.createTextVNode)(" 添加人员 ", -1)])], 8, _hoisted_46)])]), (0, vue.createElementVNode)("div", _hoisted_47, [fileList.value.length > 0 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_48, [(0, vue.createElementVNode)("h3", null, "成员管理 (" + (0, vue.toDisplayString)(fileList.value.length) + ")", 1), (0, vue.createElementVNode)("div", _hoisted_49, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(fileList.value, (file) => {
+									}, [..._cache[30] || (_cache[30] = [(0, vue.createElementVNode)("span", null, "+", -1), (0, vue.createTextVNode)(" 添加人员 ", -1)])], 8, _hoisted_41)])]), (0, vue.createElementVNode)("div", _hoisted_42, [fileList.value.length > 0 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_43, [(0, vue.createElementVNode)("h3", null, "成员管理 (" + (0, vue.toDisplayString)(fileList.value.length) + ")", 1), (0, vue.createElementVNode)("div", _hoisted_44, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(fileList.value, (file) => {
 										return (0, vue.openBlock)(), (0, vue.createElementBlock)("span", {
 											key: file.filename,
 											class: "file-tag"
 										}, [(0, vue.createTextVNode)((0, vue.toDisplayString)(file.name) + " ", 1), (0, vue.createElementVNode)("button", {
 											class: "tag-delete-btn",
 											onClick: ($event) => removeFile(file.filename, $event)
-										}, "×", 8, _hoisted_50)]);
-									}), 128))])])) : (0, vue.createCommentVNode)("", true), (0, vue.createElementVNode)("div", _hoisted_51, [(0, vue.createElementVNode)("table", {
+										}, "×", 8, _hoisted_45)]);
+									}), 128))])])) : (0, vue.createCommentVNode)("", true), (0, vue.createElementVNode)("div", _hoisted_46, [(0, vue.createElementVNode)("table", {
 										ref_key: "multiEmptyTable",
 										ref: multiEmptyTable,
 										class: "schedule-table",
@@ -13320,11 +13335,11 @@ self.onmessage = async (e) => {
 											}, (0, vue.toDisplayString)(day), 1);
 										}), 64))])]),
 										(0, vue.createElementVNode)("tbody", null, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)((0, vue.unref)(classPeriods), (period, index) => {
-											return (0, vue.openBlock)(), (0, vue.createElementBlock)("tr", { key: index }, [(0, vue.createElementVNode)("th", _hoisted_52, (0, vue.toDisplayString)(period), 1), ((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(daysOfWeek, (day) => {
+											return (0, vue.openBlock)(), (0, vue.createElementBlock)("tr", { key: index }, [(0, vue.createElementVNode)("th", _hoisted_47, (0, vue.toDisplayString)(period), 1), ((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(daysOfWeek, (day) => {
 												return (0, vue.createElementVNode)("td", {
 													key: day,
 													class: "schedule-cell"
-												}, [allFilesSchedule.value[day] && allFilesSchedule.value[day][index].length > 0 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_53, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(allFilesSchedule.value[day][index], (item, i) => {
+												}, [allFilesSchedule.value[day] && allFilesSchedule.value[day][index].length > 0 ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_48, [((0, vue.openBlock)(true), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(allFilesSchedule.value[day][index], (item, i) => {
 													return (0, vue.openBlock)(), (0, vue.createElementBlock)("div", {
 														key: item.key || i,
 														class: (0, vue.normalizeClass)(["file-item-display", {
@@ -13332,7 +13347,7 @@ self.onmessage = async (e) => {
 															"file-item-online-only": item.status === "online"
 														}])
 													}, (0, vue.toDisplayString)(item.text), 3);
-												}), 128)), (0, vue.createElementVNode)("div", { class: (0, vue.normalizeClass)(["availability-summary", "status-" + multiAvailabilitySummary.value[day][index].status]) }, (0, vue.toDisplayString)(multiAvailabilitySummary.value[day][index].text), 3)])) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_54, (0, vue.toDisplayString)(multiAvailabilitySummary.value[day][index].text), 1))]);
+												}), 128)), (0, vue.createElementVNode)("div", { class: (0, vue.normalizeClass)(["availability-summary", "status-" + multiAvailabilitySummary.value[day][index].status]) }, (0, vue.toDisplayString)(multiAvailabilitySummary.value[day][index].text), 3)])) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_49, (0, vue.toDisplayString)(multiAvailabilitySummary.value[day][index].text), 1))]);
 											}), 64))]);
 										}), 128))])
 									], 512)])])])]),
@@ -13342,11 +13357,11 @@ self.onmessage = async (e) => {
 									title: "课表密钥管理",
 									name: "keys"
 								}, {
-									default: (0, vue.withCtx)(() => [(0, vue.createElementVNode)("div", _hoisted_55, [(0, vue.createElementVNode)("div", _hoisted_56, [_cache[40] || (_cache[40] = (0, vue.createElementVNode)("div", { class: "schedule-key-guide" }, [
+									default: (0, vue.withCtx)(() => [(0, vue.createElementVNode)("div", _hoisted_50, [(0, vue.createElementVNode)("div", _hoisted_51, [_cache[40] || (_cache[40] = (0, vue.createElementVNode)("div", { class: "schedule-key-guide" }, [
 										(0, vue.createElementVNode)("p", null, [(0, vue.createElementVNode)("strong", null, "加密密钥（公钥）可以分享："), (0, vue.createTextVNode)("对方导出课表时使用你的加密密钥，生成的文件只能由你的解密密钥打开。 ")]),
 										(0, vue.createElementVNode)("p", null, [(0, vue.createElementVNode)("strong", null, "解密密钥（私钥）必须保密："), (0, vue.createTextVNode)("不要发给同学、群聊或任何其他人。解密密钥丢失后无法恢复，旧加密文件也无法打开。 ")]),
 										(0, vue.createElementVNode)("p", null, "换浏览器、清理脚本数据、重装脚本或重新生成密钥前，请先自行备份解密密钥。")
-									], -1)), !scheduleKeyPair.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_57, [(0, vue.createVNode)((0, vue.unref)(Empty), { description: "尚未生成课表密钥" }), (0, vue.createVNode)((0, vue.unref)(Button), {
+									], -1)), !scheduleKeyPair.value ? ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_52, [(0, vue.createVNode)((0, vue.unref)(Empty), { description: "尚未生成课表密钥" }), (0, vue.createVNode)((0, vue.unref)(Button), {
 										type: "primary",
 										loading: scheduleKeyGenerating.value,
 										onClick: generateScheduleKeyPair
@@ -13354,7 +13369,7 @@ self.onmessage = async (e) => {
 										default: (0, vue.withCtx)(() => [..._cache[34] || (_cache[34] = [(0, vue.createTextVNode)("生成课表密钥", -1)])]),
 										_: 1
 									}, 8, ["loading"])])) : ((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, { key: 1 }, [
-										(0, vue.createElementVNode)("section", _hoisted_58, [(0, vue.createElementVNode)("div", _hoisted_59, [_cache[36] || (_cache[36] = (0, vue.createElementVNode)("div", null, [(0, vue.createElementVNode)("strong", null, "加密密钥（公钥，可分享）"), (0, vue.createElementVNode)("span", null, "可以复制并发送给需要向你提供课表的人")], -1)), (0, vue.createVNode)((0, vue.unref)(Button), {
+										(0, vue.createElementVNode)("section", _hoisted_53, [(0, vue.createElementVNode)("div", _hoisted_54, [_cache[36] || (_cache[36] = (0, vue.createElementVNode)("div", null, [(0, vue.createElementVNode)("strong", null, "加密密钥（公钥，可分享）"), (0, vue.createElementVNode)("span", null, "可以复制并发送给需要向你提供课表的人")], -1)), (0, vue.createVNode)((0, vue.unref)(Button), {
 											size: "small",
 											type: "primary",
 											plain: "",
@@ -13367,8 +13382,8 @@ self.onmessage = async (e) => {
 											value: scheduleKeyPair.value.publicKey,
 											rows: "8",
 											readonly: ""
-										}, null, 8, _hoisted_60)]),
-										(0, vue.createElementVNode)("section", _hoisted_61, [(0, vue.createElementVNode)("div", _hoisted_62, [_cache[38] || (_cache[38] = (0, vue.createElementVNode)("div", null, [(0, vue.createElementVNode)("strong", null, "解密密钥（私钥，请保密）"), (0, vue.createElementVNode)("span", null, "只由你本人保管，任何人索要都不要发送")], -1)), (0, vue.createElementVNode)("div", _hoisted_63, [(0, vue.createVNode)((0, vue.unref)(Button), {
+										}, null, 8, _hoisted_55)]),
+										(0, vue.createElementVNode)("section", _hoisted_56, [(0, vue.createElementVNode)("div", _hoisted_57, [_cache[38] || (_cache[38] = (0, vue.createElementVNode)("div", null, [(0, vue.createElementVNode)("strong", null, "解密密钥（私钥，请保密）"), (0, vue.createElementVNode)("span", null, "只由你本人保管，任何人索要都不要发送")], -1)), (0, vue.createElementVNode)("div", _hoisted_58, [(0, vue.createVNode)((0, vue.unref)(Button), {
 											size: "small",
 											plain: "",
 											onClick: _cache[8] || (_cache[8] = ($event) => showSchedulePrivateKey.value = !showSchedulePrivateKey.value)
@@ -13389,8 +13404,8 @@ self.onmessage = async (e) => {
 											value: scheduleKeyPair.value.privateKey,
 											rows: "12",
 											readonly: ""
-										}, null, 8, _hoisted_64)) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_65, " 解密密钥已隐藏，查看前请确认周围无人窥视屏幕。 "))]),
-										(0, vue.createElementVNode)("div", _hoisted_66, [(0, vue.createVNode)((0, vue.unref)(Button), {
+										}, null, 8, _hoisted_59)) : ((0, vue.openBlock)(), (0, vue.createElementBlock)("div", _hoisted_60, " 解密密钥已隐藏，查看前请确认周围无人窥视屏幕。 "))]),
+										(0, vue.createElementVNode)("div", _hoisted_61, [(0, vue.createVNode)((0, vue.unref)(Button), {
 											type: "danger",
 											plain: "",
 											loading: scheduleKeyGenerating.value,
