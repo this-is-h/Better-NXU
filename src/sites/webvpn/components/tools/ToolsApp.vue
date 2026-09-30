@@ -170,7 +170,7 @@
                 />
               </van-tabs>
             </div>
-            <div class="personal-schedule-capture">
+            <div class="personal-schedule-capture personal-course-scroll">
               <div
                 ref="personalCourseCapture"
                 class="personal-table-capture"
