@@ -235,11 +235,13 @@ export function buildPersonalCourseLayout(entries) {
 }
 
 export function buildPersonalCourseGridStyle(layout) {
-  const dayWidths = personalDays.map(
-    ({ number }) =>
-      130 *
-      Math.max(1, ...layout.filter((group) => group.weekday === number).map((group) => group.columnCount))
-  );
+  const dayWidths = personalDays.map(({ number }) => {
+    const columns = Math.max(
+      0,
+      ...layout.filter((group) => group.weekday === number).map((group) => group.columnCount)
+    );
+    return columns ? columns * 130 : 56;
+  });
   return {
     minWidth: `${92 + dayWidths.reduce((sum, width) => sum + width, 0) + 9}px`,
     gridTemplateColumns: ['92px', ...dayWidths.map((width) => `minmax(${width}px, 1fr)`)].join(' '),

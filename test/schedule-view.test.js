@@ -136,14 +136,28 @@ test('only days with overlapping cards widen, using the largest simultaneous col
   );
   assert.equal(
     buildPersonalCourseGridStyle(groups).gridTemplateColumns,
-    '92px minmax(130px, 1fr) minmax(260px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr)'
+    '92px minmax(56px, 1fr) minmax(260px, 1fr) minmax(56px, 1fr) minmax(56px, 1fr) minmax(56px, 1fr) minmax(56px, 1fr) minmax(130px, 1fr)'
   );
   assert.equal(
     buildPersonalCourseGridStyle([]).gridTemplateColumns,
-    `92px ${Array(7).fill('minmax(130px, 1fr)').join(' ')}`
+    `92px ${Array(7).fill('minmax(56px, 1fr)').join(' ')}`
   );
-  assert.equal(buildPersonalCourseGridStyle(groups).minWidth, '1141px');
-  assert.equal(buildPersonalCourseGridStyle([]).minWidth, '1011px');
+  assert.equal(buildPersonalCourseGridStyle(groups).minWidth, '771px');
+  assert.equal(buildPersonalCourseGridStyle([]).minWidth, '493px');
+});
+
+test('occupied weekdays retain readable card widths while only empty weekdays shrink', () => {
+  const data = schedule([
+    ...Array.from({ length: 7 }, (_, i) => ({ id: `课程${i}`, weekday: i + 1, periods: [1, 2] })),
+    { id: '并排课程', weekday: 3, periods: [1, 2], weeks: [2] },
+  ]);
+  assert.equal(buildPersonalCourseGridStyle(layout(data)).minWidth, '1141px');
+  assert.equal(buildPersonalCourseGridStyle(layout(data, 1)).minWidth, '1011px');
+  assert.equal(buildPersonalCourseGridStyle(layout(data, 2)).minWidth, '567px');
+  assert.equal(
+    buildPersonalCourseGridStyle(layout(data, 2)).gridTemplateColumns,
+    '92px minmax(56px, 1fr) minmax(56px, 1fr) minmax(130px, 1fr) minmax(56px, 1fr) minmax(56px, 1fr) minmax(56px, 1fr) minmax(56px, 1fr)'
+  );
 });
 
 test('teacher and room details merge identical arrangements and preserve changed and missing details', () => {
