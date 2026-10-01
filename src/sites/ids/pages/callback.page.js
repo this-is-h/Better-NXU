@@ -41,7 +41,10 @@ const console = MyConsole('[ids.callback]');
  */
 function redirectToWeixinScan(query) {
   // 1.x 行 2706-2708：autoReLogin 关闭则不自动跳。
-  if (!getGMValue('WebVPN.autoReLogin')) return;
+  if (!getGMValue('WebVPN.autoReLogin')) {
+    console('WebVPN.autoReLogin 未开启，跳过微信扫码跳转', '', 'info');
+    return;
+  }
   toast('info', '尝试自动登录...');
   const target = new URL('https://open.weixin.qq.com/connect/qrconnect');
   target.searchParams.set('appid', query.get('appid') || '');
@@ -50,6 +53,7 @@ function redirectToWeixinScan(query) {
   target.searchParams.set('scope', 'snsapi_login');
   target.searchParams.set('state', query.get('state') || '');
   target.searchParams.set('fast_login', '1');
+  console('即将跳转至微信快速登录页', '', 'info');
   location.href = target.href;
 }
 
@@ -62,10 +66,11 @@ function redirectToFixedCallback(query) {
   const warning = document.querySelector('#welcome.warn');
   if (
     !warning ||
-    !warning.textContent.includes('授权失败') ||
-    !warning.textContent.includes('Fail to bind your account')
-  )
+    (!warning.textContent.includes('授权失败') && !warning.textContent.includes('Fail to bind your account'))
+  ) {
+    console('未匹配回调修复所需的授权失败提示，跳过自动跳转', { warningFound: Boolean(warning) }, 'info');
     return;
+  }
   toast('info', '请稍候...');
   toast('info', '尝试跳转至正确页面');
   const callback = new URL('https://ids.nxu.edu.cn/authserver/callback');
@@ -74,9 +79,11 @@ function redirectToFixedCallback(query) {
   // 1.x 行 2730-2734：buildWebVpnUrl 失败提示手动返回；否则跳转。
   const callbackUrl = buildWebVpnUrl(callback);
   if (!callbackUrl) {
+    console('无法生成统一认证回调地址，停止自动跳转，请手动返回 WebVPN', '', 'error');
     toast('error', '无法生成统一认证回调地址，请手动返回 WebVPN', 5);
     return;
   }
+  console('即将跳转至 WebVPN 统一认证回调页', '', 'info');
   location.href = callbackUrl;
 }
 
