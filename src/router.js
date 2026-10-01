@@ -379,7 +379,20 @@ const JUDGE_TABLE = [
  */
 export function resolveRoute() {
   const ctx = getContext();
-  console('开始识别当前页面', { host: ctx.host, path: ctx.path, isWebvpn: ctx.isWebvpn }, 'debug');
+  console(
+    '开始识别当前页面',
+    {
+      host: ctx.host,
+      path: ctx.path,
+      isWebvpn: ctx.isWebvpn,
+      realHost: ctx.webvpnRealHost,
+      realPath: ctx.isWebvpn ? ctx.vpnContext?.realPath : undefined,
+      courseTableMethod: ['stdHome', 'courseTable'].includes(ctx.query.get('method'))
+        ? ctx.query.get('method')
+        : undefined,
+    },
+    'info'
+  );
 
   for (const entry of JUDGE_TABLE) {
     try {
@@ -392,6 +405,6 @@ export function resolveRoute() {
     }
   }
 
-  console('未命中任何路由（当前页面 2.0 暂不处理）', { host: ctx.host, path: ctx.path }, 'info');
+  console('未命中任何路由，当前主机或页面路径不在支持范围内', '', 'info');
   return null;
 }

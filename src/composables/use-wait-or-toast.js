@@ -44,14 +44,18 @@ export async function waitOrToast(selector, options = {}) {
   try {
     return await waitForElement(selector, { timeout, interval, predicate });
   } catch (error) {
-    installNotification();
     const isTimeout = error?.code === WAIT_TIMEOUT;
     const tipLevel = level === 'error' ? 'error' : 'warning';
     const message = isTimeout
       ? timeoutMessage || `等待页面元素超时：${selector}`
       : errorMessage || error?.message || `${selector} 加载失败`;
+    console(
+      '等待页面元素失败，停止当前步骤',
+      { selector, isTimeout, error, message },
+      isTimeout ? 'warn' : 'error'
+    );
+    installNotification();
     toast(tipLevel, message, duration);
-    console('waitOrToast 捕获', { selector, isTimeout, code: error?.code, message }, 'warn');
     return null;
   }
 }

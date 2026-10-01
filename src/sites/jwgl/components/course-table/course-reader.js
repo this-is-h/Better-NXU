@@ -325,7 +325,10 @@ async function hExportExcel() {
  */
 export function installCourseToolbar() {
   // 1.x 行 3140-3143：无 table 不注入。
-  if (!document.querySelector('table')) return;
+  if (!document.querySelector('table')) {
+    console('未找到课表 table，停止导出工具栏注入', '', 'warn');
+    return;
+  }
 
   const ctx = getContext();
   // 1.x 行 3145-3148：isWebvpn 判定。直连 jwgl.nxu.edu.cn 或 IP :8080~3 = false（可截图）；其余（webvpn 代理）= true。

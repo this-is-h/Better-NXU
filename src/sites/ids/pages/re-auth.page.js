@@ -39,11 +39,15 @@ export async function register() {
   // 1.x 行 2512 Basic({vant:false})：装 notification，不引 Vant。
   installNotification();
   // 1.x 行 2698-2700：autoReLogin 关闭则不处理。
-  if (!getGMValue('WebVPN.autoReLogin')) return;
+  if (!getGMValue('WebVPN.autoReLogin')) {
+    console('WebVPN.autoReLogin 未开启，跳过自动二次认证', '', 'info');
+    return;
+  }
   toast('info', '尝试自动登录...');
   // 1.x 行 2702：调用页面注入的 reAuthByCombined('weixin') 自动通过二次验证。
   if (typeof pageWindow.reAuthByCombined === 'function') {
     pageWindow.reAuthByCombined('weixin');
+    console('已触发微信二次认证，等待页面响应', '', 'info');
   } else {
     console('页面未提供 reAuthByCombined 函数，无法自动通过二次验证', undefined, 'warn');
   }

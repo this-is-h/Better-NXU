@@ -42,7 +42,10 @@ const console = MyConsole('[教务登录]');
  */
 export async function jwglLogin() {
   // 1.x 行 2739-2741：未启用自动登录直接返回。
-  if (!getGMValue('Jwgl.autoLogin')) return;
+  if (!getGMValue('Jwgl.autoLogin')) {
+    console('Jwgl.autoLogin 未开启，跳过自动登录', '', 'info');
+    return;
+  }
 
   // 1.x 行 2742：装好后弹"自动登录..."提示（installNotification 保证 toast 容器就绪）。
   installNotification();
@@ -86,6 +89,7 @@ export async function jwglLogin() {
     fillInput(passwordInput, getGMValue('Jwgl.password'));
     fillInput(captchaInput, verification);
     submitButton.click();
+    console('已触发教务登录提交，等待页面响应', '', 'info');
   } catch (error) {
     // 1.x 行 2771-2773：识别失败（OCR_* / 表单缺失 / 网络）→ 引导手动输入。
     console('自动填写失败', error, 'error');

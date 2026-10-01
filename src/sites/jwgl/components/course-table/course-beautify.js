@@ -109,7 +109,13 @@ export async function beautifyJwglCourseTable() {
   installCourseToolbar();
 
   // 未启用美化或无 table 时直接返回，仍通知父页面校准高度。
-  if (!getGMValue('Jwgl.courseBeautify') || !document.querySelector('table')) {
+  const enabled = getGMValue('Jwgl.courseBeautify');
+  if (!enabled || !document.querySelector('table')) {
+    console(
+      enabled ? '未找到课表 table，跳过课表美化' : 'Jwgl.courseBeautify 未开启，跳过课表美化',
+      '',
+      enabled ? 'warn' : 'info'
+    );
     notifyCourseBeautifyChanged();
     return;
   }

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isTuanweiDownloadRoute } from '../src/utils/route-guards.js';
+import { MyConsole } from '../src/utils/console.js';
 
 let events;
 let nextHandle = 0;
@@ -30,6 +31,7 @@ const loadPage = new Function(
   'toast',
   'removeToastHandle',
   'window',
+  'MyConsole',
   source
     .replace(/^import[\s\S]*?from\s+(['"])[^'"]+\1;?\r?\n/gm, '')
     .replace('export function register', 'function register') + '\nreturn register;'
@@ -47,7 +49,8 @@ function setup(run, { enabled = true, location = url } = {}) {
     installNotification,
     toast,
     removeToastHandle,
-    window
+    window,
+    MyConsole
   );
   return { register, window };
 }
