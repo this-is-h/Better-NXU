@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      2.0.4
+// @version      2.0.5
 // @author       H
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match        *://webvpn.nxu.edu.cn/*
@@ -213,29 +213,38 @@ SOFTWARE.
 			const write = typeof console[methodName] === "function" ? console[methodName].bind(console) : console.log.bind(console);
 			const timestamp = new Date().toLocaleTimeString("zh-CN", { hour12: false });
 			const isObjectMessage = message !== null && typeof message === "object";
-			write("%c Better NXU %c %s", "border-radius:5px;padding:3px 5px;color:#fff;background:#3a8bff;font-weight:600", "margin-left:6px;color:inherit", `${scope} ${timestamp} ${isObjectMessage ? "[详情] 输出对象" : String(message ?? "")}`);
+			write("%c Better NXU %c %s", "border-radius:5px;padding:3px 5px;color:#fff;background:#3a8bff;font-weight:600", "margin-left:6px;color:inherit", `${scope} ${timestamp} ${isObjectMessage ? "[详情] 输出对象" : sanitizeConsoleText(String(message ?? ""))}`);
 			if (isObjectMessage) write(sanitizeConsoleDetail(message));
 			if (detail !== "" && detail !== void 0) write("详细信息：", sanitizeConsoleDetail(detail));
 		};
 	}
+	function sanitizeConsolePath(value) {
+		return value.split(/[?#]/, 1)[0].replace(/;jsessionid=[^/;\s]*/gi, ";jsessionid=[已隐藏]").replace(/(\/cal\/)[^/\s]+/gi, "$1[已隐藏]").replace(/\/(?:[a-z\d_-]{24,}|\d{6,})(?=\/|$)/gi, "/[已隐藏]");
+	}
+	function sanitizeConsoleText(value) {
+		return value.replace(/https?:\/\/[^\s<>"')]+/gi, (url) => {
+			try {
+				const parsed = new URL(url);
+				return parsed.origin + sanitizeConsolePath(parsed.pathname);
+			} catch {
+				return "[地址已隐藏]";
+			}
+		}).replace(/\bBearer\s+[^\s,;]+/gi, "Bearer [已隐藏]").replace(/\b(password|passwd|token|ticket|secret|credential|authorization|cookie|username)\s*[=:]\s*[^\s,;]+/gi, "$1=[已隐藏]");
+	}
 	function sanitizeConsoleDetail(value) {
-		if (value instanceof Error) return {
-			name: value.name,
-			code: value.code,
-			message: value.message,
-			stack: value.stack
-		};
+		if (typeof value === "string") return sanitizeConsoleText(value);
 		if (value === null || typeof value !== "object") return value;
 		const seen = new WeakSet();
 		try {
 			return JSON.parse(JSON.stringify(value, (key, item) => {
-				if (/(?:password|passwd|secret|privateKey|credential|authorization|cookie|token|密码|私钥)/i.test(key)) return "[已隐藏]";
+				if (/(?:password|passwd|secret|privateKey|credential|authorization|cookie|token|username|studentId|icsId|密码|私钥|学号)/i.test(key)) return "[已隐藏]";
 				if (item instanceof Error) return {
 					name: item.name,
 					code: item.code,
 					message: item.message,
 					stack: item.stack
 				};
+				if (typeof item === "string") return /^(?:path|realPath|pathname)$/i.test(key) ? sanitizeConsoleText(sanitizeConsolePath(item)) : sanitizeConsoleText(item);
 				if (item && typeof item === "object") {
 					if (seen.has(item)) return "[循环引用]";
 					seen.add(item);
@@ -410,12 +419,12 @@ SOFTWARE.
 			return false;
 		}
 	}
-	var console$39 = MyConsole("[notification]");
+	var console$40 = MyConsole("[notification]");
 	var global$1 = _unsafeWindow ?? window;
 	var installed$1 = false;
 	function installNotification() {
 		if (typeof global$1.addToast === "function") global$1.addToast();
-		else console$39("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
+		else console$40("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
 		if (!installed$1 && typeof global$1.ToastCss === "string") _GM_addStyle?.(global$1.ToastCss);
 		if (!installed$1) installFontAwesome();
 		installed$1 = true;
@@ -445,7 +454,7 @@ SOFTWARE.
 	function toastTrustedHtml(type, message, duration) {
 		const impl = global$1.createToast;
 		if (typeof impl === "function") return impl(type, message, duration);
-		console$39("createToast 全局未就绪，降级记日志", {
+		console$40("createToast 全局未就绪，降级记日志", {
 			type,
 			message
 		}, "warn");
@@ -565,7 +574,7 @@ SOFTWARE.
 		error.code = code;
 		return error;
 	}
-	var console$38 = MyConsole("[wait]");
+	var console$39 = MyConsole("[wait]");
 	function Random(min, max) {
 		return parseInt(Math.random() * (max - min + 1) + min, 10);
 	}
@@ -580,13 +589,13 @@ SOFTWARE.
 		}
 		return new Promise(function(resolve) {
 			setTimeout(function() {
-				if (log) console$38("[等待] 定时任务完成", waitmsg.replace(/ /g, ""), "debug");
+				if (log) console$39("[等待] 定时任务完成", waitmsg.replace(/ /g, ""), "debug");
 				resolve();
 			}, waittime);
 		});
 	}
 	var unsafeWindow$1 = _unsafeWindow ?? window;
-	var console$37 = MyConsole("[dom]");
+	var console$38 = MyConsole("[dom]");
 	function simulateClick(el, needScroll = false) {
 		if (!el) return;
 		if (needScroll) el.scrollIntoView({
@@ -616,15 +625,29 @@ SOFTWARE.
 		const timeout = Math.max(0, Number(options.timeout ?? 1e4));
 		const interval = Math.max(20, Number(options.interval ?? 100));
 		const predicate = typeof options.predicate === "function" ? options.predicate : () => true;
+		let elementFound = false;
+		console$38("开始等待页面元素", {
+			selector,
+			timeoutMs: timeout
+		}, "debug");
 		const startedAt = Date.now();
 		while (Date.now() - startedAt <= timeout) {
 			const element = document.querySelector(selector);
-			if (element && predicate(element)) return element;
+			elementFound = Boolean(element);
+			if (element && predicate(element)) {
+				console$38("页面元素已就绪", {
+					selector,
+					elapsedMs: Date.now() - startedAt
+				}, "debug");
+				return element;
+			}
 			await WaitTime(interval, 0, false);
 		}
-		console$37("[DOM 等待] 目标元素等待超时", {
+		console$38("[DOM 等待] 目标元素等待超时", {
 			selector,
-			timeoutMs: timeout
+			timeoutMs: timeout,
+			elapsedMs: Date.now() - startedAt,
+			reason: elementFound ? "元素已找到，但就绪条件未满足" : "未找到匹配元素"
 		}, "warn");
 		throw scheduleOperationError(WAIT_TIMEOUT, `等待页面元素超时：${selector}`);
 	}
@@ -664,7 +687,7 @@ SOFTWARE.
 		const link = opener === "openConfig" ? "<a href=\"javascript:void(0)\" onclick=\"CAT_userConfig()\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>" : "<a href=\"https://sslvpn.nxu.edu.cn/h/settings\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>";
 		return [`<p style="margin-bottom:0.5em;margin-top: 0">${escapeHtml$1(headline)}<br>请前往配置相关信息</p>`, link].join("");
 	}
-	var console$36 = MyConsole("[credentials]");
+	var console$37 = MyConsole("[credentials]");
 	function resolveOpener(host) {
 		return host === "Jwgl" ? "openConfig" : "settingsPage";
 	}
@@ -672,7 +695,7 @@ SOFTWARE.
 		const username = getGMValue(`${host}.username`);
 		const password = getGMValue(`${host}.password`);
 		if (username && password) return true;
-		console$36(`[${host}] 未配置登录账号或密码`, "请前往 Better NXU 设置页面补充", "warn");
+		console$37(`[${host}] 未配置登录账号或密码，停止自动登录`, "请前往 Better NXU 设置页面补充", "warn");
 		installNotification();
 		toastTrustedHtml("error", buildCredentialsErrorToast({
 			missing: true,
@@ -681,6 +704,7 @@ SOFTWARE.
 		return false;
 	}
 	function notifyCredentialsProblem(host, duration = 5) {
+		console$37(`[${host}] 页面提示账号或密码错误，停止自动登录，请更新凭证`, "", "warn");
 		installNotification();
 		toastTrustedHtml("error", buildCredentialsErrorToast({
 			missing: false,
@@ -1363,7 +1387,7 @@ self.onmessage = async (e) => {
 		}
 		return "exhausted";
 	}
-	var console$35 = MyConsole("[ids.slider]");
+	var console$36 = MyConsole("[ids.slider]");
 	var solving = null;
 	async function waitForSliderElements(timeoutMs = 8e3) {
 		const interval = 200;
@@ -1383,7 +1407,7 @@ self.onmessage = async (e) => {
 	}
 	async function solve() {
 		if (!isSliderCaptchaPresent()) {
-			console$35("滑块验证码未出现，跳过");
+			console$36("滑块验证码未出现，跳过");
 			return false;
 		}
 		let toastHandle = toast("info", "正在识别滑块验证…", 0);
@@ -1394,7 +1418,7 @@ self.onmessage = async (e) => {
 			if (toastHandle) removeToastHandle(toastHandle);
 			toastHandle = toast("info", message, 0);
 		};
-		console$35("发现滑块验证码，开始自动识别");
+		console$36("发现滑块验证码，开始自动识别");
 		try {
 			const { pieceImg } = await waitForSliderElements();
 			if (!pieceImg.width || !pieceImg.height) throw new Error("展示位图 canvas 尺寸无效，无法确定滑动坐标系");
@@ -1416,7 +1440,7 @@ self.onmessage = async (e) => {
 					return "manual";
 				}
 				const distance = Math.round(box[0]);
-				console$35(`第 ${attempt}/3 次滑块拖动，距离: ${distance}px`);
+				console$36(`第 ${attempt}/3 次滑块拖动，距离: ${distance}px`);
 				await dragIdsSlider(slider, distance, { signal: controller.signal });
 				controller.signal.throwIfAborted();
 				showProgress("滑块已拖动，等待验证与跳转…");
@@ -1426,16 +1450,21 @@ self.onmessage = async (e) => {
 				onRetry: (attempt) => showProgress(`验证码已刷新，正在重试（${attempt}/3）…`)
 			});
 			if (result === "exhausted" || result === "manual") {
+				console$36(result === "exhausted" ? "滑块验证已达 3 次尝试上限，停止自动识别" : manualMessage, { result }, "warn");
 				removeToastHandle(toastHandle);
 				toastHandle = null;
 				toast("warning", result === "exhausted" ? "滑块自动验证已尝试 3 次，请手动完成验证" : manualMessage, 0);
 				return false;
 			}
+			console$36("滑块自动处理结束", { result }, "info");
 			return result === "submitted";
 		} catch (err) {
-			if (controller.signal.aborted) return false;
+			if (controller.signal.aborted) {
+				console$36("页面已离开，停止滑块自动识别", "", "info");
+				return false;
+			}
 			const isScheduleError = err?.code === SLIDER_RECOGNIZER_UNAVAILABLE;
-			console$35("滑块验证识别异常", err, "error");
+			console$36("滑块验证识别异常", err, "error");
 			removeToastHandle(toastHandle);
 			toastHandle = null;
 			toast("error", isScheduleError ? err.message : "滑块验证识别失败，请手动操作", 5);
@@ -1545,23 +1574,27 @@ self.onmessage = async (e) => {
 	function isWebVpnFailedRoute(ctx, bodyHtml = "") {
 		return ctx?.host === "webvpn.nxu.edu.cn" && ctx.path === "/wengine-vpn/failed" && !isWebVpnToolsRoute(ctx, bodyHtml);
 	}
-	var console$34 = MyConsole("[统一认证]");
+	var console$35 = MyConsole("[统一认证]");
 	var pageWindow$4 = _unsafeWindow ?? window;
 	var authLoginSubmitting = false;
 	async function idsLogin() {
-		if (!getGMValue("WebVPN.autoLogin")) return;
+		if (!getGMValue("WebVPN.autoLogin")) {
+			console$35("WebVPN.autoLogin 未开启，跳过自动登录", "", "info");
+			return;
+		}
 		if (authLoginSubmitting) {
-			console$34("已触发登录，忽略重复调用", "", "debug");
+			console$35("已触发登录，忽略重复调用", "", "debug");
 			return;
 		}
 		if (!isTrustedIdsContext(getContext())) {
-			console$34("拒绝在非统一认证页面执行自动登录", { href: window.location.href }, "error");
+			console$35("拒绝在非统一认证页面执行自动登录", { href: window.location.href }, "error");
 			return;
 		}
 		toast("info", "正在填写统一认证登录信息…", 3);
 		if (!requireCredentials("WebVPN")) return;
 		const authErrorText = getAuthErrorText();
 		if (authErrorText) {
+			console$35("页面已显示认证错误，停止自动登录，请检查页面提示或更新凭证", "", "warn");
 			if (isCredentialsErrorText(authErrorText)) notifyCredentialsProblem("WebVPN", 0);
 			else toast("error", authErrorText, 5);
 			return;
@@ -1582,6 +1615,7 @@ self.onmessage = async (e) => {
 			}
 			if (hasLegacyAuthCaptcha()) {
 				authLoginSubmitting = false;
+				console$35("检测到图形验证码，停止自动提交，请手动输入验证码", "", "warn");
 				toast("warning", "账号已填入，请手动输入图形验证码后登录", 0);
 				return;
 			}
@@ -1591,31 +1625,33 @@ self.onmessage = async (e) => {
 			else if (typeof pageWindow$4.checkForm === "function") {
 				if (await Promise.resolve(pageWindow$4.checkForm()) === false) {
 					authLoginSubmitting = false;
+					console$35("页面 checkForm 校验未通过，停止自动提交", "", "warn");
 					return;
 				}
 				const form = document.querySelector("#pwdFromId, .login-main form");
 				if (typeof form?.requestSubmit !== "function") throw scheduleOperationError(AUTH_SUBMIT_MISSING, "统一认证页面缺少安全提交入口");
 				form.requestSubmit();
 			} else throw scheduleOperationError(AUTH_SUBMIT_MISSING, "统一认证登录按钮尚未加载");
+			console$35("已触发登录提交，等待验证或页面跳转", "", "info");
 			setTimeout(() => {
 				solveIdsSliderCaptcha().catch((err) => {
-					console$34("滑块自动识别流程异常", err, "error");
+					console$35("滑块自动识别流程异常", err, "error");
 				});
 			}, 800);
 		} catch (error) {
 			authLoginSubmitting = false;
-			console$34("自动登录失败", error, "error");
+			console$35("自动登录失败", error, "error");
 			installNotification();
 			toast("error", "统一认证自动登录失败，请手动操作", 5);
 		}
 	}
 	var installed = false;
-	var console$33 = MyConsole("[vant.style]");
+	var console$34 = MyConsole("[vant.style]");
 	function installVantStyle() {
 		if (installed) return;
 		const vantCss = _GM_getResourceText?.("vant-css");
 		if (typeof vantCss !== "string" || vantCss.trim() === "") {
-			console$33("Vant CSS 资源不可用，跳过样式注入", "", "error");
+			console$34("Vant CSS 资源不可用，跳过样式注入", "", "error");
 			return;
 		}
 		if (typeof _GM_addStyle === "function") _GM_addStyle(vantCss);
@@ -1627,7 +1663,7 @@ self.onmessage = async (e) => {
 		}
 		installed = true;
 	}
-	var console$32 = MyConsole("[use-vue-app]");
+	var console$33 = MyConsole("[use-vue-app]");
 	function mountVueApp(options = {}) {
 		const { root, id, rootProps, useVantStyles = true } = options;
 		let mountEl = id ? document.getElementById(id) : null;
@@ -1637,7 +1673,7 @@ self.onmessage = async (e) => {
 			document.body.appendChild(mountEl);
 		}
 		if (typeof vue.createApp !== "function") {
-			console$32("createApp 未就绪（@require vue 可能被 ScriptCat 拒载）", void 0, "error");
+			console$33("createApp 未就绪（@require vue 可能被 ScriptCat 拒载）", void 0, "error");
 			return null;
 		}
 		if (useVantStyles) installVantStyle();
@@ -1685,13 +1721,13 @@ self.onmessage = async (e) => {
 			};
 		}
 	}, [["__scopeId", "data-v-acbd53d7"]]);
-	var console$31 = MyConsole("[ids.login]");
-	async function register$20() {
-		console$31("进入登录页");
+	var console$32 = MyConsole("[ids.login]");
+	async function register$19() {
+		console$32("进入登录页");
 		installNotification();
 		if (getGMValue("WebVPN.autoLogin")) await idsLogin();
 		else {
-			console$31("自动登录未启用，注入浮动填账号按钮");
+			console$32("自动登录未启用，注入浮动填账号按钮");
 			mountVueApp({
 				root: LoginFillButton_default,
 				id: "better-nxu-auth-fill-host",
@@ -1699,23 +1735,31 @@ self.onmessage = async (e) => {
 			});
 		}
 	}
-	var console$30 = MyConsole("[ids.re-auth]");
+	var console$31 = MyConsole("[ids.re-auth]");
 	var pageWindow$3 = _unsafeWindow ?? window;
-	async function register$19() {
-		console$30("进入二次确认页");
+	async function register$18() {
+		console$31("进入二次确认页");
 		if (!isTrustedIdsContext(getContext())) {
-			console$30("拒绝在非统一认证页面执行二次认证", { href: window.location.href }, "error");
+			console$31("拒绝在非统一认证页面执行二次认证", { href: window.location.href }, "error");
 			return;
 		}
 		installNotification();
-		if (!getGMValue("WebVPN.autoReLogin")) return;
+		if (!getGMValue("WebVPN.autoReLogin")) {
+			console$31("WebVPN.autoReLogin 未开启，跳过自动二次认证", "", "info");
+			return;
+		}
 		toast("info", "尝试自动登录...");
-		if (typeof pageWindow$3.reAuthByCombined === "function") pageWindow$3.reAuthByCombined("weixin");
-		else console$30("页面未提供 reAuthByCombined 函数，无法自动通过二次验证", void 0, "warn");
+		if (typeof pageWindow$3.reAuthByCombined === "function") {
+			pageWindow$3.reAuthByCombined("weixin");
+			console$31("已触发微信二次认证，等待页面响应", "", "info");
+		} else console$31("页面未提供 reAuthByCombined 函数，无法自动通过二次验证", void 0, "warn");
 	}
-	var console$29 = MyConsole("[ids.callback]");
+	var console$30 = MyConsole("[ids.callback]");
 	function redirectToWeixinScan(query) {
-		if (!getGMValue("WebVPN.autoReLogin")) return;
+		if (!getGMValue("WebVPN.autoReLogin")) {
+			console$30("WebVPN.autoReLogin 未开启，跳过微信扫码跳转", "", "info");
+			return;
+		}
 		toast("info", "尝试自动登录...");
 		const target = new URL("https://open.weixin.qq.com/connect/qrconnect");
 		target.searchParams.set("appid", query.get("appid") || "");
@@ -1724,11 +1768,15 @@ self.onmessage = async (e) => {
 		target.searchParams.set("scope", "snsapi_login");
 		target.searchParams.set("state", query.get("state") || "");
 		target.searchParams.set("fast_login", "1");
+		console$30("即将跳转至微信快速登录页", "", "info");
 		location.href = target.href;
 	}
 	function redirectToFixedCallback(query) {
 		const warning = document.querySelector("#welcome.warn");
-		if (!warning || !warning.textContent.includes("授权失败") || !warning.textContent.includes("Fail to bind your account")) return;
+		if (!warning || !warning.textContent.includes("授权失败") && !warning.textContent.includes("Fail to bind your account")) {
+			console$30("未匹配回调修复所需的授权失败提示，跳过自动跳转", { warningFound: Boolean(warning) }, "info");
+			return;
+		}
 		toast("info", "请稍候...");
 		toast("info", "尝试跳转至正确页面");
 		const callback = new URL("https://ids.nxu.edu.cn/authserver/callback");
@@ -1736,24 +1784,26 @@ self.onmessage = async (e) => {
 		callback.searchParams.set("state", query.get("state") || "");
 		const callbackUrl = buildWebVpnUrl(callback);
 		if (!callbackUrl) {
+			console$30("无法生成统一认证回调地址，停止自动跳转，请手动返回 WebVPN", "", "error");
 			toast("error", "无法生成统一认证回调地址，请手动返回 WebVPN", 5);
 			return;
 		}
+		console$30("即将跳转至 WebVPN 统一认证回调页", "", "info");
 		location.href = callbackUrl;
 	}
-	async function register$18() {
-		console$29("进入微信回调/扫码代理页");
+	async function register$17() {
+		console$30("进入微信回调/扫码代理页");
 		installNotification();
 		const ctx = getContext();
 		if (ctx.url.indexOf(`/${WEBVPN_HOST_TOKENS["open.weixin.qq.com"]}/connect/qrconnect`) !== -1) {
-			console$29("进入微信扫码代理分支");
+			console$30("进入微信扫码代理分支");
 			redirectToWeixinScan(ctx.query);
 			return;
 		}
-		console$29("进入微信回调修复分支");
+		console$30("进入微信回调修复分支");
 		redirectToFixedCallback(ctx.query);
 	}
-	var console$28 = MyConsole("[wait-or-toast]");
+	var console$29 = MyConsole("[wait-or-toast]");
 	async function waitOrToast(selector, options = {}) {
 		const { timeout, interval, predicate, level, timeoutMessage, errorMessage, duration = 5 } = options || {};
 		try {
@@ -1763,25 +1813,26 @@ self.onmessage = async (e) => {
 				predicate
 			});
 		} catch (error) {
-			installNotification();
 			const isTimeout = error?.code === WAIT_TIMEOUT;
 			const tipLevel = level === "error" ? "error" : "warning";
 			const message = isTimeout ? timeoutMessage || `等待页面元素超时：${selector}` : errorMessage || error?.message || `${selector} 加载失败`;
-			toast(tipLevel, message, duration);
-			console$28("waitOrToast 捕获", {
+			console$29("等待页面元素失败，停止当前步骤", {
 				selector,
 				isTimeout,
-				code: error?.code,
+				error,
 				message
-			}, "warn");
+			}, isTimeout ? "warn" : "error");
+			installNotification();
+			toast(tipLevel, message, duration);
 			return null;
 		}
 	}
-	var console$27 = MyConsole("[weixin.login]");
-	async function register$17() {
-		console$27("进入授权页面");
+	var console$28 = MyConsole("[weixin.login]");
+	async function register$16() {
+		console$28("进入授权页面");
 		const ctx = getContext();
 		if (ctx.query.get("fast_login") === "0") {
+			console$28("快速登录参数未开启，即将切换 fast_login=1 并跳转", "", "info");
 			location.href = ctx.url.replace("fast_login=0", "fast_login=1");
 			return;
 		}
@@ -1800,11 +1851,13 @@ self.onmessage = async (e) => {
 			});
 			if (!visible) return;
 			visible.querySelector("button").click();
+			console$28("已点击微信快速登录按钮，等待页面响应", "", "info");
 		} catch (error) {
+			console$28("微信快速登录中止，请手动操作", error, "error");
 			toast("error", error.message || "微信登录入口加载失败，请手动操作", 4);
 		}
 	}
-	var console$26 = MyConsole("[use-app-page]");
+	var console$27 = MyConsole("[use-app-page]");
 	function mountAppPage({ id, title, deployMessage = "请等待工具部署", extraSetup } = {}) {
 		document.body.replaceChildren();
 		if (title) document.title = title;
@@ -1817,7 +1870,7 @@ self.onmessage = async (e) => {
 		if (typeof extraSetup === "function") try {
 			extraSetup({ mountEl });
 		} catch (error) {
-			console$26("extraSetup 回调抛错", error, "warn");
+			console$27("extraSetup 回调抛错", error, "warn");
 		}
 		return {
 			mountEl,
@@ -8022,9 +8075,9 @@ self.onmessage = async (e) => {
 	var _style = (b, a = document.createElement("style")) => (a.append(b), a);
 	var app_page_css_default = _style(app_page_default);
 	var settings_css_default = _style("#settings{background-color:var(--van-doc-background);flex-direction:column;gap:12px;width:100%;height:100%;padding:20px;display:flex;overflow:hidden}.settings-function-area{border:1px solid var(--van-doc-gray-3);background-color:var(--van-doc-white);border-radius:8px;flex-shrink:0;justify-content:space-between;align-items:center;gap:16px;min-width:0;padding:14px 16px;display:flex}.settings-function-copy{flex-direction:column;gap:4px;min-width:0;display:flex}.settings-function-title{color:var(--van-doc-gray-8);font-size:16px;font-weight:600;line-height:22px}.settings-function-description{color:var(--van-doc-gray-6);font-size:13px;line-height:18px}.settings-function-actions{flex-wrap:wrap;flex-shrink:0;justify-content:flex-end;gap:8px;display:flex}.settings-groups{scrollbar-width:auto;flex:1;gap:1em;min-height:0;display:flex;overflow-x:auto}.group{background-color:var(--van-doc-gray-1);scrollbar-width:auto;border-radius:20px;flex-shrink:0;width:400px;height:100%;overflow:hidden}.group-content{width:100%;height:calc(100% - 46px);padding-bottom:32px;overflow:hidden auto}.group h2{color:var(--van-doc-gray-6);margin:0;padding:32px 16px 16px;font-size:14px;font-weight:400;line-height:16px}.group h3{color:var(--van-doc-gray-6);margin:0;padding:16px 32px;font-size:14px;font-weight:400;line-height:14px}.login-setting-disabled{--van-cell-label-color:var(--van-doc-gray-6)}@media (width<=640px){#settings{padding:12px}.settings-function-area{flex-direction:column;align-items:stretch}.settings-function-actions{justify-content:flex-start}.group{width:calc(100vw - 24px)}}");
-	var console$25 = MyConsole("[sslvpn.settings]");
-	async function register$16() {
-		console$25("进入设置页");
+	var console$26 = MyConsole("[sslvpn.settings]");
+	async function register$15() {
+		console$26("进入设置页");
 		const ctx = getContext();
 		const { deployToast } = mountAppPage({
 			id: "settings",
@@ -8054,7 +8107,7 @@ self.onmessage = async (e) => {
 		if (!runtime) throw new Error(`资源 ${resourceName} 未暴露预期的全局对象`);
 		return runtime;
 	}
-	var console$24 = MyConsole("[markdown]");
+	var console$25 = MyConsole("[markdown]");
 	var markdownRuntime;
 	var runtimeLoadAttempted = false;
 	function getMarkdownRuntime() {
@@ -8073,7 +8126,7 @@ self.onmessage = async (e) => {
 				DOMPurify
 			};
 		} catch (error) {
-			console$24("Markdown 运行时资源加载失败，降级为纯文本", error, "error");
+			console$25("Markdown 运行时资源加载失败，降级为纯文本", error, "error");
 			markdownRuntime = null;
 		}
 		return markdownRuntime;
@@ -8154,7 +8207,7 @@ self.onmessage = async (e) => {
 		if (runtime) try {
 			rawHtml = runtime.marked.parse(source);
 		} catch (error) {
-			console$24("marked.parse 失败，降级 HTML 转义", error, "warn");
+			console$25("marked.parse 失败，降级 HTML 转义", error, "warn");
 			rawHtml = escapeHtml(source);
 		}
 		else rawHtml = escapeHtml(source);
@@ -8448,18 +8501,18 @@ self.onmessage = async (e) => {
 		}
 	};
 	var about_css_default = _style("#about{background-color:var(--van-doc-background);scrollbar-width:auto;gap:1vw;width:100%;height:100%;padding:20px 1vw;display:flex;overflow-x:auto}ul{list-style-type:disc}:is(dir,menu,ol,ul) ul{list-style-type:circle}:is(dir,menu,ol,ul) :is(dir,menu,ol,ul) ul{list-style-type:square}.group{background-color:var(--van-doc-gray-1);scrollbar-width:auto;border-radius:20px;flex-shrink:0;width:32vw;height:100%;overflow:hidden}.group-content{width:100%;height:calc(100% - 46px);padding-bottom:32px;overflow:hidden auto}.group-content:not(.markdown-body)>h2{color:var(--van-doc-gray-6);margin:0;padding:32px 16px 16px;font-size:14px;font-weight:400;line-height:16px}.markdown-body{box-sizing:border-box;min-width:200px;max-width:980px;margin:0 auto;padding:25px}");
-	var console$23 = MyConsole("[sslvpn.about]");
+	var console$24 = MyConsole("[sslvpn.about]");
 	function trimMarkdownHead(text) {
 		return String(text || "").replace(/^(?:.*(?:\r\n|\n|\r)){2}/, "");
 	}
 	function readMarkdownResource(name, fallback) {
 		const markdown = _GM_getResourceText?.(name);
 		if (typeof markdown === "string" && markdown.trim() !== "") return trimMarkdownHead(markdown);
-		console$23(`Markdown 资源 ${name} 不可用，使用降级内容`, "", "error");
+		console$24(`Markdown 资源 ${name} 不可用，使用降级内容`, "", "error");
 		return fallback;
 	}
-	async function register$15() {
-		console$23("进入关于页");
+	async function register$14() {
+		console$24("进入关于页");
 		const aboutMd = readMarkdownResource("about-md", "项目说明暂时无法加载，请稍后重新安装或更新脚本。");
 		const updateMd = readMarkdownResource("update-md", "更新日志暂时无法加载，请稍后重新安装或更新脚本。");
 		const { deployToast } = mountAppPage({
@@ -8480,7 +8533,7 @@ self.onmessage = async (e) => {
 			}
 		});
 	}
-	var console$22 = MyConsole("[OCR]");
+	var console$23 = MyConsole("[OCR]");
 	var tesseractRuntime;
 	function getTesseractRuntime() {
 		if (tesseractRuntime) return tesseractRuntime;
@@ -8504,11 +8557,11 @@ self.onmessage = async (e) => {
 		try {
 			return await getTesseractRuntime().createWorker(langs, oem, options);
 		} catch (error) {
-			console$22("createWorker 失败（worker/core/lang 镜像或构造问题）", error, "error");
+			console$23("createWorker 失败（worker/core/lang 镜像或构造问题）", error, "error");
 			throw scheduleOperationError(OCR_ENGINE_UNAVAILABLE, `验证码识别组件加载失败：${error?.message || error}`);
 		}
 	}
-	var console$21 = MyConsole("[OCR]");
+	var console$22 = MyConsole("[OCR]");
 	var LoadMessage = {
 		"loading tesseract core": "OCR核心加载",
 		"initializing tesseract": "OCR初始化",
@@ -8525,7 +8578,7 @@ self.onmessage = async (e) => {
 	}
 	async function readJwglCaptcha() {
 		const url = new URL("captcha/image.action", window.location.href).href;
-		console$21("开始加载验证码图片", { url }, "info");
+		console$22("开始加载验证码图片", { url }, "info");
 		installNotification();
 		let worker;
 		let progressToast = null;
@@ -8535,7 +8588,7 @@ self.onmessage = async (e) => {
 			workerPromise = createOcrWorker("eng", 1, { logger: (m) => {
 				if (!active) return;
 				const statusText = LoadMessage[m.status];
-				if (statusText) console$21("识别进度", {
+				if (statusText) console$22("识别进度", {
 					status: statusText,
 					progress: Number(m.progress || 0)
 				}, "debug");
@@ -8554,7 +8607,7 @@ self.onmessage = async (e) => {
 			worker = await withTimeout(workerPromise, 45e3, "验证码识别组件加载超时");
 			const code = ((await withTimeout(worker.recognize(url), 3e4, "验证码识别超时"))?.data?.text || "").replace(/\s+/g, "");
 			if (!code) throw scheduleOperationError(OCR_EMPTY_RESULT, "验证码识别结果为空");
-			console$21("验证码识别完成", void 0, "info");
+			console$22("验证码识别完成", void 0, "info");
 			return code;
 		} finally {
 			active = false;
@@ -8563,19 +8616,22 @@ self.onmessage = async (e) => {
 				try {
 					await lateWorker?.terminate?.();
 				} catch (error) {
-					console$21("迟到 worker 清理失败", error, "warn");
+					console$22("迟到 worker 清理失败", error, "warn");
 				}
 			}).catch(() => {});
 			if (worker) try {
 				await worker.terminate();
 			} catch (error) {
-				console$21("worker 清理失败", error, "warn");
+				console$22("worker 清理失败", error, "warn");
 			}
 		}
 	}
-	var console$20 = MyConsole("[教务登录]");
+	var console$21 = MyConsole("[教务登录]");
 	async function jwglLogin() {
-		if (!getGMValue("Jwgl.autoLogin")) return;
+		if (!getGMValue("Jwgl.autoLogin")) {
+			console$21("Jwgl.autoLogin 未开启，跳过自动登录", "", "info");
+			return;
+		}
 		installNotification();
 		toast("info", "自动登录...", 3);
 		if (!requireCredentials("Jwgl")) return;
@@ -8602,20 +8658,21 @@ self.onmessage = async (e) => {
 			fillInput(passwordInput, getGMValue("Jwgl.password"));
 			fillInput(captchaInput, verification);
 			submitButton.click();
+			console$21("已触发教务登录提交，等待页面响应", "", "info");
 		} catch (error) {
-			console$20("自动填写失败", error, "error");
+			console$21("自动填写失败", error, "error");
 			toast("error", "验证码识别失败，请手动输入后登录", 5);
 		} finally {
 			removeToastHandle(recognitionToast);
 		}
 	}
-	var console$19 = MyConsole("[jwgl.login]");
-	async function register$14() {
-		console$19("进入登录页");
+	var console$20 = MyConsole("[jwgl.login]");
+	async function register$13() {
+		console$20("进入登录页");
 		installNotification();
 		await jwglLogin();
 	}
-	var console$18 = MyConsole("[教务菜单]");
+	var console$19 = MyConsole("[教务菜单]");
 	function addMenu(menu, menu_dd, href, content) {
 		const menuContainer = document.querySelectorAll("div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li")[menu];
 		const menuDdMyGrade = menuContainer?.querySelectorAll("dd.menu-dd")[menu_dd];
@@ -8631,11 +8688,14 @@ self.onmessage = async (e) => {
   `;
 		menuList.insertBefore(menu_dd_all_grade, menuDdMyGrade || null);
 	}
-	async function register$13() {
-		console$18("进入主页");
+	async function register$12() {
+		console$19("进入主页");
 		const jwglCustomMenu = getGMValue("Jwgl.customMenu");
-		console$18("当前启用的自定义菜单", jwglCustomMenu, "debug");
-		if (jwglCustomMenu.length === 0) return;
+		console$19("当前启用的自定义菜单", jwglCustomMenu, "debug");
+		if (jwglCustomMenu.length === 0) {
+			console$19("Jwgl.customMenu 未选择菜单，跳过菜单注入", "", "info");
+			return;
+		}
 		if (!await waitOrToast("div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li", {
 			timeout: 15e3,
 			predicate: (element) => element.textContent.trim().length > 0,
@@ -8645,6 +8705,7 @@ self.onmessage = async (e) => {
 		try {
 			if (jwglCustomMenu.indexOf("全部学期成绩") !== -1) addMenu(1, 4, "personGrade.action?method=historyCourseGrade", "全部学期成绩");
 		} catch (error) {
+			console$19("自定义菜单注入中止，请检查教务菜单结构", error, "warn");
 			toast("warning", error.message || "教务菜单加载超时，已跳过自定义菜单", 4);
 		}
 	}
@@ -8678,9 +8739,9 @@ self.onmessage = async (e) => {
 		resize();
 		return cleanup;
 	}
-	var console$17 = MyConsole("[jwgl CourseFrame]");
-	async function register$12() {
-		console$17("进入课表容器页");
+	var console$18 = MyConsole("[jwgl CourseFrame]");
+	async function register$11() {
+		console$18("进入课表容器页");
 		const iframe = await waitOrToast("#contentListFrame", {
 			timeout: 15e3,
 			level: "warning",
@@ -10233,7 +10294,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	};
-	var console$16 = MyConsole("[教务课表]");
+	var console$17 = MyConsole("[教务课表]");
 	var pageWindow$2 = _unsafeWindow ?? window;
 	function getJwglExportFilename(schedule, extension) {
 		return `${(schedule?.owner?.name || "未命名用户").replace(/[\\/:*?"<>|]/g, "_")} - 教务系统课表.${extension}`;
@@ -10323,7 +10384,7 @@ self.onmessage = async (e) => {
 		return JSON.stringify(buildFromJwgl(entries, ownerName));
 	}
 	async function hExportImage({ fixWebVpn = false } = {}) {
-		console$16("[图片导出] 开始生成课表图片", "", "info");
+		console$17("[图片导出] 开始生成课表图片", "", "info");
 		showNotify({
 			type: "primary",
 			message: "正在生成课表图片，请稍候",
@@ -10344,13 +10405,13 @@ self.onmessage = async (e) => {
 				fixWebVpn,
 				pageWindow: pageWindow$2
 			});
-			console$16("[图片导出] 导出完成", "", "info");
+			console$17("[图片导出] 导出完成", "", "info");
 			showNotify({
 				type: "success",
 				message: "课表图片已导出"
 			});
 		} catch (error) {
-			console$16("[图片导出] 导出失败", error, "error");
+			console$17("[图片导出] 导出失败", error, "error");
 			showNotify({
 				type: "danger",
 				message: error.message || "课表图片导出失败"
@@ -10358,10 +10419,10 @@ self.onmessage = async (e) => {
 		}
 	}
 	async function hExportJson() {
-		console$16("[JSON 导出] 开始解析当前课表", "", "info");
+		console$17("[JSON 导出] 开始解析当前课表", "", "info");
 		try {
 			const schedule = JSON.parse(readJwglTableToJson());
-			console$16("[JSON 导出] 课表解析完成", {
+			console$17("[JSON 导出] 课表解析完成", {
 				courseCount: schedule.courses.length,
 				lessonCount: schedule.lessons.length
 			}, "debug");
@@ -10370,17 +10431,17 @@ self.onmessage = async (e) => {
 				transition: "van-fade"
 			});
 			await downloadTextFile(result.content, getJwglExportFilename(schedule, "json"));
-			console$16("[JSON 导出] 导出完成", { encrypted: result.encrypted }, "info");
+			console$17("[JSON 导出] 导出完成", { encrypted: result.encrypted }, "info");
 			showNotify({
 				type: "success",
 				message: result.encrypted ? "加密课表已导出" : "课表 JSON 已导出"
 			});
 		} catch (error) {
 			if (error.code === "EXPORT_CANCELLED") {
-				console$16("[JSON 导出] 用户取消导出", "", "info");
+				console$17("[JSON 导出] 用户取消导出", "", "info");
 				return;
 			}
-			console$16("[JSON 导出] 导出失败", error, "error");
+			console$17("[JSON 导出] 导出失败", error, "error");
 			showNotify({
 				type: "danger",
 				message: error.message || "课表导出失败"
@@ -10390,7 +10451,7 @@ self.onmessage = async (e) => {
 	var jwglExcelExporting = false;
 	async function hExportExcel() {
 		if (jwglExcelExporting) {
-			console$16("[Excel 导出] 忽略重复点击", "已有导出任务正在执行", "warn");
+			console$17("[Excel 导出] 忽略重复点击", "已有导出任务正在执行", "warn");
 			showNotify({
 				type: "warning",
 				message: "课表 Excel 正在生成，请稍候"
@@ -10398,7 +10459,7 @@ self.onmessage = async (e) => {
 			return;
 		}
 		jwglExcelExporting = true;
-		console$16("[Excel 导出] 开始生成工作簿", "", "info");
+		console$17("[Excel 导出] 开始生成工作簿", "", "info");
 		showNotify({
 			type: "primary",
 			message: "正在生成课表 Excel"
@@ -10453,7 +10514,7 @@ self.onmessage = async (e) => {
 			XLSX.utils.book_append_sheet(workbook, detailSheet, "课程明细");
 			const filename = getJwglExportFilename(schedule, "xlsx");
 			await Promise.resolve(XLSX.writeFile(workbook, filename));
-			console$16("[Excel 导出] 导出完成", {
+			console$17("[Excel 导出] 导出完成", {
 				arrangementCount: tables.arrangementCount,
 				worksheetCount: workbook.SheetNames.length
 			}, "info");
@@ -10462,7 +10523,7 @@ self.onmessage = async (e) => {
 				message: "课表 Excel 已导出"
 			});
 		} catch (error) {
-			console$16("[Excel 导出] 导出失败", error, "error");
+			console$17("[Excel 导出] 导出失败", error, "error");
 			showNotify({
 				type: "danger",
 				message: error.message || "课表 Excel 导出失败"
@@ -10472,7 +10533,10 @@ self.onmessage = async (e) => {
 		}
 	}
 	function installCourseToolbar() {
-		if (!document.querySelector("table")) return;
+		if (!document.querySelector("table")) {
+			console$17("未找到课表 table，停止导出工具栏注入", "", "warn");
+			return;
+		}
 		const ctx = getContext();
 		const isWebvpn = !(ctx.host === "jwgl.nxu.edu.cn" || ctx.isJwglIp);
 		let container = document.getElementById("h-export");
@@ -10492,7 +10556,7 @@ self.onmessage = async (e) => {
 			}
 		});
 	}
-	var console$15 = MyConsole("[教务课表美化]");
+	var console$16 = MyConsole("[教务课表美化]");
 	var pageWindow$1 = _unsafeWindow ?? window;
 	function notifyCourseBeautifyChanged() {
 		pageWindow$1.parent.postMessage({ type: "COURSE_BEAUTIFY_CHANGED" }, "*");
@@ -10537,7 +10601,9 @@ self.onmessage = async (e) => {
 	}
 	async function beautifyJwglCourseTable() {
 		installCourseToolbar();
-		if (!getGMValue("Jwgl.courseBeautify") || !document.querySelector("table")) {
+		const enabled = getGMValue("Jwgl.courseBeautify");
+		if (!enabled || !document.querySelector("table")) {
+			console$16(enabled ? "未找到课表 table，跳过课表美化" : "Jwgl.courseBeautify 未开启，跳过课表美化", "", enabled ? "warn" : "info");
 			notifyCourseBeautifyChanged();
 			return;
 		}
@@ -10563,7 +10629,7 @@ self.onmessage = async (e) => {
         padding: 0.5em 0;
       }
     `);
-		else console$15("GM_addStyle 不可用，跳过样式注入", void 0, "warn");
+		else console$16("GM_addStyle 不可用，跳过样式注入", void 0, "warn");
 		stripNoneprintStyle();
 		const mainTable = document.querySelector("table.listTable#contentListFrame");
 		if (mainTable) mainTable.classList.add("optimized");
@@ -10608,9 +10674,9 @@ self.onmessage = async (e) => {
 		});
 		notifyCourseBeautifyChanged();
 	}
-	var console$14 = MyConsole("[jwgl CourseTable]");
-	async function register$11() {
-		console$14("进入课表内容页");
+	var console$15 = MyConsole("[jwgl CourseTable]");
+	async function register$10() {
+		console$15("进入课表内容页");
 		await beautifyJwglCourseTable();
 	}
 	function normalizeConfigVersion(value) {
@@ -10969,7 +11035,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	};
-	var console$13 = MyConsole("[webvpn.home]");
+	var console$14 = MyConsole("[webvpn.home]");
 	function titleCard(title, id) {
 		const group = document.createElement("div");
 		group.className = "block-group";
@@ -10996,7 +11062,7 @@ self.onmessage = async (e) => {
 			rootProps
 		});
 	}
-	async function register$10() {
+	async function register$9() {
 		const scriptVersion = getContext().version;
 		installNotification();
 		if (!await waitOrToast("div[title=教务管理平台]", {
@@ -11034,7 +11100,7 @@ self.onmessage = async (e) => {
   `);
 		const firstSet = getGMValue("firstSet");
 		const configVersion = normalizeConfigVersion(getGMValue("configVersion"));
-		console$13("检查首次配置与版本提示状态", {
+		console$14("检查首次配置与版本提示状态", {
 			firstSet,
 			configVersion,
 			ConfigVersion: 8
@@ -11062,7 +11128,7 @@ self.onmessage = async (e) => {
 			});
 			if (wrapper.firstElementChild) rtEl.appendChild(wrapper.firstElementChild);
 			wrapper.remove();
-		} else console$13("未找到 header .rt，BetterMenu 菜单跳过", void 0, "warn");
+		} else console$14("未找到 header .rt，BetterMenu 菜单跳过", void 0, "warn");
 		const mainDiv = document.querySelector(".portal-content__block .el-scrollbar__view");
 		if (mainDiv) {
 			if (getGMValue("WebVPN.courseGrab")) {
@@ -11081,9 +11147,9 @@ self.onmessage = async (e) => {
 				mainDiv.prepend(group);
 				mountCardGroup(content, "better-nxu-customcards-host", _sfc_main$1, { customCard });
 			}
-		} else console$13("未找到卡片组容器 .portal-content__block .el-scrollbar__view，跳过卡片注入", void 0, "warn");
+		} else console$14("未找到卡片组容器 .portal-content__block .el-scrollbar__view，跳过卡片注入", void 0, "warn");
 	}
-	var console$12 = MyConsole("[reader.copy]");
+	var console$13 = MyConsole("[reader.copy]");
 	var installations$1 = new WeakMap();
 	function installReaderCopy(doc = document) {
 		const existing = installations$1.get(doc);
@@ -11101,7 +11167,7 @@ self.onmessage = async (e) => {
 			try {
 				_GM_setClipboard?.(text);
 			} catch (error) {
-				console$12("自动复制失败", { name: error?.name }, "warn");
+				console$13("自动复制失败", { name: error?.name }, "warn");
 				toast("warning", "自动复制失败，请使用浏览器复制功能", 3);
 			}
 		};
@@ -11121,11 +11187,19 @@ self.onmessage = async (e) => {
 		return cleanup;
 	}
 	function createLibraryReaderRegistration(id, installSlider) {
+		const console = MyConsole(`[${id}.reader]`);
 		return async () => {
 			const platform = resolveLibraryReader(getContext());
-			if (platform?.id !== id) return;
+			if (platform?.id !== id) {
+				console("未匹配当前平台阅读页，停止阅读增强", "", "info");
+				return;
+			}
 			if (platform.copy) installReaderCopy();
 			if (platform.slider && installSlider) installSlider({ onError: () => toast("warning", "阅读滑块自动拖动失败，请手动完成验证", 4) });
+			console("阅读增强监听已安装", {
+				copy: Boolean(platform.copy),
+				slider: Boolean(platform.slider && installSlider)
+			}, "info");
 		};
 	}
 	var installations = new WeakMap();
@@ -11250,12 +11324,15 @@ self.onmessage = async (e) => {
 		schedule();
 		return stop;
 	}
-	var register$9 = createLibraryReaderRegistration("cnki", installCnkiSlider);
-	var register$8 = createLibraryReaderRegistration("wanfang");
-	var console$11 = MyConsole("[webvpn.failed]");
-	async function register$7() {
-		if (!getGMValue("WebVPN.autoClose")) return;
-		console$11("按 WebVPN.autoClose 配置自动关闭失败页");
+	var register$8 = createLibraryReaderRegistration("cnki", installCnkiSlider);
+	var register$7 = createLibraryReaderRegistration("wanfang");
+	var console$12 = MyConsole("[webvpn.failed]");
+	async function register$6() {
+		if (!getGMValue("WebVPN.autoClose")) {
+			console$12("WebVPN.autoClose 未开启，保留失败页供手动处理", "", "info");
+			return;
+		}
+		console$12("按 WebVPN.autoClose 配置自动关闭失败页");
 		closeCurrentTab();
 	}
 	var tools_css_default = _style("#main,#main .schedule-manager,#main .schedule-manager *{box-sizing:border-box}#main{width:calc(100% - 80px);height:calc(100% - 46px);padding-right:20px;position:absolute;top:46px;left:80px;overflow:hidden}#main>div{box-sizing:border-box;width:100%;height:100%;display:none}#main>div.show{display:block}#searchTeacher>.credits-bar{box-sizing:border-box;color:#000;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:1000;white-space:nowrap;background:#ffffff1a;border-radius:30px;align-items:center;gap:8px;margin:0;padding:10px 25px;font-size:.9rem;animation:.6s ease-out slideUp;display:flex;position:fixed;bottom:20px;left:calc(50% + 64px);transform:translate(-50%);box-shadow:0 4px 12px #00000026}#searchTeacher .van-cell-group{padding-bottom:60px}.schedule-manager{flex-direction:column;height:100%;display:flex;overflow:hidden}.schedule-manager-tab{background:#f7f8fa;padding:12px}.schedule-manager-actions{border-bottom:1px solid #e1e4e8;flex:none;justify-content:space-between;align-items:center;gap:12px;padding:4px 8px 12px;display:flex}.schedule-manager-hint{color:#6b7280;font-size:13px}.add-btn{color:#fff;cursor:pointer;background:#4a6bdf;border:none;border-radius:6px;align-items:center;gap:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.add-btn:hover{background:#3a5bc7}.add-btn:disabled{cursor:not-allowed;opacity:.55}.export-container{margin-right:15px;position:relative}.export-btn{color:#fff;cursor:pointer;background:#a0a0a0;border:none;border-radius:6px;align-items:center;gap:5px;margin-right:5px;padding:8px 12px;font-size:14px;transition:background-color .2s;display:flex}.export-btn:hover{background:#5b5b5b}.export-dropdown{z-index:100;background:#fff;border-radius:6px;min-width:120px;padding:8px 0;position:absolute;top:100%;right:0;box-shadow:0 4px 12px #0000001a}.export-dropdown div{cursor:pointer;color:#4a5568;padding:8px 16px;transition:background-color .2s}.export-dropdown div:hover{color:#4a6bdf;background-color:#f0f4ff}.file-list-header{background:0 0;border-bottom:1px solid #e1e4e8;padding:15px 20px}.file-list-header h3{color:#4a5568;margin-top:0;margin-bottom:10px;font-size:16px;font-weight:600}.files-display{flex-wrap:wrap;gap:8px;display:flex}.file-tag{color:#4a5568;background:#edf2f7;border-radius:20px;align-items:center;gap:6px;padding:6px 12px;font-size:13px;display:flex}.tag-delete-btn{color:#718096;cursor:pointer;background:0 0;border:none;border-radius:50%;justify-content:center;align-items:center;width:16px;height:16px;font-size:14px;display:flex}.tag-delete-btn:hover{color:#e53e3e;background:#fff5f5}.main-content{flex-direction:column;flex:1;display:flex;overflow:hidden}.schedule-container{flex:1;padding:12px 0 0;overflow:auto}.schedule-table{border-collapse:collapse;table-layout:fixed;background:#fff;width:100%}.schedule-table th,.schedule-table td{text-align:center;border:1px solid #e1e4e8;padding:12px}.schedule-table th{color:#4a5568;background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-table th.time-header{width:80px;font-weight:600;background-color:#f0f4ff!important}.period-cell{background-color:#f8f9ff;font-size:14px;font-weight:600}.schedule-cell{vertical-align:top;min-height:80px;padding:8px}.file-item-display{color:#2b6cb0;word-break:break-all;background:#ebf4ff;border-radius:4px;margin-bottom:4px;padding:6px 8px;font-size:13px}.file-item-display.file-item-all-free{color:#07c160;background:#e8f8ef;font-weight:600}.file-item-display.file-item-online-only{color:#ad6800;background:#fff7e6;font-weight:600}.availability-summary{color:#646566;margin-top:6px;font-size:11px;font-weight:600}.availability-summary.status-free{color:#078b47}.availability-summary.status-online{color:#ad6800}.availability-summary.status-none{color:#c41d7f}.empty-cell{color:#a0aec0;justify-content:center;align-items:center;height:100%;font-size:12px;display:flex}.visually-hidden{clip:rect(0, 0, 0, 0)!important;white-space:nowrap!important;border:0!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;position:absolute!important;overflow:hidden!important}@media (width<=768px){.schedule-table{font-size:12px}.schedule-table th,.schedule-table td{padding:6px}}.personal-schedule-page{background:#f7f8fa;flex-direction:column;min-width:0;height:100%;display:flex;overflow:hidden}#main>.personal-schedule-page.show{display:flex}.personal-schedule-toolbar{background:#fff;border-bottom:1px solid #ebedf0;flex-wrap:wrap;flex:none;align-items:center;gap:12px;padding:8px 12px;display:flex}.personal-link-search-form{flex:420px;min-width:240px}.personal-link-search{width:100%;padding:0}.personal-schedule-actions{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.personal-schedule-tabs{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.personal-schedule-tabs>.van-tabs__wrap{flex:none}.personal-schedule-tabs>.van-tabs__content{flex:1;min-height:0}.personal-schedule-tabs>.van-tabs__content>.van-tab__panel{height:100%;overflow:hidden}.schedule-key-page{background:#f7f8fa;height:100%;padding:12px 16px;overflow:auto}.schedule-key-content{width:100%;max-width:100%}.schedule-key-guide{color:#4b5563;border-left:4px solid #1989fa;margin-bottom:18px;padding:8px 12px;line-height:1.65}.schedule-key-guide p{margin:4px 0}.schedule-key-empty{flex-direction:column;align-items:center;padding-bottom:24px;display:flex}.schedule-key-section{border-top:1px solid #ebedf0;padding:16px 0}.schedule-private-key-section{border-color:#ebedf0}.schedule-key-section-title{justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;display:flex}.schedule-key-section-title strong,.schedule-key-section-title span{display:block}.schedule-key-section-title span{color:#6b7280;margin-top:3px;font-size:13px}.schedule-key-buttons{flex-wrap:wrap;justify-content:flex-end;gap:8px;display:flex}.schedule-key-text{resize:vertical;color:#334155;word-break:break-all;background:#f8fafc;border:1px solid #dcdfe6;border-radius:8px;width:100%;padding:10px;font:12px/1.5 Consolas,Monaco,monospace}.schedule-private-key-text{background:#fff}.schedule-private-key-hidden{color:#6b7280;text-align:center;background:#f3f4f6;padding:24px 12px}.schedule-key-regenerate{justify-content:flex-end;margin-top:18px;display:flex}.personal-panel-shell{flex-direction:column;height:100%;min-height:0;display:flex}.personal-week-filter{background:#fff;border-bottom:1px solid #f0f1f2;flex:none;padding:6px 12px;overflow:hidden}.personal-week-axis{--van-radius-sm:var(--van-radius-max);--van-tabs-card-height:32px}.personal-week-axis>.van-tabs__wrap{justify-content:center;align-items:center;display:flex}.personal-week-axis .van-tabs__nav--card{max-width:100%;margin:0}.personal-week-axis .van-tabs__nav--card .van-tab{min-width:64px}.personal-schedule-capture{background:#f7f8fa;flex:1;min-height:0;padding:12px;overflow:auto}.personal-course-scroll{margin:12px;padding:0}.personal-table-capture{width:100%;min-width:1002px;min-height:100%}.personal-stats-capture{min-height:100%}.personal-course-grid{box-sizing:border-box;background:#ebedf0;border-radius:8px;grid-template-rows:38px repeat(10,minmax(52px,auto));grid-template-columns:92px repeat(7,minmax(130px,1fr));gap:1px;width:100%;min-width:1002px;padding:1px;display:grid;box-shadow:0 2px 10px #0000000d}.personal-course-grid-corner,.personal-course-grid-day,.personal-course-grid-period,.personal-course-grid-cell{box-sizing:border-box;min-width:0}.personal-course-grid-corner,.personal-course-grid-day,.personal-course-grid-period{box-shadow:0 0 0 1px #ebedf0}.personal-course-grid-corner,.personal-course-grid-day{z-index:4;color:#4a5568;background:#f0f4ff;justify-content:center;align-items:center;font-size:13px;font-weight:600;display:flex;position:sticky;top:1px}.personal-course-grid-corner{z-index:5;grid-area:1/1;left:1px}.personal-course-grid-period{z-index:3;color:#4a5568;text-align:center;background:#f8f9ff;flex-direction:column;justify-content:center;align-items:center;padding:4px;font-size:11px;display:flex;position:sticky;left:1px}.personal-course-grid-cell{z-index:1;background:#fff}.personal-table{table-layout:fixed;border-spacing:0;border-collapse:separate;background:#fff;border-radius:8px;width:100%;min-width:980px;overflow:hidden;box-shadow:0 2px 10px #0000000d}.personal-table th,.personal-table td{text-align:center;vertical-align:top;border-bottom:1px solid #ebedf0;border-right:1px solid #ebedf0;padding:6px}.personal-table thead th{color:#4a5568;background:#f0f4ff;height:38px;font-size:13px}.personal-table .personal-period-cell{color:#4a5568;vertical-align:middle;background:#f8f9ff;width:92px;min-width:92px;font-size:12px}.personal-course-card{box-sizing:border-box;border-left:4px solid var(--course-color);background:color-mix(in srgb, var(--course-color) 10%, white);color:#2d3748;text-align:left;word-break:break-word;border-radius:6px;flex-direction:column;justify-content:center;min-width:0;margin:3px 0;padding:7px 6px;line-height:1.35;display:flex}.personal-course-stack{z-index:2;grid-template-rows:subgrid;box-sizing:border-box;align-self:stretch;gap:1px 4px;min-width:0;margin:0 3px;display:grid}.personal-course-name{color:#2d3748;min-width:0;font-size:13px;font-weight:600}.personal-course-variant-count{color:#4a6bdf;white-space:nowrap;background:#dfe7ff;border-radius:999px;flex:none;padding:1px 5px;font-size:10px;line-height:1.5}.personal-course-variant-count.overlap{color:#d46b08;background:#fff3e0}.personal-course-variants{border-top:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1;margin-top:5px}.personal-course-variant{padding:5px 0}.personal-course-variant+.personal-course-variant{border-top:1px dashed #cbd5e1}.personal-course-variant-weeks{color:#475569;font-size:11px;font-weight:600}.personal-course-variant-detail{color:#646566;margin-top:1px;font-size:11px}.personal-course-periods{color:#646566;margin-top:5px;font-size:11px}.personal-free-cell{color:#1989fa;white-space:pre-line;justify-content:center;align-items:center;min-height:52px;font-size:12px;line-height:1.45;display:flex}.personal-not-free{color:#c8c9cc}.personal-all-term-free{color:#07c160;font-weight:600}.personal-online-only{color:#ad6800;font-weight:600}.personal-empty-state{justify-content:center;align-items:center;height:100%;min-height:260px;display:flex}.personal-stats{height:100%;padding:12px;overflow:auto}.personal-stat-grid{grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin-bottom:12px;display:grid}.personal-stat-card,.personal-chart-card{background:#fff;border-radius:8px;padding:14px;box-shadow:0 2px 10px #0000000d}.personal-stat-value{color:#4a6bdf;margin-top:4px;font-size:26px;font-weight:700}.personal-stat-label,.personal-stat-unit{color:#969799;font-size:12px}.personal-chart-card h3{color:#323233;margin:0 0 12px;font-size:16px}.personal-week-bars{align-items:flex-end;gap:8px;min-height:210px;padding:8px 4px 0;display:flex;overflow-x:auto}.personal-week-bar-item{text-align:center;color:#969799;flex:1 0 36px;min-width:36px;font-size:11px}.personal-week-bar-track{justify-content:center;align-items:flex-end;height:160px;display:flex}.personal-week-bar{background:linear-gradient(#6f8df3,#4a6bdf);border-radius:5px 5px 0 0;width:22px;min-height:2px}.personal-week-bar-value{color:#4a6bdf;margin-bottom:3px;font-weight:600}@media (width<=900px){.personal-schedule-toolbar{flex-direction:column;align-items:stretch;gap:6px}.personal-link-search-form{flex-basis:auto;width:100%;min-width:0}.schedule-manager-actions{flex-direction:column;align-items:stretch}.schedule-manager-actions>div{justify-content:flex-start!important}.personal-stat-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.schedule-key-page{padding:10px}.schedule-key-section-title{flex-direction:column;align-items:stretch}.schedule-key-buttons{justify-content:flex-start}}");
@@ -11497,7 +11574,7 @@ self.onmessage = async (e) => {
 		}));
 		return grid;
 	}
-	var console$10 = MyConsole("[教师查询]");
+	var console$11 = MyConsole("[教师查询]");
 	function xmlToJson(xml) {
 		const xmlDoc = new DOMParser().parseFromString(xml, "application/xml");
 		if (xmlDoc.querySelector("parsererror")) throw new Error("教师查询接口返回了无效 XML");
@@ -11542,7 +11619,7 @@ self.onmessage = async (e) => {
 				planid: "undefined",
 				university_en_name: "undefined"
 			}).toString();
-			console$10("开始请求分页数据", { page }, "debug");
+			console$11("开始请求分页数据", { page }, "debug");
 			const xhr = new XMLHttpRequest();
 			xhr.withCredentials = true;
 			xhr.timeout = Math.max(1e3, Number(options.timeout || 15e3));
@@ -11580,7 +11657,7 @@ self.onmessage = async (e) => {
 				if (this.status >= 200 && this.status < 300) try {
 					const raw_result = xmlToJson(this.responseText);
 					if (!raw_result.page?.["#text"]) {
-						console$10("WebVPN 登录状态已失效", { page }, "warn");
+						console$11("WebVPN 登录状态已失效", { page }, "warn");
 						resolveOnce({
 							success: false,
 							msg: "webvpn登录已过期"
@@ -11589,7 +11666,7 @@ self.onmessage = async (e) => {
 					}
 					const pages = raw_result.page["#text"].match(/第(\d+)\/(\d+)页/);
 					if (!pages) {
-						console$10("无法识别分页信息", { page }, "error");
+						console$11("无法识别分页信息", { page }, "error");
 						resolveOnce({
 							success: false,
 							msg: "教师查询结果格式异常"
@@ -11599,7 +11676,7 @@ self.onmessage = async (e) => {
 					const now_page = Number.parseInt(pages[1], 10);
 					const all_page = Number.parseInt(pages[2], 10);
 					if (all_page === 0) {
-						console$10("当前关键词没有结果", { page }, "info");
+						console$11("当前关键词没有结果", { page }, "info");
 						resolveOnce({
 							success: false,
 							msg: "查询不到该教师"
@@ -11615,7 +11692,7 @@ self.onmessage = async (e) => {
 					const word = raw_result.word;
 					const remind = raw_result.remind;
 					if (!val || !word || !remind) {
-						console$10("教师查询结果字段缺失", { page }, "error");
+						console$11("教师查询结果字段缺失", { page }, "error");
 						resolveOnce({
 							success: false,
 							msg: "教师查询结果格式异常"
@@ -11649,21 +11726,21 @@ self.onmessage = async (e) => {
 							unit
 						});
 					}
-					console$10("分页数据解析完成", {
+					console$11("分页数据解析完成", {
 						page: now_page,
 						totalPages: all_page,
 						resultCount: result.data.length
 					}, "debug");
 					resolveOnce(result);
 				} catch (error) {
-					console$10("教师查询结果解析失败", {
+					console$11("教师查询结果解析失败", {
 						page,
 						error
 					}, "error");
 					rejectOnce(new Error("教师查询结果解析失败"));
 				}
 				else {
-					console$10("接口返回异常状态", {
+					console$11("接口返回异常状态", {
 						page,
 						status: this.status
 					}, "error");
@@ -11671,11 +11748,11 @@ self.onmessage = async (e) => {
 				}
 			});
 			xhr.addEventListener("error", function() {
-				console$10("请求发生网络错误", { page }, "error");
+				console$11("请求发生网络错误", { page }, "error");
 				rejectOnce(new Error("Network error"));
 			});
 			xhr.addEventListener("timeout", function() {
-				console$10("请求超时", {
+				console$11("请求超时", {
 					page,
 					timeout: xhr.timeout
 				}, "warn");
@@ -11689,7 +11766,7 @@ self.onmessage = async (e) => {
 			try {
 				xhr.send(data);
 			} catch (err) {
-				console$10("请求发送失败", {
+				console$11("请求发送失败", {
 					page,
 					error: err
 				}, "error");
@@ -13429,7 +13506,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	};
-	var console$9 = MyConsole("[webvpn.tools]");
+	var console$10 = MyConsole("[webvpn.tools]");
 	function openWarmupTab(openInTab, url) {
 		if (typeof openInTab !== "function" || !url) return;
 		try {
@@ -13438,14 +13515,14 @@ self.onmessage = async (e) => {
 				try {
 					tab.close();
 				} catch (error) {
-					console$9("后台预热标签页关闭失败", error, "warn");
+					console$10("后台预热标签页关闭失败", error, "warn");
 				}
 			}, 5e3);
 		} catch (error) {
-			console$9("后台预热标签页打开失败", error, "warn");
+			console$10("后台预热标签页打开失败", error, "warn");
 		}
 	}
-	async function register$6() {
+	async function register$5() {
 		openWarmupTab(_GM_openInTab, buildWebVpnUrl("https://portal.nxu.edu.cn/index.html"));
 		openWarmupTab(_GM_openInTab, buildWebVpnUrl("https://xsfw.nxu.edu.cn/xsfw/sys/jbxxapp/*default/index.do#/wdxx"));
 		const { deployToast } = mountAppPage({
@@ -13460,33 +13537,39 @@ self.onmessage = async (e) => {
 		removeToastHandle(deployToast);
 		toast("success", "小工具部署完毕", 2);
 		toast("info", "由于获取课表信息需要，我们正在后台打开信息门户和学工系统页面，请稍后再打开\"课表信息\"页面，以免获取信息失败", 6);
-		console$9("小工具页部署完毕");
+		console$10("小工具页部署完毕");
 	}
-	var console$8 = MyConsole("[sysaq.login]");
-	async function register$5() {
+	var console$9 = MyConsole("[sysaq.login]");
+	async function register$4() {
 		installNotification();
-		console$8("进入实验室安全教育平台登录页");
-		if (!document.evaluate("//button[.//span[contains(., '点击登录')]]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue) return;
+		console$9("进入实验室安全教育平台登录页");
+		if (!document.evaluate("//button[.//span[contains(., '点击登录')]]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue) {
+			console$9("未找到“点击登录”按钮，停止自动跳转，请手动登录", "", "warn");
+			return;
+		}
 		toast("success", "自动登录…", 3);
-		console$8("识别到\"点击登录\"按钮，自动跳转认证页");
+		console$9("识别到\"点击登录\"按钮，自动跳转认证页");
 		const url = new URL(window.location.href);
 		url.pathname = url.pathname.replace(/\/$/, "") + "/login";
 		window.location.href = url.toString();
 	}
-	var console$7 = MyConsole("[sysaq.auth]");
-	async function register$4() {
-		installNotification();
-		console$7("进入实验室安全教育平台认证页");
-		const button = document.evaluate(".//a[contains(., '统一身份认证登录')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-		if (!button) return;
-		toast("success", "自动登录…", 3);
-		console$7("识别到\"统一身份认证登录\"链接，自动点击");
-		simulateClick(button);
-	}
-	var console$6 = MyConsole("[评教]");
+	var console$8 = MyConsole("[sysaq.auth]");
 	async function register$3() {
 		installNotification();
-		console$6("进入评教系统", "注入未实现提示");
+		console$8("进入实验室安全教育平台认证页");
+		const button = document.evaluate(".//a[contains(., '统一身份认证登录')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+		if (!button) {
+			console$8("未找到“统一身份认证登录”链接，停止自动认证，请手动登录", "", "warn");
+			return;
+		}
+		toast("success", "自动登录…", 3);
+		console$8("识别到\"统一身份认证登录\"链接，自动点击");
+		simulateClick(button);
+	}
+	var console$7 = MyConsole("[评教]");
+	async function register$2() {
+		installNotification();
+		console$7("进入评教系统", "注入未实现提示");
 		const message = "评教自动填写功能暂未实现，请手动完成当前页面操作。";
 		if (toast) toast("info", message, 5);
 		else window.alert(message);
@@ -13798,9 +13881,17 @@ self.onmessage = async (e) => {
 			page.removeEventListener("pagehide", stop);
 		}
 	}
+	var console$6 = MyConsole("[tuanwei.download]");
 	var task;
-	function register$2() {
-		if (!isTuanweiDownloadRoute(getContext()) || !getGMValue("TuanWei.autoDownload")) return;
+	function register$1() {
+		if (!isTuanweiDownloadRoute(getContext())) {
+			console$6("未匹配团委附件下载入口，停止自动下载", "", "info");
+			return;
+		}
+		if (!getGMValue("TuanWei.autoDownload")) {
+			console$6("TuanWei.autoDownload 未开启，跳过自动下载", "", "info");
+			return;
+		}
 		if (task) return task;
 		installNotification();
 		let progressToast = null;
@@ -13810,6 +13901,7 @@ self.onmessage = async (e) => {
 			progressToast = null;
 		};
 		const onPageHide = () => {
+			console$6("页面已离开，停止自动下载流程", "", "info");
 			active = false;
 			clearProgress();
 		};
@@ -13818,17 +13910,20 @@ self.onmessage = async (e) => {
 			autoClose: getGMValue("TuanWei.autoDownloadClose") === true,
 			report: (message, type = "info") => {
 				if (!active) return;
+				console$6(message, "", "info");
 				clearProgress();
 				if (type === "success") toast("success", message, 3);
 				else progressToast = toast("info", message, 0);
 			}
 		}).then((result) => {
 			if (active && result === "manual") {
+				console$6("已停止自动下载，请手动完成", "", "info");
 				clearProgress();
 				toast("info", "已停止自动下载，请手动完成", 4);
 			}
 		}).catch((error) => {
 			if (!active) return;
+			console$6("自动下载异常终止，页面已保留，可手动下载", error, "error");
 			clearProgress();
 			toast("error", `${error?.message || "自动下载失败"}；页面已保留，可手动下载。`, 6);
 		}).finally(() => {
@@ -14012,6 +14107,10 @@ self.onmessage = async (e) => {
 			}
 			const list = mainIframe.document.querySelector("div.city_sort");
 			if (!list?.querySelector("div.sortItem")) {
+				console$4("门户分类加载超时，停止卡片注入", {
+					selector: "div.city_sort div.sortItem",
+					timeoutMs: 15e3
+				}, "warn");
 				toast("warning", "门户分类加载超时，已跳过自定义卡片", 4);
 				return;
 			}
@@ -14050,7 +14149,10 @@ self.onmessage = async (e) => {
 				div.innerHTML = template;
 				for (const card of div.querySelectorAll("[data-card-index]")) {
 					const item = items[Number(card.dataset.cardIndex)];
-					const reportError = (error) => toast("warning", error.message || "门户链接打开失败", 4);
+					const reportError = (error) => {
+						console$4("门户链接打开失败", error, "warn");
+						toast("warning", error.message || "门户链接打开失败", 4);
+					};
 					const open = () => {
 						try {
 							const result = openPortalCard(item, {
@@ -14091,12 +14193,14 @@ self.onmessage = async (e) => {
 				if (currentUrl.indexOf("#/hall") !== -1) {
 					console$4("识别到门户应用中心（#/hall）");
 					await injectPortalHall();
+					return;
 				}
 			}
+			console$4("当前不是门户应用中心，跳过卡片注入；继续监听导航", { path: currentPath }, "info");
 		};
 	}
 	var console$3 = MyConsole("[portal.hall]");
-	async function register$1() {
+	async function register() {
 		installNotification();
 		console$3("进入新版信息门户");
 		const onNavigate = buildPortalOnNavigate(() => {
@@ -14116,24 +14220,24 @@ self.onmessage = async (e) => {
 		return ctx.url;
 	}
 	var console$2 = MyConsole("[路由]");
-	var readerRegistrations = new Map([["cnki", register$9], ["wanfang", register$8]]);
+	var readerRegistrations = new Map([["cnki", register$8], ["wanfang", register$7]]);
 	var JUDGE_TABLE = [
 		{
 			site: "sslvpn",
 			page: "settings",
-			register: register$16,
+			register: register$15,
 			test: (c) => c.host === "sslvpn.nxu.edu.cn" && c.path === "/h/settings"
 		},
 		{
 			site: "sslvpn",
 			page: "about",
-			register: register$15,
+			register: register$14,
 			test: (c) => c.host === "sslvpn.nxu.edu.cn" && c.path === "/h/about"
 		},
 		{
 			site: "jwgl",
 			page: "login",
-			register: register$14,
+			register: register$13,
 			test: (c) => {
 				if (!isJwglSite(c)) return false;
 				if (c.isWebvpn) {
@@ -14146,7 +14250,7 @@ self.onmessage = async (e) => {
 		{
 			site: "jwgl",
 			page: "home",
-			register: register$13,
+			register: register$12,
 			test: (c) => {
 				if (!isJwglSite(c)) return false;
 				const p = jwglPathOrUrl(c);
@@ -14156,61 +14260,61 @@ self.onmessage = async (e) => {
 		{
 			site: "jwgl",
 			page: "course-table-container",
-			register: register$12,
+			register: register$11,
 			test: (c) => isJwglSite(c) && c.url.indexOf("courseTableForStd.action") !== -1 && c.query.get("method") === "stdHome"
 		},
 		{
 			site: "jwgl",
 			page: "course-table",
-			register: register$11,
+			register: register$10,
 			test: (c) => isJwglSite(c) && c.url.indexOf("courseTableForStd.action") !== -1 && c.query.get("method") === "courseTable"
 		},
 		{
 			site: "weixin",
 			page: "fast-login",
-			register: register$17,
+			register: register$16,
 			test: (c) => c.host === "open.weixin.qq.com" && c.url.indexOf("nxu.edu") !== -1
 		},
 		{
 			site: "ids",
 			page: "login",
-			register: register$20,
+			register: register$19,
 			test: (c) => c.host === "ids.nxu.edu.cn" && c.path.indexOf("/authserver/login") !== -1
 		},
 		{
 			site: "ids",
 			page: "re-auth",
-			register: register$19,
+			register: register$18,
 			test: (c) => c.host === "ids.nxu.edu.cn" && c.url.indexOf("/authserver/reAuthCheck/") !== -1
 		},
 		{
 			site: "ids",
 			page: "callback",
-			register: register$18,
+			register: register$17,
 			test: (c) => c.host === "ids.nxu.edu.cn" && (c.path === "/authserver/callback" || c.url.indexOf(`/${WEBVPN_HOST_TOKENS["open.weixin.qq.com"]}/connect/qrconnect`) !== -1)
 		},
 		{
 			site: "ids",
 			page: "login",
-			register: register$20,
+			register: register$19,
 			test: isWebVpnIdsLoginRoute
 		},
 		{
 			site: "ids",
 			page: "re-auth",
-			register: register$19,
+			register: register$18,
 			test: isWebVpnIdsReAuthRoute
 		},
 		{
 			site: "ids",
 			page: "callback",
-			register: register$18,
+			register: register$17,
 			test: (c) => c.isWebvpn && isWebVpnRealHost(c.vpnContext, "open.weixin.qq.com")
 		},
 		{
 			site: "webvpn",
 			page: "home",
-			register: register$10,
+			register: register$9,
 			test: (c) => c.isWebvpnHost && (c.url === "https://webvpn.nxu.edu.cn/" || c.path === "/")
 		},
 		...LIBRARY_READER_PLATFORMS.map(({ id }) => ({
@@ -14222,67 +14326,67 @@ self.onmessage = async (e) => {
 		{
 			site: "webvpn",
 			page: "tools",
-			register: register$6,
+			register: register$5,
 			test: (c) => isWebVpnToolsRoute(c, document.body?.innerHTML || "")
 		},
 		{
 			site: "webvpn",
 			page: "failed",
-			register: register$7,
+			register: register$6,
 			test: (c) => isWebVpnFailedRoute(c, document.body?.innerHTML || "")
 		},
 		{
 			site: "sysaq",
 			page: "login",
-			register: register$5,
+			register: register$4,
 			test: (c) => c.isWebvpn && isWebVpnRealHost(c.vpnContext, "sysaq.nxu.edu.cn") && (c.vpnContext?.realPath || "") === "/lab-platform/"
 		},
 		{
 			site: "sysaq",
 			page: "auth",
-			register: register$4,
+			register: register$3,
 			test: (c) => c.isWebvpn && isWebVpnRealHost(c.vpnContext, "sysaq.nxu.edu.cn") && (c.vpnContext?.realPath || "").indexOf("/lab-platform/login") !== -1
 		},
 		{
 			site: "portal",
 			page: "hall",
-			register: register$1,
+			register,
 			test: (c) => c.isWebvpn && isWebVpnRealHost(c.vpnContext, "portal.nxu.edu.cn")
 		},
 		{
 			site: "sysaq",
 			page: "login",
-			register: register$5,
+			register: register$4,
 			test: (c) => c.host === "sysaq.nxu.edu.cn" && c.path === "/lab-platform/"
 		},
 		{
 			site: "sysaq",
 			page: "auth",
-			register: register$4,
+			register: register$3,
 			test: (c) => c.host === "sysaq.nxu.edu.cn" && c.path.indexOf("/lab-platform/login") !== -1
 		},
 		{
 			site: "pingjiao",
 			page: "notify",
-			register: register$3,
+			register: register$2,
 			test: (c) => c.host === "jsfzyjxzlxt.nxu.edu.cn" && c.path === "/quality/student/evaluate/item_tasks"
 		},
 		{
 			site: "pingjiao",
 			page: "notify",
-			register: register$3,
+			register: register$2,
 			test: (c) => c.host === "jsfzyjxzlxt.nxu.edu.cn" && c.path === "/quality/student/evaluate/item_tasks_text"
 		},
 		{
 			site: "portal",
 			page: "hall",
-			register: register$1,
+			register,
 			test: (c) => c.host === "portal.nxu.edu.cn"
 		},
 		{
 			site: "tuanwei",
 			page: "download",
-			register: register$2,
+			register: register$1,
 			test: isTuanweiDownloadRoute
 		}
 	];
@@ -14291,8 +14395,11 @@ self.onmessage = async (e) => {
 		console$2("开始识别当前页面", {
 			host: ctx.host,
 			path: ctx.path,
-			isWebvpn: ctx.isWebvpn
-		}, "debug");
+			isWebvpn: ctx.isWebvpn,
+			realHost: ctx.webvpnRealHost,
+			realPath: ctx.isWebvpn ? ctx.vpnContext?.realPath : void 0,
+			courseTableMethod: ["stdHome", "courseTable"].includes(ctx.query.get("method")) ? ctx.query.get("method") : void 0
+		}, "info");
 		for (const entry of JUDGE_TABLE) try {
 			if (entry.test(ctx)) {
 				console$2(`命中 ${entry.site}/${entry.page}`);
@@ -14301,19 +14408,38 @@ self.onmessage = async (e) => {
 		} catch (error) {
 			console$2(`${entry.site}/${entry.page} 判定异常`, error, "warn");
 		}
-		console$2("未命中任何路由（当前页面 2.0 暂不处理）", {
-			host: ctx.host,
-			path: ctx.path
-		}, "info");
+		console$2("未命中任何路由，当前主机或页面路径不在支持范围内", "", "info");
 		return null;
 	}
 	var console$1 = MyConsole("[初始化]");
 	console$1("Better NXU 开始运行");
-	initContext();
-	var register = resolveRoute();
-	if (typeof register === "function") try {
-		await(register());
+	var startedAt = Date.now();
+	var stage = "读取版本信息";
+	try {
+		console$1(`脚本版本：${_GM_info?.script?.version || "未知（GM_info 未提供版本）"}`, "", "info");
+		stage = "上下文初始化";
+		const ctx = initContext();
+		console$1("运行环境", {
+			scriptHandler: _GM_info?.scriptHandler || "未知",
+			handlerVersion: _GM_info?.version || "未知",
+			access: ctx.isWebvpn ? "WebVPN 代理" : ctx.isWebvpnHost ? "WebVPN 主站" : "直连",
+			frame: window === window.top ? "顶层页面" : "iframe",
+			readyState: document.readyState,
+			visibilityState: document.visibilityState
+		}, "info");
+		stage = "路由匹配";
+		const register = resolveRoute();
+		if (typeof register === "function") {
+			stage = "页面注册";
+			console$1("开始执行页面入口", "", "debug");
+			await(register());
+			console$1("页面入口执行结束", { elapsedMs: Date.now() - startedAt }, "info");
+		} else console$1("未匹配页面处理程序，停止当前页面初始化", { elapsedMs: Date.now() - startedAt }, "info");
 	} catch (error) {
-		console$1("页面注册执行异常", error, "error");
+		console$1("当前页面初始化异常终止", {
+			stage,
+			elapsedMs: Date.now() - startedAt,
+			error
+		}, "error");
 	}
 })(Vue);
