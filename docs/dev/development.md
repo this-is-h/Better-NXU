@@ -238,15 +238,19 @@ IDS 拖动使用 `requestAnimationFrame` 和 `performance.now()` 按实际经过
 
 ## 11. 调试
 
-生产 debug 默认关闭。在页面控制台执行后刷新：
+启动版本、环境、路由与终止原因使用默认可见的日志级别。生产 debug 默认关闭；在当前页面控制台执行以下语句，并启用控制台的 Verbose/详细级别，再重试相关操作：
 
 ```js
 globalThis.__BETTER_NXU_DEBUG__ = true;
 ```
 
+该开关只影响当前文档后续日志，刷新或跳转后会清除。排查启动阶段的 debug 时，在开发者工具中为脚本入口设置断点，刷新后暂停，在脚本执行上下文中设置开关再继续；日常排障使用默认日志即可。关闭调试可设置为 `false`。DOM 等待仅在开始和就绪时记录 debug，不逐次输出轮询。
+
 关注带作用域前缀的日志，如 `[路由]`、`[统一认证]`、`[教务课表]`、`[portal.hall]`。诊断 GM 注入时检查构建产物的 `@grant`、对应 `#gm` 导入和具体 API 是否可用；不要依赖或记录 vite-plugin-monkey 的私有 monkeyWindow 键。
 
-未命中路由时先检查：外层 host/path、`vpnContext.viaVpn`、`realHost`、`realPath`、查询参数和路由顺序。命中但无 UI 时再检查等待选择器、远程资源和原站 DOM。
+未命中路由时先检查：外层 host/path、`isWebvpn`、`realHost`、`realPath` 和路由顺序。课表分流只记录白名单内的 `courseTableMethod`，不打印完整查询参数。命中但无 UI 时再检查功能开关、等待选择器、远程资源和原站 DOM。入口结束不代表业务成功：页面内部可能跳过操作，或已安装监听器继续处理后续事件。
+
+新增日志统一使用 `MyConsole`：正常跳过用 info，需要人工处理的降级用 warn，异常中止用 error；错误详情传 `{ error }` 以保留错误码和堆栈。不要传整个上下文、GM 配置、DOM、响应正文或课表。脱敏同时覆盖消息、详情和 Error 中的 URL 参数，但不能识别任意自然语言中的个人信息。
 
 ## 12. 发布
 

@@ -16,7 +16,8 @@
  */
 export function MyConsole(scope) {
   return function log(message, detail = '', level = 'log') {
-    if (level === 'debug' && import.meta.env.PROD && globalThis.__BETTER_NXU_DEBUG__ !== true) return;
+    if (level === 'debug' && import.meta.env?.PROD !== false && globalThis.__BETTER_NXU_DEBUG__ !== true)
+      return;
     const methodName = ['debug', 'info', 'warn', 'error', 'log'].includes(level) ? level : 'log';
     const write =
       typeof console[methodName] === 'function'
@@ -24,7 +25,7 @@ export function MyConsole(scope) {
         : console.log.bind(console);
     const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
     const isObjectMessage = message !== null && typeof message === 'object';
-    const messageText = isObjectMessage ? '[详情] 输出对象' : String(message ?? '');
+    const messageText = isObjectMessage ? '[详情] 输出对象' : sanitizeConsoleText(String(message ?? ''));
     write(
       '%c Better NXU %c %s',
       'border-radius:5px;padding:3px 5px;color:#fff;background:#3a8bff;font-weight:600',
@@ -36,6 +37,31 @@ export function MyConsole(scope) {
   };
 }
 
+function sanitizeConsolePath(value) {
+  return value
+    .split(/[?#]/, 1)[0]
+    .replace(/;jsessionid=[^/;\s]*/gi, ';jsessionid=[已隐藏]')
+    .replace(/(\/cal\/)[^/\s]+/gi, '$1[已隐藏]')
+    .replace(/\/(?:[a-z\d_-]{24,}|\d{6,})(?=\/|$)/gi, '/[已隐藏]');
+}
+
+function sanitizeConsoleText(value) {
+  return value
+    .replace(/https?:\/\/[^\s<>"')]+/gi, (url) => {
+      try {
+        const parsed = new URL(url);
+        return parsed.origin + sanitizeConsolePath(parsed.pathname);
+      } catch {
+        return '[地址已隐藏]';
+      }
+    })
+    .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [已隐藏]')
+    .replace(
+      /\b(password|passwd|token|ticket|secret|credential|authorization|cookie|username)\s*[=:]\s*[^\s,;]+/gi,
+      '$1=[已隐藏]'
+    );
+}
+
 /**
  * 脱敏序列化任意值用于日志打印：Error 保留 name/code/message/stack；
  * 对象中匹配敏感键的字段值替换为 [已隐藏]，循环引用替换为 [循环引用]，不可序列化则占位。
@@ -44,26 +70,26 @@ export function MyConsole(scope) {
  * @returns {any}
  */
 export function sanitizeConsoleDetail(value) {
-  if (value instanceof Error) {
-    return {
-      name: value.name,
-      code: value.code,
-      message: value.message,
-      stack: value.stack,
-    };
-  }
+  if (typeof value === 'string') return sanitizeConsoleText(value);
   if (value === null || typeof value !== 'object') return value;
   const seen = new WeakSet();
   try {
     return JSON.parse(
       JSON.stringify(value, (key, item) => {
         if (
-          /(?:password|passwd|secret|privateKey|credential|authorization|cookie|token|密码|私钥)/i.test(key)
+          /(?:password|passwd|secret|privateKey|credential|authorization|cookie|token|username|studentId|icsId|密码|私钥|学号)/i.test(
+            key
+          )
         ) {
           return '[已隐藏]';
         }
         if (item instanceof Error) {
           return { name: item.name, code: item.code, message: item.message, stack: item.stack };
+        }
+        if (typeof item === 'string') {
+          return /^(?:path|realPath|pathname)$/i.test(key)
+            ? sanitizeConsoleText(sanitizeConsolePath(item))
+            : sanitizeConsoleText(item);
         }
         if (item && typeof item === 'object') {
           if (seen.has(item)) return '[循环引用]';

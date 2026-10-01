@@ -72,6 +72,11 @@ export async function injectPortalHall() {
     const list = mainIframe.document.querySelector('div.city_sort');
     // 1.x 行 3643-3647：列表加载超时（无 div.sortItem）→ toast warning 跳过自定义卡片。
     if (!list?.querySelector('div.sortItem')) {
+      console(
+        '门户分类加载超时，停止卡片注入',
+        { selector: 'div.city_sort div.sortItem', timeoutMs: 15000 },
+        'warn'
+      );
       toast('warning', '门户分类加载超时，已跳过自定义卡片', 4);
       return;
     }
@@ -125,7 +130,10 @@ export async function injectPortalHall() {
       // 系统模式保留 WebVPN 的 window.open 转换；直开模式由脚本管理器打开原地址。
       for (const card of div.querySelectorAll('[data-card-index]')) {
         const item = items[Number(card.dataset.cardIndex)];
-        const reportError = (error) => toast('warning', error.message || '门户链接打开失败', 4);
+        const reportError = (error) => {
+          console('门户链接打开失败', error, 'warn');
+          toast('warning', error.message || '门户链接打开失败', 4);
+        };
         const open = () => {
           try {
             const result = openPortalCard(item, {
@@ -187,7 +195,9 @@ export function buildPortalOnNavigate(resolveCurrentPath) {
       if (currentUrl.indexOf('#/hall') !== -1) {
         console('识别到门户应用中心（#/hall）');
         await injectPortalHall();
+        return;
       }
     }
+    console('当前不是门户应用中心，跳过卡片注入；继续监听导航', { path: currentPath }, 'info');
   };
 }

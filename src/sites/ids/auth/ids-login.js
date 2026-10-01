@@ -60,7 +60,10 @@ let authLoginSubmitting = false;
  */
 export async function idsLogin() {
   // 1.x 行 2610-2612：autoLogin 关闭则不自动登录。
-  if (!getGMValue('WebVPN.autoLogin')) return;
+  if (!getGMValue('WebVPN.autoLogin')) {
+    console('WebVPN.autoLogin 未开启，跳过自动登录', '', 'info');
+    return;
+  }
   // 1.x 行 2613-2616：重入保护。
   if (authLoginSubmitting) {
     console('已触发登录，忽略重复调用', '', 'debug');
@@ -78,6 +81,7 @@ export async function idsLogin() {
   // 1.x 行 2621-2632：页面已渲染鉴权错误 → 引导去设置或回显错误文案。
   const authErrorText = getAuthErrorText();
   if (authErrorText) {
+    console('页面已显示认证错误，停止自动登录，请检查页面提示或更新凭证', '', 'warn');
     if (isCredentialsErrorText(authErrorText)) {
       notifyCredentialsProblem('WebVPN', 0);
     } else {
@@ -120,6 +124,7 @@ export async function idsLogin() {
     if (hasLegacyAuthCaptcha()) {
       // 用户手填图形验证码路径：本次未提交，重置重入标志，允许后续重试（P3 提前置位后需在此复位）。
       authLoginSubmitting = false;
+      console('检测到图形验证码，停止自动提交，请手动输入验证码', '', 'warn');
       toast('warning', '账号已填入，请手动输入图形验证码后登录', 0);
       return;
     }
@@ -137,6 +142,7 @@ export async function idsLogin() {
       const valid = await Promise.resolve(pageWindow.checkForm());
       if (valid === false) {
         authLoginSubmitting = false;
+        console('页面 checkForm 校验未通过，停止自动提交', '', 'warn');
         return;
       }
       const form = document.querySelector('#pwdFromId, .login-main form');
@@ -148,6 +154,7 @@ export async function idsLogin() {
       throw scheduleOperationError(AUTH_SUBMIT_MISSING, '统一认证登录按钮尚未加载');
     }
 
+    console('已触发登录提交，等待验证或页面跳转', '', 'info');
     // 1.x 行 2682-2689：800ms 后若出现滑块 → 2.0 改为自动识别（feat/slider-captcha-autosolve）。
     // solveIdsSliderCaptcha 内部处理成功/失败 toast，不向外抛错（失败回退手动操作提示）。
     setTimeout(() => {

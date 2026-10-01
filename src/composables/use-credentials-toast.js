@@ -44,7 +44,7 @@ export function requireCredentials(host) {
   const username = getGMValue(`${host}.username`);
   const password = getGMValue(`${host}.password`);
   if (username && password) return true;
-  console(`[${host}] 未配置登录账号或密码`, '请前往 Better NXU 设置页面补充', 'warn');
+  console(`[${host}] 未配置登录账号或密码，停止自动登录`, '请前往 Better NXU 设置页面补充', 'warn');
   installNotification();
   toast('error', buildCredentialsErrorToast({ missing: true, opener: resolveOpener(host) }), 0);
   return false;
@@ -57,6 +57,7 @@ export function requireCredentials(host) {
  * @param {number} [duration=5] - toast 持续秒数（1.x 错误分支用 5）
  */
 export function notifyCredentialsProblem(host, duration = 5) {
+  console(`[${host}] 页面提示账号或密码错误，停止自动登录，请更新凭证`, '', 'warn');
   installNotification();
   toast('error', buildCredentialsErrorToast({ missing: false, opener: resolveOpener(host) }), duration);
 }

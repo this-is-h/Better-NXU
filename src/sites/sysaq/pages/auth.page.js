@@ -34,7 +34,10 @@ export async function register() {
     XPathResult.FIRST_ORDERED_NODE_TYPE,
     null
   ).singleNodeValue;
-  if (!button) return;
+  if (!button) {
+    console('未找到“统一身份认证登录”链接，停止自动认证，请手动登录', '', 'warn');
+    return;
+  }
 
   toast('success', '自动登录…', 3);
   console('识别到"统一身份认证登录"链接，自动点击');

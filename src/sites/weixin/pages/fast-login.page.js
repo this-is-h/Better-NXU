@@ -42,6 +42,7 @@ export async function register() {
   // 1.x 行 2358-2360：fast_login=0 → 改写为 1 并刷新（路由 entry 已守 url 含 nxu.edu，此处不重复守卫）。
   // URLSearchParams.get('fast_login') 返回字符串 '0'，与 1.x 松等语义一致后转严格比较。
   if (ctx.query.get('fast_login') === '0') {
+    console('快速登录参数未开启，即将切换 fast_login=1 并跳转', '', 'info');
     location.href = ctx.url.replace('fast_login=0', 'fast_login=1');
     return;
   }
@@ -64,7 +65,9 @@ export async function register() {
     });
     if (!visible) return;
     visible.querySelector('button').click();
+    console('已点击微信快速登录按钮，等待页面响应', '', 'info');
   } catch (error) {
+    console('微信快速登录中止，请手动操作', error, 'error');
     // 1.x 行 2604-2606：点击失败提示手动操作。
     toast('error', error.message || '微信登录入口加载失败，请手动操作', 4);
   }

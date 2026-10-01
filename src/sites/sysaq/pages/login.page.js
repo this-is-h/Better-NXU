@@ -31,7 +31,10 @@ export async function register() {
     XPathResult.FIRST_ORDERED_NODE_TYPE,
     null
   ).singleNodeValue;
-  if (!button) return;
+  if (!button) {
+    console('未找到“点击登录”按钮，停止自动跳转，请手动登录', '', 'warn');
+    return;
+  }
 
   toast('success', '自动登录…', 3);
   console('识别到"点击登录"按钮，自动跳转认证页');

@@ -28,7 +28,10 @@ const console = MyConsole('[webvpn.failed]');
  */
 export async function register() {
   // 1.x 行 7207-7209：未开 WebVPN.autoClose 则不关窗，原样返回。
-  if (!getGMValue('WebVPN.autoClose')) return;
+  if (!getGMValue('WebVPN.autoClose')) {
+    console('WebVPN.autoClose 未开启，保留失败页供手动处理', '', 'info');
+    return;
+  }
 
   // 使用 vite-plugin-monkey 官方 monkeyWindow.close 路径关闭当前页。
   console('按 WebVPN.autoClose 配置自动关闭失败页');

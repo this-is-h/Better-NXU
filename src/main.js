@@ -10,23 +10,40 @@
 import { MyConsole } from './utils/console.js';
 import { initContext } from './context.js';
 import { resolveRoute } from './router.js';
+import { GM_info } from '#gm';
 
 const console = MyConsole('[初始化]');
 
-// Better NXU 开始运行（1.x 行 2325 等价日志）
 console('Better NXU 开始运行');
+const startedAt = Date.now();
+let stage = '读取版本信息';
+try {
+  console(`脚本版本：${GM_info?.script?.version || '未知（GM_info 未提供版本）'}`, '', 'info');
+  stage = '上下文初始化';
+  const ctx = initContext();
+  console(
+    '运行环境',
+    {
+      scriptHandler: GM_info?.scriptHandler || '未知',
+      handlerVersion: GM_info?.version || '未知',
+      access: ctx.isWebvpn ? 'WebVPN 代理' : ctx.isWebvpnHost ? 'WebVPN 主站' : '直连',
+      frame: window === window.top ? '顶层页面' : 'iframe',
+      readyState: document.readyState,
+      visibilityState: document.visibilityState,
+    },
+    'info'
+  );
 
-// 一次性解析并缓存当前页面上下文（Host/Url/Path/vpnContext 等）
-initContext();
-
-// 路由分发：返回命中的 sites/<svc>/pages/*.page.js 注册函数并执行
-const register = resolveRoute();
-if (typeof register === 'function') {
-  // 全局错误兜底（2.0 审计 C2）：register 内部未捕获的异常不应成为 unhandled rejection 使脚本静默中断。
-  // 各 page 内部已有自己的 try/catch，此处仅兜底漏网之鱼——记 error 日志（MyConsole 脱敏，不泄露敏感字段）。
-  try {
+  stage = '路由匹配';
+  const register = resolveRoute();
+  if (typeof register === 'function') {
+    stage = '页面注册';
+    console('开始执行页面入口', '', 'debug');
     await register();
-  } catch (error) {
-    console('页面注册执行异常', error, 'error');
+    console('页面入口执行结束', { elapsedMs: Date.now() - startedAt }, 'info');
+  } else {
+    console('未匹配页面处理程序，停止当前页面初始化', { elapsedMs: Date.now() - startedAt }, 'info');
   }
+} catch (error) {
+  console('当前页面初始化异常终止', { stage, elapsedMs: Date.now() - startedAt, error }, 'error');
 }

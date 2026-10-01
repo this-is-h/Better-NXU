@@ -64,7 +64,10 @@ export async function register() {
   console('进入主页');
   const jwglCustomMenu = getGMValue('Jwgl.customMenu');
   console('当前启用的自定义菜单', jwglCustomMenu, 'debug');
-  if (jwglCustomMenu.length === 0) return;
+  if (jwglCustomMenu.length === 0) {
+    console('Jwgl.customMenu 未选择菜单，跳过菜单注入', '', 'info');
+    return;
+  }
   // 1.x 行 3092-3095：等待左侧菜单容器渲染并文本非空。
   const ready = await waitOrToast(
     'div.layui-side.layui-bg-black.layuimini-menu-left li.layui-nav-item.menu-li',
@@ -82,6 +85,7 @@ export async function register() {
       addMenu(1, 4, 'personGrade.action?method=historyCourseGrade', '全部学期成绩');
     }
   } catch (error) {
+    console('自定义菜单注入中止，请检查教务菜单结构', error, 'warn');
     // 结构缺失仍由页面专属逻辑提示，避免把业务错误伪装成等待错误。
     toast('warning', error.message || '教务菜单加载超时，已跳过自定义菜单', 4);
   }

@@ -60,13 +60,28 @@ export async function waitForElement(selector, options = {}) {
   const timeout = Math.max(0, Number(options.timeout ?? 10000));
   const interval = Math.max(20, Number(options.interval ?? 100));
   const predicate = typeof options.predicate === 'function' ? options.predicate : () => true;
+  let elementFound = false;
+  console('开始等待页面元素', { selector, timeoutMs: timeout }, 'debug');
   const startedAt = Date.now();
   while (Date.now() - startedAt <= timeout) {
     const element = document.querySelector(selector);
-    if (element && predicate(element)) return element;
+    elementFound = Boolean(element);
+    if (element && predicate(element)) {
+      console('页面元素已就绪', { selector, elapsedMs: Date.now() - startedAt }, 'debug');
+      return element;
+    }
     await WaitTime(interval, 0, false);
   }
-  console('[DOM 等待] 目标元素等待超时', { selector, timeoutMs: timeout }, 'warn');
+  console(
+    '[DOM 等待] 目标元素等待超时',
+    {
+      selector,
+      timeoutMs: timeout,
+      elapsedMs: Date.now() - startedAt,
+      reason: elementFound ? '元素已找到，但就绪条件未满足' : '未找到匹配元素',
+    },
+    'warn'
+  );
   throw scheduleOperationError(WAIT_TIMEOUT, `等待页面元素超时：${selector}`);
 }
 

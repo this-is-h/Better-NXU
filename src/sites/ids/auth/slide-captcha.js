@@ -126,14 +126,23 @@ async function solve() {
       }
     );
     if (result === 'exhausted' || result === 'manual') {
+      console(
+        result === 'exhausted' ? '滑块验证已达 3 次尝试上限，停止自动识别' : manualMessage,
+        { result },
+        'warn'
+      );
       removeToastHandle(toastHandle);
       toastHandle = null;
       toast('warning', result === 'exhausted' ? '滑块自动验证已尝试 3 次，请手动完成验证' : manualMessage, 0);
       return false;
     }
+    console('滑块自动处理结束', { result }, 'info');
     return result === 'submitted';
   } catch (err) {
-    if (controller.signal.aborted) return false;
+    if (controller.signal.aborted) {
+      console('页面已离开，停止滑块自动识别', '', 'info');
+      return false;
+    }
     // scheduleOperationError 抛出的结构化错误已含人类可读 message；其他错误原样保留。
     const isScheduleError = err?.code === SLIDER_RECOGNIZER_UNAVAILABLE;
     console('滑块验证识别异常', err, 'error');
