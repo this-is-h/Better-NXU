@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Better NXU
 // @namespace      https://thisish.com/
-// @version        2.1.0
+// @version        2.1.1
 // @author         H
 // @description    这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match          *://webvpn.nxu.edu.cn/*
