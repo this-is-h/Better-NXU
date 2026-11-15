@@ -19,6 +19,7 @@ import monkey, { util } from 'vite-plugin-monkey';
 import { USER_CONFIG_BLOCK } from './src/config/user-config.js';
 import { LIBRARY_READER_MATCHES } from './src/utils/library-reader.js';
 import { THIRD_PARTY_NOTICE } from './scripts/third-party-notices.mjs';
+import { scriptCatDevBridge } from './scripts/dev-gm-bridge.mjs';
 
 const USER_CONFIG_BRIDGE = `;(function(){var w=(typeof unsafeWindow!=='undefined')?unsafeWindow:window;var c=(typeof CAT_userConfig!=='undefined')?CAT_userConfig:undefined;if(c){w.CAT_userConfig=c;window.CAT_userConfig=c;}})();`;
 const USER_CONFIG_BRIDGE_REQUIRE = util.dataUrl(USER_CONFIG_BRIDGE);
@@ -47,13 +48,20 @@ export default defineConfig({
   plugins: [
     // 官方要求 monkey() 位于插件列表最后；vue() 必须先完成 SFC 解析。
     vue(),
+    scriptCatDevBridge(),
     monkey({
       entry: 'src/main.js',
       // 使用官方 clientAlias；业务代码从 #gm 静态导入，开发期/构建期的作用域差异由插件处理。
       clientAlias: '#gm',
       // vite-plugin-monkey 官方 generate 钩子可扩展最终元数据文本。ScriptCat 的 ==UserConfig==
       // 不是标准 userscript 键，故对 serve/build/meta 三种产物统一追加完整配置块。
-      generate({ userscript }) {
+      generate({ userscript, mode }) {
+        if (mode === 'serve' && !/^\/\/ @grant\s+CAT_userConfig$/m.test(userscript)) {
+          userscript = userscript.replace(
+            '// ==/UserScript==',
+            '// @grant CAT_userConfig\n// ==/UserScript=='
+          );
+        }
         return `${userscript}\n\n${USER_CONFIG_BLOCK}`;
       },
       userscript: {

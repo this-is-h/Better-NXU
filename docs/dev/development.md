@@ -24,6 +24,14 @@ Node 要求 `^22.22.1 || >=24.0.0`。推荐 Node 22，与 CI 一致。
 
 开发服务器无法准确模拟 GM API、`@require` 包装作用域、`@inject-into page`、校园登录态和 WebVPN 跨域 cookie。涉及这些边界的改动必须安装 `dist/better-nxu.user.js` 回归。
 
+### ScriptCat 开发脚本的 GM API 桥接
+
+使用 `pnpm dev` 时，需要在 ScriptCat 中安装开发服务器提供的 `server:Better NXU`，不能只在网页中导入 `/src/main.js`。开发安装脚本会将脚本作用域内的 GM API 交给插件官方客户端，兼容 ScriptCat 中 API 不直接位于 `window` 的情况；不向页面全局挂载 GM API，也不使用本地模拟存储。
+
+若同时出现“GM_info 未提供版本”和 `GM_getValue is not a function`，重启 `pnpm dev`，打开终端提供的开发脚本安装链接（默认 `http://127.0.0.1:5173/__vite-plugin-monkey.install.user.js`，以实际端口为准），更新安装后完整刷新学校页面。仅刷新页面或等待 HMR 不会替换已经安装的开发桥接代码。调试时仅启用开发脚本，停用正式版，避免重复注入。
+
+开发适配仅修改开发安装脚本中交接 GM API 的对象，不生成或扫描插件的私有键，不改变生产客户端、权限与存储域。其注入位置由真实开发服务器回归测试约束；插件升级后位置不匹配会返回明确错误，不静默生成失效脚本。代理页接管本地模块请求时，仍使用下面的完整构建脚本流程。
+
 ### zylib 阅读页的开发入口 MIME 错误
 
 如果 `__vite-plugin-monkey.entry.js` 报 `text/html`，且 Network 中地址变为 `https://kns.cnki.net/__vite-plugin-monkey.entry.js`、响应来自 Service Worker，说明本地开发入口被 zylib 代理接管。正常入口应为 `http://127.0.0.1:5173/__vite-plugin-monkey.entry.js`（以开发服务器实际端口为准），返回 `application/javascript`，内容导入 `/@vite/client` 和 `/src/main.js`。
@@ -217,7 +225,7 @@ IDS 拖动使用 `requestAnimationFrame` 和 `performance.now()` 按实际经过
 - 教务域名、IP 和 WebVPN 三种形态；OCR 成功、超时、资源失败、手动降级。
 - 教务首页菜单、课表美化、父 iframe 高度、图片/JSON/Excel 导出。
 - WebVPN 首页搜索浮球、Better NXU 菜单、三类卡片与配置开关。
-- 工具页教师搜索：回车、连续搜索、无结果、断网、超时、登录过期。
+- 工具页教师搜索：回车、超过 100 页的匹配结果、首批与单次延时预取上限、滚动加载与大视口滚动手势、批内短间隔与批间延时、加载中重复滚动、最终页提示、预取或加载失败后常驻通知与取消/重试、等待期间连续搜索或离页、无结果、断网、状态 0、超时、登录过期、服务不可用或限流。
 - 个人课表自动获取、链接加载、上传明文/加密 JSON、身份验证和导出限制。
 - 多人空课表：混合密钥、取消私钥、删除成员、图片/Excel 导出。
 - 门户直连/代理从 `#/hall` 切出再切回，确保重新注入且不重复。

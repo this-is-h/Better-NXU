@@ -47,8 +47,29 @@
   gap: 8px;
 }
 
-#searchTeacher .van-cell-group {
+#searchTeacher .teacher-results {
+  box-sizing: border-box;
+  width: 100%;
+  height: calc(100% - 54px);
+  overflow: auto;
+  overscroll-behavior: contain;
   padding-bottom: 60px;
+}
+
+#searchTeacher .teacher-columns {
+  display: flex;
+  justify-content: center;
+}
+
+#searchTeacher .teacher-load-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 10px;
+  color: #646566;
+  font-size: 14px;
+  text-align: center;
 }
 
 .schedule-manager {

@@ -243,6 +243,7 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 - `components/home/*`：抢课、自定义工具、自定义站点、菜单和搜索浮球。
 - `pages/tools.page.js` + `ToolsApp.vue`：接管工具页。
 - `components/tools/teacher-search.js`：导出 `searchTeachers(name, page, options)`，执行可取消、带超时的分页 XML 教师查询。
+- `components/tools/use-teacher-search.js`：管理教师查询的滚动批次、单次预取、加载状态、失败续传与旧请求/等待取消，每批最多请求 3 页，批内间隔 200ms，批间延时 1 秒。
 - `components/tools/ics-id.js`：导出 `getIcsId(options)`、`getStudentOwner(studentId, options)`，用于获取课表分享 ID 和验证当前登录学生身份；`options.signal` 支持取消，`timeoutMs` 默认 15 秒。
 - `components/tools/schedule-file.js`：导出 `parseScheduleFileContent(text, options)`，处理明文/加密课表导入和密钥协商。
 - `components/tools/schedule-view.js`：导出 `personalDays`、`personalPeriodRows`、`getTotalWeeks`、`courseColor`、`splitConsecutivePeriods`、`buildPersonalCourseEntries`、`buildPersonalCourseLayout`、`isOnlineLesson`、`getLessonAvailability`、`formatAvailabilityWeeks`、`buildPersonalFreeGrid`。

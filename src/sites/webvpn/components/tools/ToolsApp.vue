@@ -13,6 +13,7 @@
           show-action
           placeholder="请输入需要查询的教师姓名"
           @search="onSearch"
+          @clear="onSearch('')"
         >
           <template #action>
             <div @click="onSearchClick">搜索</div>
@@ -20,27 +21,39 @@
         </van-search>
       </form>
       <div
-        style="
-          width: 100%;
-          display: flex;
-          align-content: center;
-          justify-content: center;
-          overflow: auto;
-          height: calc(100% - 54px);
-        "
+        ref="teacherResultsRef"
+        class="teacher-results"
+        @scroll.passive="onTeacherScroll"
+        @wheel.passive="onTeacherWheel"
+        @touchstart.passive="onTeacherTouchStart"
+        @touchmove.passive="onTeacherTouchMove"
       >
-        <div v-for="(teachers, columnIndex) in teacherList" :key="columnIndex" style="width: 33%">
-          <van-cell-group inset>
-            <van-cell
-              v-for="teacher in teachers"
-              :key="`${teacher.number}-${teacher.name}`"
-              :title="teacher.name"
-              :value="teacher.number"
-              :label="teacher.unit"
-              clickable
-              @click="teacherClick(teacher)"
-            />
-          </van-cell-group>
+        <div class="teacher-columns">
+          <div v-for="(column, columnIndex) in teacherList" :key="columnIndex" style="width: 33%">
+            <van-cell-group inset>
+              <van-cell
+                v-for="teacher in column"
+                :key="`${teacher.number}-${teacher.name}`"
+                :title="teacher.name"
+                :value="teacher.number"
+                :label="teacher.unit"
+                clickable
+                @click="teacherClick(teacher)"
+              />
+            </van-cell-group>
+          </div>
+        </div>
+        <div
+          v-if="teacherSearched && !teacherError && !teacherCancelled"
+          class="teacher-load-state"
+          role="status"
+          aria-live="polite"
+        >
+          <van-loading v-if="teacherLoading" size="20">正在加载教师信息…</van-loading>
+          <template v-else-if="teacherFinished">
+            {{ teachers.length ? `已加载 ${teachers.length} 条，已经到底了` : '未找到匹配的教师' }}
+          </template>
+          <div v-else>已加载 {{ teachers.length }} 条，继续下滑加载更多</div>
         </div>
       </div>
       <div class="credits-bar">
@@ -477,7 +490,7 @@
  *  （vant 组件标签 PascalCase 化：van-* → Van*，供 script setup 按需 import 注册；模板结构逐字保留）。
  *
  * 与 1.x 等价点（C5）：
- *  - setup() 全段（行 6169-7193）逐字迁移：教师查询（searchTeacher 循环分页）、个人课表（拉取/上传/导出）、
+ *  - setup() 全段（行 6169-7193）逐字迁移：教师查询（按需分批加载）、个人课表（拉取/上传/导出）、
  *    密钥管理（generateScheduleKeyPair/copyScheduleKey）、多人空课表（fileList/allFilesSchedule/
  *    multiAvailabilitySummary/导出 Excel/图片）。仅标识符改写：
  *    Vue.ref/computed/... → import；vant.* → npm import；CourseScheduleTools.* → schedule 桶；
@@ -527,9 +540,9 @@ import { downloadSnapdomImage } from '../../../../utils/snapdom.js';
 import { GM_openInTab, GM_setClipboard, unsafeWindow as grantedUnsafeWindow } from '#gm';
 import { MyConsole } from '../../../../utils/console.js';
 import { getGMValue, setGMValue } from '../../../../config/gm-store.js';
-import { toast, toastPromise } from '../../../../libraries/notification.js';
+import { toast, toastPromise, removeToastHandle } from '../../../../libraries/notification.js';
 import { prepareScheduleExport } from '../../../../composables/use-schedule-export.js';
-import { searchTeachers } from './teacher-search.js';
+import { useTeacherSearch } from './use-teacher-search.js';
 import { getIcsId, getStudentOwner } from './ics-id.js';
 import { parseScheduleFileContent } from './schedule-file.js';
 import {
@@ -549,6 +562,10 @@ const onClickLeft = () => {
   closeCurrentTab();
 };
 const onChange = (index) => {
+  if (index !== 0) {
+    clearTeacherErrorToast();
+    cancelTeacherSearch();
+  }
   document.querySelector('div#main > div.show').classList.remove('show');
   const tools_tab = document.querySelectorAll('div#main > div');
   tools_tab[index].classList.add('show');
@@ -558,10 +575,70 @@ const onChange = (index) => {
   }
 };
 const searchValue = ref('');
-const teacherList = ref([]);
-const MAX_TEACHER_PAGES = 100;
-let teacherSearchVersion = 0;
-let teacherSearchController = null;
+const teacherResultsRef = ref(null);
+const teacherSearched = ref(false);
+const {
+  teachers,
+  loading: teacherLoading,
+  finished: teacherFinished,
+  error: teacherError,
+  cancelled: teacherCancelled,
+  search: runTeacherSearch,
+  loadMore: loadMoreTeachers,
+  retry: retryTeachers,
+  cancel: cancelTeacherSearch,
+} = useTeacherSearch();
+let teacherErrorToast = null;
+let teacherNoticeVersion = 0;
+const clearTeacherErrorToast = () => {
+  teacherNoticeVersion++;
+  removeToastHandle(teacherErrorToast);
+  teacherErrorToast = null;
+};
+watch(teacherError, (message) => {
+  clearTeacherErrorToast();
+  if (!message) return;
+  const noticeVersion = teacherNoticeVersion;
+  const act = (task) => {
+    if (noticeVersion !== teacherNoticeVersion) return;
+    clearTeacherErrorToast();
+    void task();
+  };
+  teacherErrorToast = toast('error', message, 0, {
+    action: { label: '重试', onClick: () => act(retryTeachers) },
+    secondary: { label: '取消', onClick: () => act(cancelTeacherSearch) },
+  });
+});
+const teacherList = computed(() => {
+  const columns = [[], [], []];
+  teachers.value.forEach((teacher, index) => columns[index % 3].push(teacher));
+  return columns;
+});
+const loadTeachersNearBottom = (element, scrollingDown = false) => {
+  const { scrollTop, scrollHeight, clientHeight } = element;
+  if (
+    active.value === 0 &&
+    (scrollTop > 0 || scrollingDown) &&
+    scrollHeight - scrollTop - clientHeight <= 80
+  ) {
+    void loadMoreTeachers();
+  }
+};
+const onTeacherScroll = (event) => loadTeachersNearBottom(event.currentTarget);
+const onTeacherWheel = (event) => {
+  if (event.deltaY > 0) loadTeachersNearBottom(event.currentTarget, true);
+};
+let teacherTouchY = null;
+const onTeacherTouchStart = (event) => {
+  teacherTouchY = event.touches[0]?.clientY ?? null;
+};
+const onTeacherTouchMove = (event) => {
+  const y = event.touches[0]?.clientY ?? null;
+  if (y !== null && teacherTouchY !== null && y < teacherTouchY) {
+    loadTeachersNearBottom(event.currentTarget, true);
+  }
+  teacherTouchY = y;
+};
 const onSearch = (val) => {
   void searchTeacher(val);
 };
@@ -569,15 +646,12 @@ const onSearchClick = () => {
   void searchTeacher(searchValue.value);
 };
 const searchTeacher = async (val) => {
+  clearTeacherErrorToast();
+  teacherTouchY = null;
   const keyword = String(val || '').trim();
-  teacherSearchController?.abort();
-  teacherSearchController = null;
-  const requestVersion = ++teacherSearchVersion;
-  if (!keyword) {
-    teacherList.value = [];
-    return;
-  }
   if (keyword.toLowerCase() === 'moss') {
+    teacherSearched.value = false;
+    await runTeacherSearch('');
     toast(
       'info',
       decodeURI(
@@ -588,48 +662,9 @@ const searchTeacher = async (val) => {
     GM_openInTab('https://moss.thisish.cn', { active: true, insert: true, setParent: false });
     return;
   }
-  const controller = new AbortController();
-  teacherSearchController = controller;
-  const rows = [[], [], []];
-  let nowPage = 1;
-  let allPages = 1;
-  let nowRow = 0;
-  try {
-    while (nowPage <= allPages) {
-      const list = await searchTeachers(keyword, nowPage, { signal: controller.signal });
-      if (requestVersion !== teacherSearchVersion) return;
-      if (!list.success) {
-        toast('error', list.msg);
-        return;
-      }
-      if (!Array.isArray(list.data)) throw new Error('教师查询结果格式异常');
-      for (let i = 0; i < list.data.length; i++) {
-        const row = (nowRow + i) % 3;
-        rows[row].push(list.data[i]);
-      }
-      nowRow = (nowRow + list.data.length) % 3;
-      const responsePage = Number(list.page?.[0]);
-      allPages = Number(list.page?.[1]);
-      if (
-        !Number.isInteger(responsePage) ||
-        !Number.isInteger(allPages) ||
-        responsePage !== nowPage ||
-        allPages < responsePage ||
-        allPages > MAX_TEACHER_PAGES
-      ) {
-        throw new Error('教师查询分页信息异常');
-      }
-      nowPage = responsePage + 1;
-    }
-    if (requestVersion === teacherSearchVersion) teacherList.value = rows;
-  } catch (error) {
-    if (error?.name !== 'AbortError' && requestVersion === teacherSearchVersion) {
-      console('教师查询失败', error, 'error');
-      toast('error', error?.message || '教师查询失败，请稍后重试', 4);
-    }
-  } finally {
-    if (requestVersion === teacherSearchVersion) teacherSearchController = null;
-  }
+  teacherSearched.value = !!keyword;
+  if (teacherResultsRef.value) teacherResultsRef.value.scrollTop = 0;
+  await runTeacherSearch(keyword);
 };
 const teacherClick = (teacher) => {
   const number = String(teacher?.number || '');
@@ -1424,7 +1459,7 @@ document.addEventListener('click', handleClickOutside);
 
 // 组件卸载时移除事件监听器
 onUnmounted(() => {
-  teacherSearchController?.abort();
+  clearTeacherErrorToast();
   personalMetadataController?.abort();
   ownerRequestController?.abort();
   personalRequestVersion++;

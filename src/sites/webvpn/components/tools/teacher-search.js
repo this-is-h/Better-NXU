@@ -2,20 +2,21 @@
  * sites/webvpn/components/tools/teacher-search — 在职教师工号查询（XHR 拉分页 XML→JSON）
  * 对应 1.x：Better NXU.user.js 行 4775-4889（webvpnHTools 内部 searchTeachers + xmlToJson/parseElement）
  * 依赖：utils/console（MyConsole）
- * 入口/被谁调用：sites/webvpn/components/tools/ToolsApp.vue（教师查询 tab 的 searchTeacher 循环分页调用）
+ * 入口/被谁调用：sites/webvpn/components/tools/use-teacher-search.js
  *
  * 与 1.x 等价点（C5）：
  *  - xmlToJson/parseElement（行 4776-4815）：DOMParser 解析 XML→JSON（@attributes/数组折叠），逐字迁移。
  *  - searchTeachers（行 4817-4888）：POST webvpn 代理 AutoCompleteServletSrtp（XHR 裸用，page 模型下
  *    页面 XHR 可达，与 1.x 同形）。分页信息从 raw_result.page["#text"] 的 `第N/M页` 提取；无 page 文本
- *    →"webvpn登录已过期"；all_page==0 →"查询不到该教师"；val.length 判断单/多结果。
- *  - 失败/网络错误 reject(new Error(...))，调用方（SFC searchTeacher）catch 兜底。
+ *    →"webvpn登录已过期"；all_page==0 返回空结果；val.length 判断单/多结果。
+ *  - 失败/网络错误 reject(new Error(...))，调用方捕获并提供重试。
  *
  * 注：1.x 请求 URL 硬编码 `vpn-12-o1-202.201.128.142=` 尾参，逐字保留（C5 不 rewrite 代理地址）。
  */
 import { MyConsole } from '../../../../utils/console.js';
 
 const console = MyConsole('[教师查询]');
+const NETWORK_ERROR_MESSAGE = '无法连接教师查询服务，请检查网络或 WebVPN 登录状态后重试';
 
 /**
  * XML 字符串 → JSON 对象（1.x 行 4776-4815 逐字）。
@@ -80,7 +81,7 @@ function parseElement(element) {
  * @param {{signal?:AbortSignal,timeout?:number}} [options]
  * @returns {Promise<{success:boolean, page?:[number,number], data?:Array, msg?:string}>}
  *   success=true → {page:[now_page, all_page], data:[{name,number,unit}]}；
- *   success=false → {msg}（"webvpn登录已过期"/"教师查询结果格式异常"/"查询不到该教师"）。
+ *   success=false → {msg}（登录状态或结果异常提示）。
  */
 export function searchTeachers(name, page = 1, options = {}) {
   return new Promise((resolve, reject) => {
@@ -133,25 +134,26 @@ export function searchTeachers(name, page = 1, options = {}) {
         rejectOnce(abortError());
         return;
       }
+      if (this.status === 0) return;
       if (this.status >= 200 && this.status < 300) {
         try {
           const raw_result = xmlToJson(this.responseText);
           if (!raw_result.page?.['#text']) {
             console('WebVPN 登录状态已失效', { page }, 'warn');
-            resolveOnce({ success: false, msg: 'webvpn登录已过期' });
+            resolveOnce({ success: false, msg: 'WebVPN 登录可能已过期，请重新登录后重试' });
             return;
           }
           const pages = raw_result.page['#text'].match(/第(\d+)\/(\d+)页/);
           if (!pages) {
             console('无法识别分页信息', { page }, 'error');
-            resolveOnce({ success: false, msg: '教师查询结果格式异常' });
+            resolveOnce({ success: false, msg: '教师查询返回的数据异常，请稍后重试' });
             return;
           }
           const now_page = Number.parseInt(pages[1], 10);
           const all_page = Number.parseInt(pages[2], 10);
           if (all_page === 0) {
             console('当前关键词没有结果', { page }, 'info');
-            resolveOnce({ success: false, msg: '查询不到该教师' });
+            resolveOnce({ success: true, page: [page, all_page], data: [] });
             return;
           }
           const result = { success: true, page: [now_page, all_page], data: [] };
@@ -160,14 +162,14 @@ export function searchTeachers(name, page = 1, options = {}) {
           const remind = raw_result.remind;
           if (!val || !word || !remind) {
             console('教师查询结果字段缺失', { page }, 'error');
-            resolveOnce({ success: false, msg: '教师查询结果格式异常' });
+            resolveOnce({ success: false, msg: '教师信息暂时无法读取，请稍后重试' });
             return;
           }
           const values = Array.isArray(val) ? val : [val];
           const words = Array.isArray(word) ? word : [word];
           const reminders = Array.isArray(remind) ? remind : [remind];
           if (values.length !== words.length || values.length !== reminders.length) {
-            resolveOnce({ success: false, msg: '教师查询结果格式异常' });
+            resolveOnce({ success: false, msg: '教师信息暂时无法读取，请稍后重试' });
             return;
           }
           for (let i = 0; i < values.length; i++) {
@@ -175,7 +177,7 @@ export function searchTeachers(name, page = 1, options = {}) {
             const rawName = String(words[i]?.['#text'] || '');
             const unit = String(reminders[i]?.['#text'] || '');
             if (!number || !rawName) {
-              resolveOnce({ success: false, msg: '教师查询结果格式异常' });
+              resolveOnce({ success: false, msg: '教师信息暂时无法读取，请稍后重试' });
               return;
             }
             result.data.push({ name: rawName.replace(`${number}-`, ''), number, unit });
@@ -192,37 +194,48 @@ export function searchTeachers(name, page = 1, options = {}) {
           resolveOnce(result);
         } catch (error) {
           console('教师查询结果解析失败', { page, error }, 'error');
-          rejectOnce(new Error('教师查询结果解析失败'));
+          rejectOnce(new Error('教师查询返回的数据无法读取，请稍后重试'));
         }
       } else {
         console('接口返回异常状态', { page, status: this.status }, 'error');
-        rejectOnce(new Error(`Request failed with status ${this.status}`));
+        const message =
+          this.status === 401 || this.status === 403
+            ? '暂时无法访问教师查询服务，请确认 WebVPN 登录状态后重试'
+            : this.status === 429
+              ? '查询过于频繁，请稍后重试'
+              : '教师查询服务暂时不可用，请稍后重试';
+        rejectOnce(new Error(message));
       }
     });
 
     xhr.addEventListener('error', function () {
-      console('请求发生网络错误', { page }, 'error');
-      rejectOnce(new Error('Network error'));
+      console('请求发生网络错误', { page, status: this.status }, 'error');
+      rejectOnce(new Error(NETWORK_ERROR_MESSAGE));
     });
     xhr.addEventListener('timeout', function () {
       console('请求超时', { page, timeout: xhr.timeout }, 'warn');
-      rejectOnce(new Error('教师查询请求超时'));
+      rejectOnce(new Error('教师查询超时，请稍后重试'));
     });
     xhr.addEventListener('abort', function () {
       rejectOnce(abortError());
     });
-
-    xhr.open(
-      'POST',
-      'https://webvpn.nxu.edu.cn/http/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2c90171/StuExpbook/AutoCompleteServletSrtp?vpn-12-o1-202.201.128.142='
-    );
-    xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+    xhr.addEventListener('loadend', function () {
+      if (!settled && this.status === 0) {
+        console('请求结束但未收到有效响应', { page, status: this.status }, 'error');
+        rejectOnce(new Error(NETWORK_ERROR_MESSAGE));
+      }
+    });
 
     try {
+      xhr.open(
+        'POST',
+        'https://webvpn.nxu.edu.cn/http/77726476706e69737468656265737421a2a713d27560391e2f5ad1e2c90171/StuExpbook/AutoCompleteServletSrtp?vpn-12-o1-202.201.128.142='
+      );
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
       xhr.send(data);
     } catch (err) {
-      console('请求发送失败', { page, error: err }, 'error');
-      rejectOnce(err);
+      console('请求初始化或发送失败', { page, error: err }, 'error');
+      rejectOnce(new Error('无法发起教师查询，请刷新页面后重试', { cause: err }));
     }
   });
 }
