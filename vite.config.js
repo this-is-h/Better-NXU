@@ -18,17 +18,7 @@ import vue from '@vitejs/plugin-vue';
 import monkey, { util } from 'vite-plugin-monkey';
 import { USER_CONFIG_BLOCK } from './src/config/user-config.js';
 import { LIBRARY_READER_MATCHES } from './src/utils/library-reader.js';
-import { readFileSync } from 'node:fs';
-
-// 小型滑块算法静态打包后，必须随单文件产物保留上游 MIT 许可。
-const SLIDER_LICENSE = readFileSync(
-  new URL('./node_modules/captcha-recognizer-js/LICENSE', import.meta.url),
-  'utf8'
-);
-const DING_LICENSE = readFileSync(
-  new URL('./node_modules/@yusufceng1z/ding/LICENSE', import.meta.url),
-  'utf8'
-);
+import { THIRD_PARTY_NOTICE } from './scripts/third-party-notices.mjs';
 
 const USER_CONFIG_BRIDGE = `;(function(){var w=(typeof unsafeWindow!=='undefined')?unsafeWindow:window;var c=(typeof CAT_userConfig!=='undefined')?CAT_userConfig:undefined;if(c){w.CAT_userConfig=c;window.CAT_userConfig=c;}})();`;
 const USER_CONFIG_BRIDGE_REQUIRE = util.dataUrl(USER_CONFIG_BRIDGE);
@@ -47,11 +37,13 @@ const XLSX_BRIDGE = `;(function(){var w=(typeof unsafeWindow!=='undefined')?unsa
 const XLSX_BRIDGE_REQUIRE = util.dataUrl(XLSX_BRIDGE);
 
 export default defineConfig({
-  // vite-plugin-monkey 默认关闭最终 IIFE 压缩；显式启用可显著减小安装脚本且不改变单文件模型。
-  // 但脚本管理器一般不允许压缩
-  // build: {
-  //   minify: 'oxc',
-  // },
+  build: {
+    rolldownOptions: {
+      output: {
+        footer: THIRD_PARTY_NOTICE,
+      },
+    },
+  },
   plugins: [
     // 官方要求 monkey() 位于插件列表最后；vue() 必须先完成 SFC 解析。
     vue(),
@@ -62,7 +54,7 @@ export default defineConfig({
       // vite-plugin-monkey 官方 generate 钩子可扩展最终元数据文本。ScriptCat 的 ==UserConfig==
       // 不是标准 userscript 键，故对 serve/build/meta 三种产物统一追加完整配置块。
       generate({ userscript }) {
-        return `${userscript}\n\n${USER_CONFIG_BLOCK}\n\n/*! captcha-recognizer-js@1.0.4\n${SLIDER_LICENSE}\n*/\n\n/*! Ding@0.0.6\n${DING_LICENSE}\n*/`;
+        return `${userscript}\n\n${USER_CONFIG_BLOCK}`;
       },
       userscript: {
         name: 'Better NXU',

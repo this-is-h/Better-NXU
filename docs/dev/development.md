@@ -97,6 +97,8 @@ vite-plugin-monkey 官方支持动态 import，但会改用 SystemJS 构建。�
 
 优先级：现有浏览器 API/项目 helper，其次已有 npm 依赖，最后才新增远程 `@require`/`@resource`。
 
+随主脚本分发的第三方版权和许可统一维护在 [第三方声明](../../THIRD_PARTY_NOTICES.md)。构建只在安装脚本末尾保留一次合并 MIT 声明，元数据文件不重复附带。新增或升级打包依赖时同步清单；不删除必要的版权、授权条件或免责声明。
+
 新增远程可执行或样式资源时：
 
 1. 固定完整版本，禁止 `latest`、`main` 或浮动 semver。

@@ -4,6 +4,7 @@ import { gzipSync } from 'node:zlib';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { USER_CONFIG_BLOCK, USER_CONFIG_SAFE_DEFAULTS } from '../src/config/user-config.js';
+import { THIRD_PARTY_NOTICE } from './third-party-notices.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = resolve(root, 'dist');
@@ -104,7 +105,9 @@ const configBridge = decodeURIComponent(requires[0].split(',')[1]);
 assert.match(configBridge, /CAT_userConfig/);
 assert.doesNotMatch(configBridge, /addToast|createToast|removeToast|ToastCss/);
 assert.doesNotMatch(meta, /h\.notification\.js/);
-assert.match(user, /Ding@0\.0\.6[\s\S]*Copyright \(c\) 2026 Yusuf Cengiz/);
+assert.equal(user.split(THIRD_PARTY_NOTICE).length, 2, 'userscript must contain one consolidated notice');
+assert.ok(user.trimEnd().endsWith(THIRD_PARTY_NOTICE), 'third-party notice must remain at the end');
+assert.doesNotMatch(meta, /MIT License|Copyright/, 'metadata must not duplicate runtime notices');
 assert.match(requires[2], /\/snapdom\.js#sha384-/);
 assert.equal(
   requires[2],

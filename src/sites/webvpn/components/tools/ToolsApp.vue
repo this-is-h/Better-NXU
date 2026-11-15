@@ -577,7 +577,6 @@ const searchTeacher = async (val) => {
     teacherList.value = [];
     return;
   }
-  // vant.showToast(val)
   if (keyword.toLowerCase() === 'moss') {
     toast(
       'info',
