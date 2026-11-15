@@ -3,7 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const root = process.cwd();
-const ignoredDirectories = new Set(['.git', 'dist', 'node_modules']);
+const ignoredDirectories = new Set(['.git', 'dist', 'node_modules', 'coverage']);
 const firstHeadingExemptions = new Set(['.github/PULL_REQUEST_TEMPLATE.md']);
 
 async function collectMarkdownFiles(directory = root) {
