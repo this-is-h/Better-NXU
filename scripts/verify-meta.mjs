@@ -95,7 +95,7 @@ assert.equal(requires.length, 7);
 assert.equal(resources.length, 8);
 assert.equal(
   requires[2],
-  `https://cdnjs.cloudflare.com/ajax/libs/vue/${packageJson.dependencies.vue}/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB`
+  `https://cdnjs.cloudflare.com/ajax/libs/vue/${packageJson.dependencies.vue}/vue.global.prod.min.js#sha384-8SaM1k/WoMo3RugF5T99/LlfVn0iWchtOkmpk2rEECKX/BrhEgV44Ab22Y4CKKDx`
 );
 assert.ok(resourceMap['vant-css'].includes(`/vant/${packageJson.dependencies.vant}/index.min.css#sha384-`));
 assert.match(requires[0], /\/h\.notification\.js#sha384-/);
@@ -103,7 +103,7 @@ assert.match(requires[1], /^data:/);
 assert.match(requires[3], /\/snapdom\.js#sha384-/);
 assert.equal(
   requires[3],
-  'https://unpkg.com/@zumer/snapdom@3.1.0/dist/snapdom.js#sha384-WGMhfcLrIwHy2nch3wquBVui5YbAvFGEjpUqtK65dcKwZ+vBMkydMJja61MRE6An'
+  'https://unpkg.com/@zumer/snapdom@3.7.5/dist/snapdom.js#sha384-xiTilgh2FRBi16JzGVQOJiZ0G+TqHazobQjzh9flLx4M2hI/27tUWcGVv4lK/lsJ'
 );
 assert.equal(
   resourceMap['tesseract-js'],
@@ -114,7 +114,11 @@ assert.match(requires[5], /\/xlsx\.full\.min\.js#sha384-/);
 assert.match(requires[6], /^data:/);
 assert.equal(
   resourceMap['dompurify-js'],
-  'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.15/purify.min.js#sha384-uUMu9JDY09vBzRf9SPcK2VgUj+W/70J6Soc+Dded5P474ElQ63iv9j5N3DE7Kp3N'
+  'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.18/purify.min.js#sha384-lkArbWjiZKuE+bzKbj1vOEF7DKYBDNvgwZMCt5OH8bdRB92zpzyNska9Q/XKPHQD'
+);
+assert.equal(
+  resourceMap['marked-js'],
+  'https://unpkg.com/marked@18.2.0/lib/marked.umd.js#sha384-DDYDxilZ1LlqPSbaRHlrwh12h+3fUewuQj7HjscrZIWt5bGyQ+n0DHtIoZE3i3zU'
 );
 for (const entry of requires.filter((value) => /^https?:/i.test(value))) {
   assert.match(entry, /#sha384-[A-Za-z0-9+/]+={0,2}$/);
