@@ -1,7 +1,7 @@
 /**
  * sites/webvpn/pages/tools — webvpn 小工具页（1.x webvpnHTools 巨函数的挂载入口）
  * 对应 1.x：Better NXU.user.js 行 4774-7203（webvpnHTools 整函数）
- * 依赖：composables/use-app-page（mountAppPage 清 body/标题/toast/fontawesome/挂 #tools 容器，1.x 行 4898-4914）、
+ * 依赖：composables/use-app-page（mountAppPage 清 body/标题/toast/挂 #tools 容器，1.x 行 4898-4914）、
  *       composables/use-vue-app（mountVueApp 挂 ToolsApp SFC）、#gm（GM_openInTab）、
  *       libraries/notification（removeToastHandle/toast——mounted 等价）、utils/console、
  *       components/tools/ToolsApp.vue、components/tools/tools.css（1.x 行 4915-5799 的页面样式，?style 注入）
@@ -14,7 +14,7 @@
  * 与 1.x 等价点（C5）：
  *  - 行 4890-4897：register 最前预开两个后台 tab（信息门户 + 学工系统，催 webvpn 代理 cookie 供后续
  *    getIcsId/getStudentOwner fetch），5s 后自动关。GM_openInTab 从 #gm 导入（1.x 为裸调用）。
- *  - 行 4898-4914：mountAppPage({id:'tools', title:'小工具 - H'}) 一步完成清 body/标题/notification/fontawesome/
+ *  - 行 4898-4914：mountAppPage({id:'tools', title:'小工具 - H'}) 一步完成清 body/标题/notification/
  *    部署中 toast/#tools 容器；1.x 的 GM_addElement(body,'div',{id:'tools'}) 由 mountAppPage 原生 createElement 等价。
  *  - 行 4915-5799：通过 vite-plugin-monkey `?style` 模块按路由注入 tools.css。
  *  - 行 6166-7202：mountVueApp({root: ToolsApp, id:'tools'})——SFC 已含 template+setup（vant 组件 PascalCase
@@ -66,7 +66,7 @@ export async function register() {
     buildWebVpnUrl('https://xsfw.nxu.edu.cn/xsfw/sys/jbxxapp/*default/index.do#/wdxx')
   );
 
-  // 1.x 行 4898-4914：清 body → 标题 → notification/fontawesome → 部署中 toast → 挂 #tools 容器。
+  // 1.x 行 4898-4914：清 body → 标题 → notification → 部署中 toast → 挂 #tools 容器。
   const { deployToast } = mountAppPage({ id: 'tools', title: '小工具 - H' });
 
   // 1.x 行 4915-5799：用 vite-plugin-monkey 的 ?style 模块按路由挂载页面样式。

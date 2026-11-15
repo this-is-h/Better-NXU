@@ -169,7 +169,6 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 | `@require`  | Vue 3.5.43 生产版     | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果 |
 | `@require`  | snapdom + bridge      | 图片导出                                        |
 | `@require`  | XLSX + bridge         | Excel 导出                                      |
-| `@resource` | FontAwesome CSS       | 页面图标，注入前修正 webfont 相对路径           |
 | `@resource` | Vant CSS              | 只在 Vant 页面幂等注入                          |
 | `@resource` | Tesseract UMD         | 只在 OCR 触发时执行                             |
 | `@resource` | marked + DOMPurify    | 只在关于页解析并消毒 Markdown                   |

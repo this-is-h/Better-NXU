@@ -144,7 +144,7 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 
 ### `notification.js`
 
-- `installNotification()`：使用 Ding 原生 `mountToaster()`，注入状态色及页面 FontAwesome；幂等，独立页面清空 body 后可重新挂载，无需额外 Vue 应用。配置为顶部居中、系统主题、音量 `0.5`；音效读取 `Script.toastSound`，默认开启。
+- `installNotification()`：使用 Ding 原生 `mountToaster()`，注入状态色；幂等，独立页面清空 body 后可重新挂载，无需额外 Vue 应用。配置为顶部居中、系统主题、音量 `0.5`；音效读取 `Script.toastSound`，默认开启。
 - `openTab('settings' | 'about')`：用 `GM_openInTab` 打开 SSL VPN 设置/关于页。
 - `betterNXUVersionClick()`：通过 `GM.xmlHttpRequest` 获取一言并 toast。
 - `toast(type, message, duration, options)`：纯文本提示，返回 Ding 调用方 ID。`duration` 沿用秒数，默认 5 秒，`loading` 默认常驻；第四参透传原生 `description`、`action`、`progress` 等选项。
@@ -157,7 +157,6 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 
 ### 其他适配器
 
-- `fontawesome.js#installFontAwesome()`：读取 `svg-logo` CSS，修正 webfont 路径并幂等注入。
 - `vant-style.js#installVantStyle()`：读取 `vant-css` 并幂等注入；GM 样式 API缺失时使用原生 `<style>`。
 - `page-resource.js#evaluatePageResource(name, resolveGlobal)`：在真实 page window 执行固定资源并验证 UMD 全局。
 - `tesseract.js#createOcrWorker(langs, oem, extraOptions)`：按需加载 Tesseract，补固定 worker/core/lang 路径。默认只保证单语言。

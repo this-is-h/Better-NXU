@@ -1,7 +1,6 @@
 import { mountToaster, toast as dingToast } from '@yusufceng1z/ding';
 import { GM, GM_addStyle } from '#gm';
 import { getGMValue } from '../config/gm-store.js';
-import { installFontAwesome } from './fontawesome.js';
 
 const TOAST_CONFIG = {
   position: 'top-center',
@@ -30,7 +29,6 @@ export function installNotification() {
     GM_addStyle?.(TOAST_STYLE);
     styleInstalled = true;
   }
-  installFontAwesome();
   unmount = mountToaster({
     position: TOAST_CONFIG.position,
     theme: TOAST_CONFIG.theme,

@@ -108,8 +108,6 @@ export default defineConfig({
         // 按发布策略读取 main 且不校验摘要，脚本安装/更新时即可取得当时的最新文档。
         // Vant JS 保持 npm 构建，避免把它变成所有匹配页面的关键远程启动依赖。
         resource: {
-          'svg-logo':
-            'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.2.1/css/all.min.css#sha384-twcuYPV86B3vvpwNhWJuaLdUSLF9+ttgM2A6M870UYXrOsxKfER2MKox5cirApyA',
           'github-markdown-css':
             'https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.9.0/github-markdown.min.css#sha384-dvqix+FXNZkkgkfxRwowYZelxQUSFEjEbDpb1k1mIMw84dsT8M3NM2CJC3xyp2hh',
           'vant-css':

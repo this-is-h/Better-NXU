@@ -13,7 +13,6 @@ test('notifications preserve live mute while the saved sound setting is still st
     'dingToast',
     'getGMValue',
     'GM_addStyle',
-    'installFontAwesome',
     'document',
     source.replace(/^import[\s\S]*?from\s+(['"])[^'"]+\1;?\r?\n/gm, '').replace(/^export /gm, '') +
       '\nreturn { installNotification, setToastSound, toast };'
@@ -30,7 +29,6 @@ test('notifications preserve live mute while the saved sound setting is still st
       show: () => played.push(sound),
     },
     () => true,
-    () => {},
     () => {},
     { body: {}, querySelectorAll: () => [viewport] }
   );

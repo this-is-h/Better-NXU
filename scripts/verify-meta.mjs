@@ -92,7 +92,8 @@ const mutableMarkdownResources = {
   'update-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md',
 };
 assert.equal(requires.length, 6);
-assert.equal(resources.length, 8);
+assert.equal(resources.length, 7);
+assert.doesNotMatch(user, /svg-logo|@fortawesome\/fontawesome-free/);
 assert.equal(
   requires[1],
   `https://cdnjs.cloudflare.com/ajax/libs/vue/${packageJson.dependencies.vue}/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB`
@@ -148,7 +149,6 @@ assert.deepEqual(resources.map((entry) => entry.split(/\s+/, 1)[0]).sort(), [
   'dompurify-js',
   'github-markdown-css',
   'marked-js',
-  'svg-logo',
   'tesseract-js',
   'update-md',
   'vant-css',
