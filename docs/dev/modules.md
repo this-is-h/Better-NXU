@@ -47,7 +47,7 @@
 
 ### `config-version.js`
 
-- `ConfigVersion`：当前配置结构版本，现为 `8`。团委历史开关开始生效，沿用旧值和默认关闭值。
+- `ConfigVersion`：当前配置结构版本，现为 `9`。新增通知音效设置，默认开启，保留已有显式值。
 - `normalizeConfigVersion(value)`：将数字/数字字符串规范化为非负安全整数，非法值回退 `0`。
 
 新增、删除或改变设置语义时，应提升 `ConfigVersion` 并提供迁移/提示；仅调整 UI 不一定需要提升。
