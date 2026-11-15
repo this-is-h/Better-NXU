@@ -332,6 +332,8 @@ test('CSP OCR session releases Blob URLs and terminates late workers on cancella
     const revoked = [];
     let count = 0;
     let terminated = 0;
+    let logger;
+    const progress = [];
     const worker = {
       setParameters: async () => {},
       recognize: async () => 'recognized',
@@ -348,14 +350,18 @@ test('CSP OCR session releases Blob URLs and terminates late workers on cancella
         },
       },
       loadAsset: async () => new ArrayBuffer(1),
+      logger: (message) => progress.push(message),
       createWorker: (_language, _oem, options) => {
         assert.equal(options.workerBlobURL, false);
         assert.equal(options.corePath, 'blob:fixture-1#.js');
         assert.equal(options.langPath, 'blob:fixture-2#');
+        logger = options.logger;
+        logger({ status: 'initializing api', progress: 0.5 });
         return pending.promise;
       },
     });
     await tick();
+    assert.equal(progress.length, 1);
     if (cancelEarly) {
       controller.abort();
       await assert.rejects(task);
@@ -368,7 +374,40 @@ test('CSP OCR session releases Blob URLs and terminates late workers on cancella
       session.dispose();
     }
     await tick();
+    logger({ status: 'recognizing text', progress: 1 });
+    assert.equal(progress.length, 1);
     assert.equal(terminated, 1);
     assert.equal(revoked.length, 3);
   }
+});
+
+test('attachment OCR forwards numeric progress and suppresses events after manual takeover', async () => {
+  let logger;
+  const progress = [];
+  const f = fixture({
+    report: (...args) => progress.push(args),
+    createWorker: async (_signal, options) => {
+      logger = options.logger;
+      logger({ status: 'initializing api', progress: '0.4' });
+      logger({ status: 'unknown', progress: 0.7 });
+      logger({ status: 'recognizing text', progress: 'invalid' });
+      return {
+        recognize: async () => {
+          logger({ status: 'recognizing text', progress: 0.75 });
+          f.input.emit('input', { isTrusted: true });
+          logger({ status: 'recognizing text', progress: 1 });
+          return { data: { text: '0123' } };
+        },
+        dispose() {},
+      };
+    },
+  });
+  assert.equal(await autoDownloadAttachment(f.options), 'manual');
+  assert.deepEqual(
+    progress.filter((entry) => entry.length === 3),
+    [
+      ['初始化OCR接口', 'info', 0.4],
+      ['识别验证码', 'info', 0.75],
+    ]
+  );
 });

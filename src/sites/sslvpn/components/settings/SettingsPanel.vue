@@ -44,7 +44,7 @@ import {
 import { cloneGMValue, hasLoginCredentials } from '../../../../config/gm-keys.js';
 import { createSettingsWriteQueue } from '../../../../config/settings-write-queue.js';
 import { unsafeWindow as grantedUnsafeWindow } from '#gm';
-import { toast, removeToastHandle } from '../../../../libraries/notification.js';
+import { toast, updateToastHandle, setToastSound } from '../../../../libraries/notification.js';
 import { MyConsole } from '../../../../utils/console.js';
 
 const console = MyConsole('[设置]');
@@ -54,6 +54,9 @@ const props = defineProps({
   scriptVersion: { type: String, default: '' }, // 1.x 行 4413 scriptVersion: Version
   deployToast: { type: null, default: null }, // 部署中常驻 toast 句柄，部署完毕移除（1.x 行 4444）
 });
+
+const toastSound = ref(getGMValue('Script.toastSound'));
+watch(toastSound, setToastSound);
 
 // 1.x 行 4211-4213：van-cell 整行 clickable 点击 → 触发对应 van-checkbox toggle（Vant checkbox-in-cell 官方写法）。
 const cellCheckBoxToggle = (refs, index) => {
@@ -118,6 +121,7 @@ enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, 'Jwgl.autoLogin
 
 // 保存监听与重置回填共用映射，避免新增开关只有 UI 绑定却漏掉存储写入。
 const resettableSettingModels = {
+  'Script.toastSound': toastSound,
   'WebVPN.autoLogin': webVPNAutoLogin,
   'WebVPN.autoReLogin': webVPNAutoReLogin,
   'WebVPN.autoClose': webVPNAutoClose,
@@ -237,15 +241,16 @@ onBeforeUpdate(() => {
 
 // 1.x 行 4443-4446 mounted：移除部署中常驻 toast + 弹"设置页面部署完毕"。
 onMounted(() => {
-  if (props.deployToast) removeToastHandle(props.deployToast);
-  toast('success', '设置页面部署完毕', 2);
+  if (props.deployToast) {
+    updateToastHandle(props.deployToast, { type: 'success', title: '设置页面部署完毕', duration: 2000 });
+  } else toast('success', '设置页面部署完毕', 2);
 });
 </script>
 
 <template>
   <section class="settings-function-area" aria-label="设置功能区">
     <div class="settings-function-copy">
-      <span class="settings-function-title">脚本设置</span>
+      <span class="settings-function-title">Better NXU 设置</span>
       <span class="settings-function-description">修改会自动保存 · Better NXU V {{ scriptVersion }}</span>
     </div>
     <div class="settings-function-actions">
@@ -259,6 +264,19 @@ onMounted(() => {
     </div>
   </section>
   <div class="settings-groups">
+    <div class="group">
+      <van-nav-bar title="脚本设置" />
+      <div class="group-content">
+        <h2>通知设置</h2>
+        <van-cell-group inset>
+          <van-cell center title="通知音效" label="播放通知提示音">
+            <template #right-icon>
+              <van-switch v-model="toastSound" aria-label="通知音效" />
+            </template>
+          </van-cell>
+        </van-cell-group>
+      </div>
+    </div>
     <div class="group">
       <van-nav-bar title="WebVPN 页面设置" />
       <div class="group-content">

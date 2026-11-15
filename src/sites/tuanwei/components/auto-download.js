@@ -2,6 +2,7 @@ import { createLocalOcrWorker } from '../../../libraries/tesseract-local.js';
 import { closeCurrentTab } from '../../../utils/file.js';
 import { isTuanweiDownloadRoute } from '../../../utils/route-guards.js';
 import { withAbort } from '../../../utils/abort.js';
+import { OCR_STATUS_LABELS } from '../../../utils/ocr-progress.js';
 import { fetchAttachment, saveAttachment } from './attachment.js';
 
 const BUTTON = 'body > div.code > div > div.code_but > input[type="button"]';
@@ -87,7 +88,15 @@ export async function autoDownloadAttachment({
   page.addEventListener('pagehide', stop, { once: true });
   try {
     report('正在加载验证码识别组件…');
-    worker = await createWorker(signal);
+    worker = await createWorker(signal, {
+      logger: ({ status, progress }) => {
+        if (signal.aborted || !OCR_STATUS_LABELS[status]) return;
+        const value = Number(progress);
+        if (Number.isFinite(value)) {
+          report(OCR_STATUS_LABELS[status], 'info', Math.min(1, Math.max(0, value)));
+        }
+      },
+    });
     for (let attempt = 0; attempt < 3; attempt++) {
       signal.throwIfAborted();
       if (attempt) {

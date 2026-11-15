@@ -1,17 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { toast as ding } from '@yusufceng1z/ding';
 
 import { waitOrToast } from '../src/composables/use-wait-or-toast.js';
 import { waitForElement } from '../src/utils/dom.js';
 
 test('waitOrToast returns the matching element without showing a toast', async () => {
   const originalDocument = globalThis.document;
-  const originalCreateToast = globalThis.createToast;
+  const originalCreateToast = ding.show;
   const element = { id: 'ready' };
   let toastCalls = 0;
 
   globalThis.document = { querySelector: () => element };
-  globalThis.createToast = () => {
+  ding.show = () => {
     toastCalls += 1;
   };
 
@@ -21,7 +22,7 @@ test('waitOrToast returns the matching element without showing a toast', async (
     assert.equal(toastCalls, 0);
   } finally {
     globalThis.document = originalDocument;
-    globalThis.createToast = originalCreateToast;
+    ding.show = originalCreateToast;
   }
 });
 
@@ -50,20 +51,17 @@ test('DOM timeout distinguishes a missing element from a failed readiness predic
 
 test('unexpected DOM errors are logged with the failed selector before returning null', async (t) => {
   const originalDocument = globalThis.document;
-  const originalCreateToast = globalThis.createToast;
-  const originalAddToast = globalThis.addToast;
+  const originalCreateToast = ding.show;
   t.after(() => {
     globalThis.document = originalDocument;
-    globalThis.createToast = originalCreateToast;
-    globalThis.addToast = originalAddToast;
+    ding.show = originalCreateToast;
   });
   globalThis.document = {
     querySelector: () => {
       throw new Error('fixture DOM failure');
     },
   };
-  globalThis.createToast = () => {};
-  globalThis.addToast = () => {};
+  ding.show = () => {};
   const errors = [];
   t.mock.method(console, 'error', (...args) => errors.push(args));
   assert.equal(await waitOrToast('#fixture'), null);
@@ -74,13 +72,11 @@ test('unexpected DOM errors are logged with the failed selector before returning
 
 test('waitOrToast converts a timeout into the configured toast and null', async () => {
   const originalDocument = globalThis.document;
-  const originalAddToast = globalThis.addToast;
-  const originalCreateToast = globalThis.createToast;
+  const originalCreateToast = ding.show;
   const calls = [];
 
   globalThis.document = { querySelector: () => null };
-  globalThis.addToast = () => {};
-  globalThis.createToast = (...args) => calls.push(args);
+  ding.show = (...args) => calls.push(args);
 
   try {
     const result = await waitOrToast('#missing', {
@@ -92,10 +88,9 @@ test('waitOrToast converts a timeout into the configured toast and null', async 
     });
 
     assert.equal(result, null);
-    assert.deepEqual(calls, [['error', '页面尚未就绪', 4]]);
+    assert.deepEqual(calls, [['error', '页面尚未就绪', { duration: 4000 }]]);
   } finally {
     globalThis.document = originalDocument;
-    globalThis.addToast = originalAddToast;
-    globalThis.createToast = originalCreateToast;
+    ding.show = originalCreateToast;
   }
 });

@@ -392,7 +392,7 @@ GM 键位于 `@storageName h.nxu` 下，改名或改变语义会影响已安装�
 1. 使用固定完整版本，禁止 `latest`、`main` 或浮动 semver。
 2. 从可信来源取得原始文件，计算并核对 SHA384，格式为 `#sha384-<base64>`。
 3. 更新 `vite.config.js` 和 `scripts/verify-meta.mjs` 的数量、名称或固定期望。
-4. 保持 `h.notification`、snapdom、XLSX 与各自 `data:` bridge 的相邻顺序。
+4. 保持 snapdom、XLSX 与各自 `data:` bridge 的相邻顺序，并保留 `CAT_userConfig` grant 桥接。
 5. 验证 ScriptCat 接受资源，预期全局落在正确的 page window。
 6. 提供资源下载、摘要校验或执行失败时的可操作降级。
 7. 比较 user.js 原始/gzip 体积，并在显著增长时说明来源。

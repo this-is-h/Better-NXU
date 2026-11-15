@@ -29,7 +29,7 @@
 
 import { getSliderRecognizer, MIN_CONFIDENCE } from '../../../libraries/slider-recognizer.js';
 import { dragIdsSlider } from './slider-drag.js';
-import { toast, removeToastHandle } from '../../../libraries/notification.js';
+import { toast, removeToastHandle, updateToastHandle } from '../../../libraries/notification.js';
 import { MyConsole } from '../../../utils/console.js';
 import { SLIDER_RECOGNIZER_UNAVAILABLE } from '../../../utils/errors.js';
 import {
@@ -77,13 +77,12 @@ async function solve() {
     return false;
   }
 
-  let toastHandle = toast('info', '正在识别滑块验证…', 0);
+  let toastHandle = toast('loading', '正在识别滑块验证…', 0);
   const controller = new AbortController();
   const onPageHide = () => controller.abort(new Error('页面已离开'));
   window.addEventListener('pagehide', onPageHide, { once: true });
   const showProgress = (message) => {
-    if (toastHandle) removeToastHandle(toastHandle);
-    toastHandle = toast('info', message, 0);
+    updateToastHandle(toastHandle, { title: message });
   };
   console('发现滑块验证码，开始自动识别');
 
@@ -131,9 +130,12 @@ async function solve() {
         { result },
         'warn'
       );
-      removeToastHandle(toastHandle);
+      updateToastHandle(toastHandle, {
+        type: 'warning',
+        title: result === 'exhausted' ? '滑块自动验证已尝试 3 次，请手动完成验证' : manualMessage,
+        duration: 0,
+      });
       toastHandle = null;
-      toast('warning', result === 'exhausted' ? '滑块自动验证已尝试 3 次，请手动完成验证' : manualMessage, 0);
       return false;
     }
     console('滑块自动处理结束', { result }, 'info');
@@ -146,9 +148,12 @@ async function solve() {
     // scheduleOperationError 抛出的结构化错误已含人类可读 message；其他错误原样保留。
     const isScheduleError = err?.code === SLIDER_RECOGNIZER_UNAVAILABLE;
     console('滑块验证识别异常', err, 'error');
-    removeToastHandle(toastHandle);
+    updateToastHandle(toastHandle, {
+      type: 'error',
+      title: isScheduleError ? err.message : '滑块验证识别失败，请手动操作',
+      duration: 5000,
+    });
     toastHandle = null;
-    toast('error', isScheduleError ? err.message : '滑块验证识别失败，请手动操作', 5);
     return false;
   } finally {
     if (toastHandle) removeToastHandle(toastHandle);

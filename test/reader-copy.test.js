@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { toast as ding } from '@yusufceng1z/ding';
+
+test.beforeEach((t) => t.mock.method(ding, 'show', () => 'fixture-toast'));
 
 const copied = [];
 document[globalThis.__MONKEY_WINDOW_KEY__] = {
   GM_setClipboard: (text) => copied.push(text),
-  unsafeWindow: { addToast() {}, createToast() {} },
+  unsafeWindow: {},
 };
 const { installReaderCopy } = await import('../src/composables/reader-copy.js');
 

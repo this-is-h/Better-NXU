@@ -4,7 +4,6 @@
  *          4898-4914（webvpnHTools 头）——三处清 body→title→addToast→ToastCss→FontAwesome→绑定 createToast/removeToast
  *          →部署中 toast→GM_addElement('div',{id}) 步骤一字不差。
  * 依赖：libraries/notification（installNotification 装 toast）、
- *       libraries/fontawesome（installFontAwesome 注入 svg-logo 改写后样式）、
  *       原生 DOM（创建挂载节点）、utils/console
  * 入口/被谁调用：sites/sslvpn/pages/{settings,about}.page.js；sites/webvpn/pages/tools.page.js
  *
@@ -25,13 +24,12 @@ import { MyConsole } from '../utils/console.js';
 const console = MyConsole('[use-app-page]');
 
 /**
- * 一次性部署一个独立 H 页面的公共骨架：清空 body → 设标题 → 装 toast/FontAwesome → 挂 <div id> 容器 → 返回容器。
+ * 一次性部署一个独立 H 页面的公共骨架：清空 body → 设标题 → 装 toast → 挂 <div id> 容器 → 返回容器。
  *
  * 与 1.x 三处样板步骤对齐（行 3750-3768 / 4453-4473 / 4898-4914）：
  *   1. document.body.replaceChildren() 清空（1.x 行 3750 等）
  *   2. document.title = title（1.x 行 3751 等）
  *   3. installNotification()（= 1.x addToast+GM_addStyle(ToastCss)+绑 createToast/removeToast，行 3755-3761）
- *   4. installFontAwesome()（= 1.x GM_addStyle(svg-logo 改写)，行 3758/4462/4907）
  *   5. deploy 常驻 toast（1.x `createToast("info","请等待工具部署",0)` 行 3763/4467/4912）——返 toast 句柄，调用方
  *      部署完成后可 removeToastHandle 取消
  *   6. extraSetup?.() 页面专属注入回调（about 的 github-markdown-css+marked、tools/settings 的 GM_addStyle 全局样式）
@@ -52,12 +50,12 @@ export function mountAppPage({ id, title, deployMessage = '请等待工具部署
   // 2. 设标题（1.x 行 3751/4454/4899）。
   if (title) document.title = title;
 
-  // 3. 装 notification（含 addToast、ToastCss 和 FontAwesome）。
+  // 3. 装 notification。
   installNotification();
   // 保持原入口顺序：Vant 基础样式先注入，页面专属样式随后覆盖。
   installVantStyle();
   // 4+. 部署中常驻 toast（1.x 行 3763/4467/4912：duration=0 常驻）。
-  const deployToast = toast('info', deployMessage, 0);
+  const deployToast = toast('loading', deployMessage, 0);
 
   // 6. 挂 <div id> 容器。等价 1.x `GM_addElement(body,'div',{id})`（1.x 行 3768/4473/4914）：
   //  走原生 createElement+appendChild（这三处只设 id 一个属性，等价；免依赖 GM_addElement）。

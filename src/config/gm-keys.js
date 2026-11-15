@@ -24,6 +24,7 @@
  *  - TuanWei.autoDownload*：附件验证码下载与下载后关闭页面，默认关闭，保留已有显式值。
  */
 export const GM_VALUE_DEFAULTS = Object.freeze({
+  'Script.toastSound': true,
   'WebVPN.username': undefined,
   'WebVPN.password': undefined,
   'WebVPN.autoLogin': false,
@@ -54,6 +55,7 @@ export const GM_VALUE_DEFAULTS = Object.freeze({
  * 1.x 行 229-243 逐字迁移，供 resetFunctionSettingValues 使用。
  */
 export const SETTINGS_RESET_KEYS = Object.freeze([
+  'Script.toastSound',
   'WebVPN.autoLogin',
   'WebVPN.autoReLogin',
   'WebVPN.autoClose',

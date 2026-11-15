@@ -4,6 +4,7 @@ import { gzipSync } from 'node:zlib';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { USER_CONFIG_BLOCK, USER_CONFIG_SAFE_DEFAULTS } from '../src/config/user-config.js';
+import { THIRD_PARTY_NOTICE } from './third-party-notices.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = resolve(root, 'dist');
@@ -91,27 +92,34 @@ const mutableMarkdownResources = {
   'about-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/README.md',
   'update-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md',
 };
-assert.equal(requires.length, 7);
-assert.equal(resources.length, 8);
+assert.equal(requires.length, 6);
+assert.equal(resources.length, 7);
+assert.doesNotMatch(user, /svg-logo|@fortawesome\/fontawesome-free/);
 assert.equal(
-  requires[2],
+  requires[1],
   `https://cdnjs.cloudflare.com/ajax/libs/vue/${packageJson.dependencies.vue}/vue.global.prod.min.js#sha384-8SaM1k/WoMo3RugF5T99/LlfVn0iWchtOkmpk2rEECKX/BrhEgV44Ab22Y4CKKDx`
 );
 assert.ok(resourceMap['vant-css'].includes(`/vant/${packageJson.dependencies.vant}/index.min.css#sha384-`));
-assert.match(requires[0], /\/h\.notification\.js#sha384-/);
-assert.match(requires[1], /^data:/);
-assert.match(requires[3], /\/snapdom\.js#sha384-/);
+assert.match(requires[0], /^data:/);
+const configBridge = decodeURIComponent(requires[0].split(',')[1]);
+assert.match(configBridge, /CAT_userConfig/);
+assert.doesNotMatch(configBridge, /addToast|createToast|removeToast|ToastCss/);
+assert.doesNotMatch(meta, /h\.notification\.js/);
+assert.equal(user.split(THIRD_PARTY_NOTICE).length, 2, 'userscript must contain one consolidated notice');
+assert.ok(user.trimEnd().endsWith(THIRD_PARTY_NOTICE), 'third-party notice must remain at the end');
+assert.doesNotMatch(meta, /MIT License|Copyright/, 'metadata must not duplicate runtime notices');
+assert.match(requires[2], /\/snapdom\.js#sha384-/);
 assert.equal(
-  requires[3],
+  requires[2],
   'https://unpkg.com/@zumer/snapdom@3.7.5/dist/snapdom.js#sha384-xiTilgh2FRBi16JzGVQOJiZ0G+TqHazobQjzh9flLx4M2hI/27tUWcGVv4lK/lsJ'
 );
 assert.equal(
   resourceMap['tesseract-js'],
   'https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM'
 );
-assert.match(requires[4], /^data:/);
-assert.match(requires[5], /\/xlsx\.full\.min\.js#sha384-/);
-assert.match(requires[6], /^data:/);
+assert.match(requires[3], /^data:/);
+assert.match(requires[4], /\/xlsx\.full\.min\.js#sha384-/);
+assert.match(requires[5], /^data:/);
 assert.equal(
   resourceMap['dompurify-js'],
   'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.18/purify.min.js#sha384-lkArbWjiZKuE+bzKbj1vOEF7DKYBDNvgwZMCt5OH8bdRB92zpzyNska9Q/XKPHQD'
@@ -148,7 +156,6 @@ assert.deepEqual(resources.map((entry) => entry.split(/\s+/, 1)[0]).sort(), [
   'dompurify-js',
   'github-markdown-css',
   'marked-js',
-  'svg-logo',
   'tesseract-js',
   'update-md',
   'vant-css',
@@ -175,6 +182,7 @@ function getUserConfigKeys(source) {
 }
 
 const expectedUserConfigKeys = [
+  'Script.toastSound',
   'WebVPN.username',
   'WebVPN.password',
   'WebVPN.autoLogin',

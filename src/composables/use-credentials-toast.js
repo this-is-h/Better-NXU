@@ -17,7 +17,8 @@
  *  host → opener 映射在 resolveOpener 集中：新增站点须在此补一条，避免误用。
  */
 import { getGMValue } from '../config/gm-store.js';
-import { toastTrustedHtml as toast, installNotification } from '../libraries/notification.js';
+import { GM_openInTab, unsafeWindow } from '#gm';
+import { toast, installNotification } from '../libraries/notification.js';
 import { buildCredentialsErrorToast } from '../utils/auth-form.js';
 import { MyConsole } from '../utils/console.js';
 
@@ -28,8 +29,17 @@ const console = MyConsole('[credentials]');
  * @param {string} host - 登录组前缀：'WebVPN' | 'Jwgl'
  * @returns {'settingsPage'|'openConfig'}
  */
-function resolveOpener(host) {
-  return host === 'Jwgl' ? 'openConfig' : 'settingsPage';
+function settingsOptions(host) {
+  return {
+    description: '请前往配置相关信息',
+    action: {
+      label: '前往配置',
+      onClick: () => {
+        if (host === 'Jwgl') unsafeWindow.CAT_userConfig();
+        else GM_openInTab('https://sslvpn.nxu.edu.cn/h/settings', { active: true });
+      },
+    },
+  };
 }
 
 /**
@@ -46,7 +56,7 @@ export function requireCredentials(host) {
   if (username && password) return true;
   console(`[${host}] 未配置登录账号或密码，停止自动登录`, '请前往 Better NXU 设置页面补充', 'warn');
   installNotification();
-  toast('error', buildCredentialsErrorToast({ missing: true, opener: resolveOpener(host) }), 0);
+  toast('error', buildCredentialsErrorToast({ missing: true }), 0, settingsOptions(host));
   return false;
 }
 
@@ -59,5 +69,5 @@ export function requireCredentials(host) {
 export function notifyCredentialsProblem(host, duration = 5) {
   console(`[${host}] 页面提示账号或密码错误，停止自动登录，请更新凭证`, '', 'warn');
   installNotification();
-  toast('error', buildCredentialsErrorToast({ missing: false, opener: resolveOpener(host) }), duration);
+  toast('error', buildCredentialsErrorToast({ missing: false }), duration, settingsOptions(host));
 }

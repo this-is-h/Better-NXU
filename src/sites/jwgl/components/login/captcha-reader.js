@@ -22,19 +22,16 @@
  */
 import { createOcrWorker } from '../../../../libraries/tesseract.js';
 import { OCR_EMPTY_RESULT, scheduleOperationError } from '../../../../utils/errors.js';
-import { toast, installNotification, removeToastHandle } from '../../../../libraries/notification.js';
+import {
+  toast,
+  installNotification,
+  removeToastHandle,
+  updateToastHandle,
+} from '../../../../libraries/notification.js';
 import { MyConsole } from '../../../../utils/console.js';
+import { OCR_STATUS_LABELS } from '../../../../utils/ocr-progress.js';
 
 const console = MyConsole('[OCR]');
-
-// 1.x 行 310 逐字迁移：tesseract worker 状态→中文进度文案（logger 仅对此 5 种状态记日志）。
-const LoadMessage = {
-  'loading tesseract core': 'OCR核心加载',
-  'initializing tesseract': 'OCR初始化',
-  'loading language traineddata': '加载OCR语言训练数据',
-  'initializing api': '初始化OCR接口',
-  'recognizing text': '识别验证码',
-};
 
 function withTimeout(promise, timeoutMs, message) {
   let timer;
@@ -49,7 +46,7 @@ function withTimeout(promise, timeoutMs, message) {
  * 失败上抛（OCR_EMPTY_RESULT / OCR_ENGINE_UNAVAILABLE / 网络）；调用方 catch 后转 toast 引导手动填。
  * @returns {Promise<string>} 识别出的验证码（已去所有空白）
  */
-export async function readJwglCaptcha() {
+export async function readJwglCaptcha(progressToast) {
   // 1.x 行 2040：相对当前页解析验证码图片 url（教务登录页、IP 直连 :8080~3、webvpn 代理形态均适用）。
   const url = new URL('captcha/image.action', window.location.href).href;
   console('开始加载验证码图片', { url }, 'info');
@@ -60,7 +57,8 @@ export async function readJwglCaptcha() {
   installNotification();
 
   let worker;
-  let progressToast = null;
+  const ownsToast = !progressToast;
+  progressToast ??= toast('loading', '正在识别验证码，首次使用需下载识别模型，请耐心等待...', 0);
   let active = true;
   let workerPromise;
   try {
@@ -69,24 +67,18 @@ export async function readJwglCaptcha() {
       logger: (m) => {
         if (!active) return;
         // 1.x 行 2057-2064：仅对 LoadMessage 已知状态记进度日志。
-        const statusText = LoadMessage[m.status];
+        const statusText = OCR_STATUS_LABELS[m.status];
         if (statusText) {
           console('识别进度', { status: statusText, progress: Number(m.progress || 0) }, 'debug');
         }
-        // 1.x 行 2058-2061：progress==0 弹进度提示常驻、progress==1 弹完成。
-        // 2.0 经 libraries/notification.toast（1.x 裸 createToast 全局；2.0 模块作用域取不到，
-        // 必经 toast 包装 + installNotification 先就绪）。仅对已知状态弹，避免未知 status 弹 undefined。
-        // worker 消息的 progress 可能是字符串，统一转数字后严格比较。
         const progress = Number(m.progress);
-        if (progress === 0) {
-          if (statusText) {
-            if (progressToast) removeToastHandle(progressToast);
-            progressToast = toast('info', statusText, 0);
-          }
-        } else if (progress === 1) {
-          if (progressToast) removeToastHandle(progressToast);
-          progressToast = null;
-          toast('success', '验证码识别组件加载完成', 2);
+        if (statusText && Number.isFinite(progress)) {
+          const value = Math.min(1, Math.max(0, progress));
+          updateToastHandle(progressToast, {
+            title: statusText,
+            progress: value,
+            meta: `${Math.round(value * 100)}%`,
+          });
         }
       },
     });
@@ -101,7 +93,7 @@ export async function readJwglCaptcha() {
     return code;
   } finally {
     active = false;
-    if (progressToast) removeToastHandle(progressToast);
+    if (ownsToast) removeToastHandle(progressToast);
     // 初始化超时不会取消 createWorker 自身；若 worker 之后才创建成功，立即终止，避免后台线程永久驻留。
     if (!worker && workerPromise) {
       void workerPromise

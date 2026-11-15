@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { toast as ding } from '@yusufceng1z/ding';
 
 /**
  * slide-captcha 单元测试（Node，无真实 DOM/浏览器）
@@ -19,19 +20,21 @@ import assert from 'node:assert/strict';
 
 // ---- 环境桩（模仿 test/setup.mjs 的最小 DOM 面） ----
 function installToastStub(calls) {
-  globalThis.createToast = (type, message, duration) => {
+  ding.show = (type, message, { duration }) => {
     calls.push(['create', type, message, duration]);
-    return { id: calls.length };
+    return 'fixture-toast';
   };
-  globalThis.removeToast = (handle) => {
+  ding.dismiss = (handle) => {
     calls.push(['remove', handle]);
   };
+  ding.update = (handle, patch) => calls.push(['update', handle, patch]);
 }
 
 const originalDocument = globalThis.document;
 const originalWindow = globalThis.window;
-const originalCreateToast = globalThis.createToast;
-const originalRemoveToast = globalThis.removeToast;
+const originalCreateToast = ding.show;
+const originalRemoveToast = ding.dismiss;
+const originalUpdateToast = ding.update;
 const lifecycle = new EventTarget();
 globalThis.addEventListener = lifecycle.addEventListener.bind(lifecycle);
 globalThis.removeEventListener = lifecycle.removeEventListener.bind(lifecycle);
@@ -39,8 +42,9 @@ globalThis.removeEventListener = lifecycle.removeEventListener.bind(lifecycle);
 test.afterEach(() => {
   globalThis.document = originalDocument;
   globalThis.window = originalWindow;
-  globalThis.createToast = originalCreateToast;
-  globalThis.removeToast = originalRemoveToast;
+  ding.show = originalCreateToast;
+  ding.dismiss = originalRemoveToast;
+  ding.update = originalUpdateToast;
 });
 
 test('isSliderCaptchaPresent detects visible, non-empty sliderDiv', async () => {
@@ -115,9 +119,8 @@ test('solveIdsSliderCaptcha surfaces an error toast when elements never appear',
   assert.equal(result, false);
   // info 常驻 → 移除 → error 5 秒（等待超时走 catch 分支）。
   assert.deepEqual(calls, [
-    ['create', 'info', '正在识别滑块验证…', 0],
-    ['remove', { id: 1 }],
-    ['create', 'error', '滑块验证识别失败，请手动操作', 5],
+    ['create', 'loading', '正在识别滑块验证…', 0],
+    ['update', 'fixture-toast', { type: 'error', title: '滑块验证识别失败，请手动操作', duration: 5000 }],
   ]);
 });
 
@@ -142,8 +145,7 @@ test('solveIdsSliderCaptcha degrades when display canvas has invalid size', asyn
   assert.equal(result, false);
   // 尺寸校验在识别器加载前：直接 error toast（catch 分支）。
   assert.deepEqual(calls, [
-    ['create', 'info', '正在识别滑块验证…', 0],
-    ['remove', { id: 1 }],
-    ['create', 'error', '滑块验证识别失败，请手动操作', 5],
+    ['create', 'loading', '正在识别滑块验证…', 0],
+    ['update', 'fixture-toast', { type: 'error', title: '滑块验证识别失败，请手动操作', duration: 5000 }],
   ]);
 });

@@ -162,17 +162,17 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 
 ## 7. 用户脚本运行时资源
 
-| 类型        | 资源                    | 用途与加载方式                                      |
-| ----------- | ----------------------- | --------------------------------------------------- |
-| `@require`  | h.notification + bridge | toast 与 ScriptCat 配置入口，桥接到真实 page window |
-| `@require`  | Vue 3.5.43 生产版       | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果     |
-| `@require`  | snapdom + bridge        | 图片导出                                            |
-| `@require`  | XLSX + bridge           | Excel 导出                                          |
-| `@resource` | FontAwesome CSS         | toast 与页面图标，注入前修正 webfont 相对路径       |
-| `@resource` | Vant CSS                | 只在 Vant 页面幂等注入                              |
-| `@resource` | Tesseract UMD           | 只在 OCR 触发时执行                                 |
-| `@resource` | marked + DOMPurify      | 只在关于页解析并消毒 Markdown                       |
-| `@resource` | README + CHANGELOG      | 安装/更新脚本时由 ScriptCat 缓存                    |
+| 类型        | 资源                  | 用途与加载方式                                  |
+| ----------- | --------------------- | ----------------------------------------------- |
+| npm 打包    | Ding 0.0.6            | 原生 DOM 通知、进度与状态切换，保留 MIT 许可    |
+| `data:`     | CAT_userConfig bridge | ScriptCat 配置入口，桥接到真实 page window      |
+| `@require`  | Vue 3.5.45 生产版     | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果 |
+| `@require`  | snapdom + bridge      | 图片导出                                        |
+| `@require`  | XLSX + bridge         | Excel 导出                                      |
+| `@resource` | Vant CSS              | 只在 Vant 页面幂等注入                          |
+| `@resource` | Tesseract UMD         | 只在 OCR 触发时执行                             |
+| `@resource` | marked + DOMPurify    | 只在关于页解析并消毒 Markdown                   |
+| `@resource` | README + CHANGELOG    | 安装/更新脚本时由 ScriptCat 缓存                |
 
 远程可执行资源和样式必须固定版本并带 SHA384。README/CHANGELOG 是唯一允许跟随 `main` 且无摘要的例外，因为它们不是代码，写入 DOM 前仍必须消毒。两项 Markdown 由持续同步 GitHub 主仓库的 [Gitee 镜像 `thisish/Better-NXU`](https://gitee.com/thisish/Better-NXU) 提供，以改善国内访问稳定性。
 
