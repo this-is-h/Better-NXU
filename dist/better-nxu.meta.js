@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Better NXU
 // @namespace      https://thisish.com/
-// @version        2.0.5
+// @version        2.0.6
 // @author         H
 // @description    这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match          *://webvpn.nxu.edu.cn/*
@@ -24,15 +24,15 @@
 // @match          *://f.wanfangdata.com.cn/online/pc/periodical_html*
 // @require        https://scriptcat.org/lib/1405/1.0.7/h.notification.js#sha384-Ef8dnXffgAqEVHA7uHKmtub7Uh4Ji/Yv60yL+Himym+PdTNeb/NAKi+d9qh9olzC
 // @require        data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bw.addToast%3DaddToast%3Bw.createToast%3DcreateToast%3Bw.removeToast%3DremoveToast%3Bw.ToastCss%3DToastCss%3Bvar%20c%3D(typeof%20CAT_userConfig!%3D%3D'undefined')%3FCAT_userConfig%3Aundefined%3Bif(c)%7Bw.CAT_userConfig%3Dc%3Bwindow.CAT_userConfig%3Dc%3B%7D%7D)()%3B
-// @require        https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.43/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB
-// @require        https://unpkg.com/@zumer/snapdom@3.1.0/dist/snapdom.js#sha384-WGMhfcLrIwHy2nch3wquBVui5YbAvFGEjpUqtK65dcKwZ+vBMkydMJja61MRE6An
+// @require        https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.45/vue.global.prod.min.js#sha384-8SaM1k/WoMo3RugF5T99/LlfVn0iWchtOkmpk2rEECKX/BrhEgV44Ab22Y4CKKDx
+// @require        https://unpkg.com/@zumer/snapdom@3.7.5/dist/snapdom.js#sha384-xiTilgh2FRBi16JzGVQOJiZ0G+TqHazobQjzh9flLx4M2hI/27tUWcGVv4lK/lsJ
 // @require        data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bvar%20s%3D(typeof%20snapdom!%3D%3D'undefined')%3Fsnapdom%3A(typeof%20window!%3D%3D'undefined'%3Fwindow.snapdom%3Aundefined)%3Bif(s)%7Bw.snapdom%3Ds%3Bwindow.snapdom%3Ds%3B%7D%7D)()%3B
 // @require        https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js#sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT
 // @require        data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bvar%20x%3D(typeof%20XLSX!%3D%3D'undefined')%3FXLSX%3A(typeof%20window!%3D%3D'undefined'%3Fwindow.XLSX%3Aundefined)%3Bif(x)%7Bw.XLSX%3Dx%3Bwindow.XLSX%3Dx%3B%7D%7D)()%3B
 // @resource       about-md             https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/README.md
-// @resource       dompurify-js         https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.15/purify.min.js#sha384-uUMu9JDY09vBzRf9SPcK2VgUj+W/70J6Soc+Dded5P474ElQ63iv9j5N3DE7Kp3N
+// @resource       dompurify-js         https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.18/purify.min.js#sha384-lkArbWjiZKuE+bzKbj1vOEF7DKYBDNvgwZMCt5OH8bdRB92zpzyNska9Q/XKPHQD
 // @resource       github-markdown-css  https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.9.0/github-markdown.min.css#sha384-dvqix+FXNZkkgkfxRwowYZelxQUSFEjEbDpb1k1mIMw84dsT8M3NM2CJC3xyp2hh
-// @resource       marked-js            https://unpkg.com/marked@18.0.14/lib/marked.umd.js#sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo
+// @resource       marked-js            https://unpkg.com/marked@18.2.0/lib/marked.umd.js#sha384-DDYDxilZ1LlqPSbaRHlrwh12h+3fUewuQj7HjscrZIWt5bGyQ+n0DHtIoZE3i3zU
 // @resource       svg-logo             https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.2.1/css/all.min.css#sha384-twcuYPV86B3vvpwNhWJuaLdUSLF9+ttgM2A6M870UYXrOsxKfER2MKox5cirApyA
 // @resource       tesseract-js         https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM
 // @resource       update-md            https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md

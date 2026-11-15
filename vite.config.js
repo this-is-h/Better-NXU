@@ -67,7 +67,7 @@ export default defineConfig({
       userscript: {
         name: 'Better NXU',
         namespace: 'https://thisish.com/',
-        version: '2.0.5', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 9（见 src/config/config-version.js）。
+        version: '2.0.6', // 脚本版本与配置结构版本独立；本版 ConfigVersion 为 9（见 src/config/config-version.js）。
         description: '这是一个提高各种 NXU 网站体验的用户脚本（Userscript）',
         author: 'H',
         'run-at': 'document-idle',
@@ -97,8 +97,8 @@ export default defineConfig({
         //  详见 vite.config.js 顶部 USER_CONFIG_BRIDGE / SNAPDOM_BRIDGE / XLSX_BRIDGE 注释。
         require: [
           USER_CONFIG_BRIDGE_REQUIRE,
-          'https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.43/vue.global.prod.min.js#sha384-jpQley6yTEvoZeHVfCkBVqGK6kLbDxptME8BFcqX9FJiFhpNkdkUSs54xLMnxmuB',
-          'https://unpkg.com/@zumer/snapdom@3.1.0/dist/snapdom.js#sha384-WGMhfcLrIwHy2nch3wquBVui5YbAvFGEjpUqtK65dcKwZ+vBMkydMJja61MRE6An',
+          'https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.45/vue.global.prod.min.js#sha384-8SaM1k/WoMo3RugF5T99/LlfVn0iWchtOkmpk2rEECKX/BrhEgV44Ab22Y4CKKDx',
+          'https://unpkg.com/@zumer/snapdom@3.7.5/dist/snapdom.js#sha384-xiTilgh2FRBi16JzGVQOJiZ0G+TqHazobQjzh9flLx4M2hI/27tUWcGVv4lK/lsJ',
           SNAPDOM_BRIDGE_REQUIRE,
           'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js#sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT',
           XLSX_BRIDGE_REQUIRE,
@@ -115,9 +115,9 @@ export default defineConfig({
           'tesseract-js':
             'https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM',
           'marked-js':
-            'https://unpkg.com/marked@18.0.14/lib/marked.umd.js#sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo',
+            'https://unpkg.com/marked@18.2.0/lib/marked.umd.js#sha384-DDYDxilZ1LlqPSbaRHlrwh12h+3fUewuQj7HjscrZIWt5bGyQ+n0DHtIoZE3i3zU',
           'dompurify-js':
-            'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.15/purify.min.js#sha384-uUMu9JDY09vBzRf9SPcK2VgUj+W/70J6Soc+Dded5P474ElQ63iv9j5N3DE7Kp3N',
+            'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.18/purify.min.js#sha384-lkArbWjiZKuE+bzKbj1vOEF7DKYBDNvgwZMCt5OH8bdRB92zpzyNska9Q/XKPHQD',
           'about-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/README.md',
           'update-md': 'https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md',
         },

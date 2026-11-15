@@ -166,7 +166,7 @@ https://webvpn.nxu.edu.cn/<http|https>[-port]/<host-token>/<real-path>
 | ----------- | --------------------- | ----------------------------------------------- |
 | npm 打包    | Ding 0.0.6            | 原生 DOM 通知、进度与状态切换，保留 MIT 许可    |
 | `data:`     | CAT_userConfig bridge | ScriptCat 配置入口，桥接到真实 page window      |
-| `@require`  | Vue 3.5.43 生产版     | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果 |
+| `@require`  | Vue 3.5.45 生产版     | 由 `externalGlobals.vue = 'Vue'` 提供给打包结果 |
 | `@require`  | snapdom + bridge      | 图片导出                                        |
 | `@require`  | XLSX + bridge         | Excel 导出                                      |
 | `@resource` | Vant CSS              | 只在 Vant 页面幂等注入                          |

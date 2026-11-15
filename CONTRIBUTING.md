@@ -23,7 +23,7 @@ CI 还会独立执行两项质量门禁，本地可提前验证：
 
 ```bash
 pnpm test:coverage   # 行覆盖率 ≥ 80%，低于阈值失败
-pnpm audit --prod --audit-level=high   # 依赖安全扫描（npmmirror 镜像可能不支持，加 --registry=https://registry.npmjs.org/）
+pnpm audit --audit-level=high   # 全量依赖安全扫描（npmmirror 镜像可能不支持，加 --registry=https://registry.npmjs.org/）
 ```
 
 涉及 GM API、UserConfig、校园登录态、跨域请求、远程资源或学校页面 DOM 的修改，还需要在 ScriptCat 中安装 `dist/better-nxu.user.js` 真机回归，并在 PR 中记录脱敏结果。用户安装入口为 [ScriptCat 的 Better NXU 项目页](https://scriptcat.org/zh-CN/script-show-page/1429)。

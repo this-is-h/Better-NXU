@@ -8,7 +8,7 @@
 pnpm install --frozen-lockfile
 ```
 
-Node 要求 `^22.13.0 || >=24.0.0`。推荐 Node 22，与 CI 一致。
+Node 要求 `^22.22.1 || >=24.0.0`。推荐 Node 22，与 CI 一致。
 
 常用命令：
 
@@ -115,7 +115,7 @@ WebVPN 的外链、Blob 和 Worker 兼容方案已集中记录在[WebVPN 资源�
 
 `captcha-recognizer-js@1.0.4/src/core.js`（MIT）的小型算法静态编入脚本。上游只开放模型 URL，ORT JavaScript 和 WASM 路径写死在 Worker；`libraries/slider-recognizer.js` 校验并替换这两处加载点，升级依赖时必须重新核对。原 IIFE `@resource` 已移除。
 
-`libraries/slider-resources.js` 在首次使用时经 `GM.xmlHttpRequest` 匿名下载 ORT 1.30.0 的 `ort.min.js`、`ort-wasm-simd-threaded.mjs`、`ort-wasm-simd-threaded.wasm` 和识别器 1.0.4 的模型，逐一校验 SHA384。ORT 摘要由 CDN 原始文件计算，模型摘要取自同版本 npm 包内文件。所有文件都在已有 `@connect cdn.jsdelivr.net` 范围内。不要将页面 `fetch` 或远程 `importScripts` 作为回退，否则 WebVPN 会再次重写地址。
+`libraries/slider-resources.js` 在首次使用时经 `GM.xmlHttpRequest` 匿名下载 ORT 1.31.1 的 `ort.min.js`、`ort-wasm-simd-threaded.mjs`、`ort-wasm-simd-threaded.wasm` 和识别器 1.0.4 的模型，逐一校验 SHA384。ORT 摘要由 CDN 原始文件计算，模型摘要取自同版本 npm 包内文件。所有文件都在已有 `@connect cdn.jsdelivr.net` 范围内。不要将页面 `fetch` 或远程 `importScripts` 作为回退，否则 WebVPN 会再次重写地址。
 
 Worker 只收到本地 Blob URL 与模型 `Uint8Array`，保持单线程 WASM 和原展示坐标映射。单次下载超时为 60 秒，整个初始化上限 90 秒，识别上限 30 秒；同页并发初始化复用同一个 Promise。失败、显式释放及 `pagehide` 会中止请求、拒绝等待中的任务、终止 Worker 并回收 Blob URL，随后允许重试。
 

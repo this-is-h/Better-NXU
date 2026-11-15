@@ -465,7 +465,7 @@ Markdown 结构与本地链接检查（pnpm docs）
 另外两个独立门禁命令：
 
 - `pnpm test:coverage`：测试 + 行覆盖率门禁（阈值 80%，`scripts/check-coverage.mjs`），低于阈值即失败；CI 单独执行。
-- `pnpm audit --prod --audit-level=high`：依赖安全扫描；CI 单独执行（本地如使用 npmmirror 镜像，audit 端点可能不可用，需 `--registry=https://registry.npmjs.org/`）。
+- `pnpm audit --audit-level=high`：包含开发依赖的全量安全扫描；CI 单独执行（本地如使用 npmmirror 镜像，audit 端点可能不可用，需 `--registry=https://registry.npmjs.org/`）。
 
 根据改动范围可以先运行 `pnpm test` 或具体测试文件，但创建 PR 前应运行完整 `pnpm check`。检查失败时先定位第一处有效错误，在本地复现后修复；不要只重复运行等待偶然通过。
 
@@ -535,13 +535,13 @@ docs(contributing): 完善 GitHub 协作规范
 
 ## 11. GitHub Actions 与失败处理
 
-面向 `main` 的 PR 修改源码、测试、文档、依赖、协作模板或构建配置时，`.github/workflows/build.yml` 会安装 Node 22 与 pnpm 10.32.1，依次执行多层质量门禁：
+面向 `main` 的 PR 修改源码、测试、文档、依赖、协作模板或构建配置时，`.github/workflows/build.yml` 会安装 Node 22 与 pnpm 10.34.9，依次执行多层质量门禁：
 
 ```text
 编译/构建门禁：pnpm check（docs → lint → test → build → verify-meta）
 测试门禁：    pnpm test:coverage（单元测试全部通过 且 行覆盖率 ≥ 80%）
 Lint 门禁：   pnpm lint（ESLint，已并入 pnpm check）
-安全扫描门禁：pnpm audit --prod --audit-level=high
+安全扫描门禁：pnpm audit --audit-level=high
 ```
 
 任何一道门禁未通过，PR 都不能合并。
