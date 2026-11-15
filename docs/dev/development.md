@@ -8,7 +8,7 @@
 pnpm install --frozen-lockfile
 ```
 
-Node 要求 `^22.13.0 || >=24.0.0`。推荐 Node 22，与 CI 一致。
+Node 要求 `^22.22.1 || >=24.0.0`。推荐 Node 22，与 CI 一致。
 
 常用命令：
 

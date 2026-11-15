@@ -23,7 +23,7 @@
 
 - [ ] 已运行 `pnpm check`
 - [ ] 已运行 `pnpm test:coverage`（行覆盖率 ≥ 80%）
-- [ ] 已运行 `pnpm audit --prod --audit-level=high`（依赖安全扫描）
+- [ ] 已运行 `pnpm audit --audit-level=high`（包含开发依赖的全量安全扫描）
 - [ ] 已补充或更新自动测试（不适用时说明原因）
 - [ ] 已在 ScriptCat 中完成相关页面真机回归（不适用时说明原因）
 - [ ] UI 改动已附脱敏截图或录屏（不适用时说明原因）
