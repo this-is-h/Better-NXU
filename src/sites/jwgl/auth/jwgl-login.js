@@ -30,7 +30,7 @@ import { getGMValue } from '../../../config/gm-store.js';
 import { requireCredentials, notifyCredentialsProblem } from '../../../composables/use-credentials-toast.js';
 import { JWGL_LOGIN_FORM_MISSING, scheduleOperationError } from '../../../utils/errors.js';
 import { readJwglCaptcha } from '../components/login/captcha-reader.js';
-import { toast, removeToastHandle, installNotification } from '../../../libraries/notification.js';
+import { toast, updateToastHandle, installNotification } from '../../../libraries/notification.js';
 import { MyConsole } from '../../../utils/console.js';
 
 const console = MyConsole('[教务登录]');
@@ -66,10 +66,10 @@ export async function jwglLogin() {
   }
 
   // 1.x 行 2757：识别常驻 toast（首用时下载 OCR 模型提示）。
-  const recognitionToast = toast('info', '正在识别验证码，首次使用需下载识别模型，请耐心等待...', 0);
+  const recognitionToast = toast('loading', '正在识别验证码，首次使用需下载识别模型，请耐心等待...', 0);
   try {
     // 1.x 行 2759：OCR 识别验证码（GetVerificationCode('Jwgl') → readJwglCaptcha）。
-    const verification = await readJwglCaptcha();
+    const verification = await readJwglCaptcha(recognitionToast);
     // 1.x 行 2760-2763：同步取登录表单四字段（getElementsByName / #loginSubmit）。
     const usernameInput = document.getElementsByName('loginForm.name')[0];
     const passwordInput = document.getElementsByName('loginForm.password')[0];
@@ -88,14 +88,24 @@ export async function jwglLogin() {
     fillInput(usernameInput, getGMValue('Jwgl.username'));
     fillInput(passwordInput, getGMValue('Jwgl.password'));
     fillInput(captchaInput, verification);
+    updateToastHandle(recognitionToast, {
+      type: 'success',
+      title: '验证码识别完成，正在登录',
+      progress: null,
+      meta: null,
+      duration: 2000,
+    });
     submitButton.click();
     console('已触发教务登录提交，等待页面响应', '', 'info');
   } catch (error) {
     // 1.x 行 2771-2773：识别失败（OCR_* / 表单缺失 / 网络）→ 引导手动输入。
     console('自动填写失败', error, 'error');
-    toast('error', '验证码识别失败，请手动输入后登录', 5);
-  } finally {
-    // 1.x 行 2774-2776：移除识别进度常驻 toast。
-    removeToastHandle(recognitionToast);
+    updateToastHandle(recognitionToast, {
+      type: 'error',
+      title: '验证码识别失败，请手动输入后登录',
+      progress: null,
+      meta: null,
+      duration: 5000,
+    });
   }
 }

@@ -63,7 +63,7 @@ eslint.config.js       ESLint flat config（静态检查）
 - GM API 必须从项目的 `#gm` 别名按需静态导入，让 vite-plugin-monkey 负责作用域适配与 `autoGrant`；不要读取 `__monkeyWindow-*` 私有桥接。
 - 认证凭证只允许在可信 IDS 页面或教务登录页面读取。IDS 路由与业务入口都必须有主机守卫。
 - 页面数据进入 DOM 时使用 `textContent`、属性 API 和节点构建；Markdown 必须经过 DOMPurify。
-- `h.notification`、snapdom、XLSX 的 `data:` 桥接脚本必须紧跟对应 `@require`，不能排序或合并。
+- snapdom、XLSX 的 `data:` 桥接脚本必须紧跟对应 `@require`；`CAT_userConfig` 保留独立 grant 桥接。Ding 原生通知随主程序打包。
 - Vant CSS 只在实际挂载 Vant 页面时注入；IDS 轻量页面使用 `useVantStyles: false`。
 - 网络请求要有超时、错误处理和旧请求失效机制；worker、监听器、定时器与后台标签页要有清理路径。
 - `pnpm check` 通过不代表真实可用。GM 注入、校内登录态、跨域和学校 DOM 必须安装产物后真机验证。

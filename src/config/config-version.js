@@ -5,15 +5,15 @@
  * 入口/被谁调用：config 首启/版本引导（主页 VersionDialog 在 B7 实现）按本常量比对；
  *                gm-store 不直接依赖；首启引导逻辑读取 getGMValue('firstSet')/'configVersion' 后比对 ConfigVersion。
  *
- * 团委附件下载开关开始生效，ConfigVersion 升至 8，提示升级用户检查设置。
- * 键名和默认值不变，已有显式值不覆盖；两种重置仍将团委开关置为 false。
+ * 新增脚本通知音效设置，ConfigVersion 升至 9，提示升级用户检查设置。
+ * 已有显式值不覆盖；通知音效默认开启，两种重置均恢复开启。
  */
 
 /**
  * UserConfig 结构版本号。每次新增或调整 UserConfig 项目时递增，用于提示用户查看配置页面。
- * 1.x 初始值为 6；自动登录默认值调整为 7，启用团委下载设置为 8。
+ * 1.x 初始值为 6；自动登录默认值调整为 7，启用团委下载设置为 8，新增通知音效设置为 9。
  */
-export const ConfigVersion = 8;
+export const ConfigVersion = 9;
 
 /**
  * 把任意来源的 configVersion 值规范化为非负安全整数，非法值回退为 0。

@@ -17,6 +17,12 @@ export const USER_CONFIG_SAFE_DEFAULTS = Object.freeze({
 // 同时还需恢复 CustomCards.vue 和 SettingsPanel.vue，并递增 ConfigVersion。
 
 export const USER_CONFIG_BLOCK = `/* ==UserConfig==
+Script:
+    toastSound:
+        title: 通知音效
+        description: 是否播放通知提示音
+        type: checkbox
+        default: true
 WebVPN:
     username:
         title: 账号

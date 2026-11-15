@@ -3,7 +3,7 @@
 import { ref, onMounted } from 'vue';
 import { NavBar as VanNavBar, CellGroup as VanCellGroup, Cell as VanCell, Dialog as VanDialog } from 'vant';
 import { renderMarkdown } from '../../../../libraries/markdown.js';
-import { toast, removeToastHandle } from '../../../../libraries/notification.js';
+import { toast, updateToastHandle } from '../../../../libraries/notification.js';
 
 // rootProps：about.page.js 从 Gitee main 的 README/CHANGELOG 资源生成，渲染仍经过消毒。
 const props = defineProps({
@@ -20,8 +20,9 @@ onMounted(() => {
   renderMarkdown(document.getElementById('aboutmd'), props.aboutMd);
   renderMarkdown(document.getElementById('updatemd'), props.updateMd);
   // 1.x 行 4766-4767：移除"请等待工具部署"常驻 toast，弹"关于我们部署完毕"成功提示。
-  if (props.deployToast) removeToastHandle(props.deployToast);
-  toast('success', '关于我们部署完毕', 2);
+  if (props.deployToast) {
+    updateToastHandle(props.deployToast, { type: 'success', title: '关于我们部署完毕', duration: 2000 });
+  } else toast('success', '关于我们部署完毕', 2);
 });
 </script>
 

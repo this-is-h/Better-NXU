@@ -55,7 +55,7 @@ export async function fetchOcrAsset({ url, sha384 }, signal) {
 
 export async function createLocalOcrWorker(
   signal,
-  { page = unsafeWindow ?? window, loadAsset = fetchOcrAsset, createWorker = createOcrWorker } = {}
+  { page = unsafeWindow ?? window, loadAsset = fetchOcrAsset, createWorker = createOcrWorker, logger } = {}
 ) {
   const controller = new AbortController();
   const cancel = () => controller.abort(signal.reason);
@@ -103,6 +103,9 @@ export async function createLocalOcrWorker(
       corePath: `${urls[1]}#.js`,
       langPath: `${urls[2]}#`,
       cacheMethod: 'none',
+      logger: (message) => {
+        if (!disposed && !controller.signal.aborted) logger?.(message);
+      },
     });
     worker = await withAbort(pendingWorker, controller.signal);
     await withAbort(

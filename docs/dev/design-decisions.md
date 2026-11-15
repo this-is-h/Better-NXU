@@ -30,15 +30,17 @@ vite-plugin-monkey 官方支持单文件中的动态 import，并会改用 Syste
 
 业务需要调用学校页面定义的 `startLogin`、`checkForm`、`reAuthByCombined`，读取真实页面 Vue/DOM 环境，以及取得桥接后的 snapdom/XLSX。改成 content/sandbox 会改变 window 身份、页面函数可见性和 GM API 路径，需要全面重新设计与真机验证，不是普通配置调整。
 
-## 4. `@require` 后为什么还有三条 `data:` bridge
+## 4. 为什么保留三条 `data:` bridge
 
 ScriptCat 会把 `@require` 与脚本主体包装在一个 sandbox 函数中：
 
-- h.notification 用顶层声明暴露 `addToast/createToast/removeToast/ToastCss`，它们可能只是包装函数局部变量。
+- ScriptCat 的 `CAT_userConfig` grant 可能只在包装函数局部可见，需要独立桥接到页面供配置按钮调用。
 - snapdom/XLSX 写入的 `window` 可能是 sandbox window，而业务读取的是真实 page window。
 - ESM 模块既访问不到包装函数局部，也不能可靠假定全局落点。
 
-解决方式是在每个库之后紧跟 `data:` 脚本，利用同一包装作用域中的裸变量，把对象挂到 `unsafeWindow` 和 `window`。顺序是依赖关系：bridge 放到库前会引用不存在的变量；改用 `eval` 也无法访问外层包装函数的词法局部。
+解决方式是用 `data:` 脚本利用同一包装作用域中的裸变量，把对象挂到 `unsafeWindow` 和 `window`。snapdom/XLSX bridge 必须紧跟各自库；`CAT_userConfig` bridge 直接读取管理器 grant，不再依赖远程通知库。Ding 随主程序打包，通知无需全局桥接。
+
+Ding 的 Vue 组件只封装原生 `mountToaster()` 的挂载、卸载和属性同步，不增加通知能力。项目在多个非 Vue 页面直接发出通知，因此统一使用原生入口；计时、进度、动画、音效和按钮仍全部由 Ding 负责，设置页保留原有 Vue 实现。
 
 已踩坑表现：通知函数 undefined；图片/Excel 导出读取 `unsafeWindow.snapdom`/`.XLSX` 时崩溃。不要自动排序 `require` 数组，也不要把 bridge 合并到产物模块中。
 

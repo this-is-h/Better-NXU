@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { parse, compileScript } from 'vue/compiler-sfc';
 import * as keys from '../src/config/gm-keys.js';
 import { createSettingsWriteQueue } from '../src/config/settings-write-queue.js';
+import { toast as ding } from '@yusufceng1z/ding';
 
 // Import Vue in its normal Node environment; test/setup's document is only a GM bridge.
 const gmDocument = globalThis.document;
@@ -14,9 +15,10 @@ globalThis.document = gmDocument;
 // Exercise the real SFC setup/watchers with Vue reactivity and an in-memory GM backend.
 // Rendering and the Vant click/emit path are additionally checked in a real browser.
 let backend;
-const page = {
-  createToast: (type, message) => backend.toasts.push({ type, message }),
-};
+const page = {};
+test.beforeEach((t) => {
+  t.mock.method(ding, 'show', (type, message) => backend.toasts.push({ type, message }));
+});
 document[globalThis.__MONKEY_WINDOW_KEY__] = {
   unsafeWindow: page,
   GM_getValue: (name, fallback) => (backend.values.has(name) ? backend.values.get(name) : fallback),
@@ -93,7 +95,7 @@ function setup(t, initial = {}) {
 test('every rendered settings model persists to its GM key and reloads correctly', async (t) => {
   const f = setup(t);
   const bindings = [...descriptor.template.content.matchAll(/v-model="(\w+)"/g)].map((match) => match[1]);
-  assert.equal(bindings.length, 16);
+  assert.equal(bindings.length, 17);
   assert.deepEqual(f.backend.writes, [], 'mount must not rewrite saved values');
   const expected = {};
   for (const binding of bindings) {
@@ -157,7 +159,11 @@ test('clearing either credential disables and persists the corresponding automat
 });
 
 test('functional and full resets synchronize every model without losing retained credentials', async (t) => {
-  const f = setup(t, { 'TuanWei.autoDownload': true, 'TuanWei.autoDownloadClose': true });
+  const f = setup(t, {
+    'Script.toastSound': false,
+    'TuanWei.autoDownload': true,
+    'TuanWei.autoDownloadClose': true,
+  });
   f.model.webVPNCourseGrab.value = false;
   await vue.nextTick();
   await f.model.resetFunctionSettings();
@@ -173,6 +179,23 @@ test('functional and full resets synchronize every model without losing retained
     assert.deepEqual(ref.value, keys.GM_VALUE_DEFAULTS[key], key);
     assert.deepEqual(f.backend.values.get(key), keys.GM_VALUE_DEFAULTS[key], key);
   }
+});
+
+test('script settings appear first and muting takes effect before the next notification', async (t) => {
+  const titles = [...descriptor.template.content.matchAll(/<van-nav-bar title="([^"]+)"/g)].map(
+    (match) => match[1]
+  );
+  assert.equal(titles[0], '脚本设置');
+  const configure = t.mock.method(ding, 'configure', () => {});
+  const f = setup(t);
+  assert.equal(f.model.toastSound.value, true);
+  f.model.toastSound.value = false;
+  await f.flush();
+  assert.equal(f.backend.values.get('Script.toastSound'), false);
+  assert.ok(configure.mock.calls.some((call) => call.arguments[0].sound === false));
+  f.scope.stop();
+  const reopened = setup(t, Object.fromEntries(f.backend.values));
+  assert.equal(reopened.model.toastSound.value, false);
 });
 
 test('GM write failure shows the existing error toast and does not stop later settings', async (t) => {

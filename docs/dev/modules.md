@@ -95,9 +95,9 @@ GM API 从 vite-plugin-monkey 官方客户端别名 `#gm` 按需静态导入。�
 - `getAuthErrorText()`：从统一认证的多种错误 DOM 中读取首个非空文本。
 - `hasLegacyAuthCaptcha()`：判断旧式图形验证码是否可见。
 - `isCredentialsErrorText(errorText)`：判断错误是否属于账号/密码问题。
-- `buildCredentialsErrorToast(options)`：生成带设置入口的静态 toast HTML。动态错误文本仍需转义。
+- `buildCredentialsErrorToast(options)`：生成凭证缺失或错误的纯文本标题。
 
-普通消息调用 `libraries/notification.toast()`，由适配层统一转义。只有上述静态配置入口使用 `toastTrustedHtml()`；不向它传入文件名、接口消息或用户文本。
+普通消息调用 `libraries/notification.toast()`，由 Ding 作为文本渲染，不接受 HTML。配置入口由凭证 composable 提供原生 `action` 按钮。
 
 该文件只做 DOM 读取和文案构造，不读取凭证、不弹 toast。
 
@@ -144,14 +144,16 @@ UI 应优先按 `error.code` 分流，`message` 用于用户提示和诊断，�
 
 ### `notification.js`
 
-- `installNotification()`：把 h.notification 运行时、Toast CSS、FontAwesome 和页面回调准备好；幂等。
+- `installNotification()`：使用 Ding 原生 `mountToaster()`，注入状态色及页面 FontAwesome；幂等，独立页面清空 body 后可重新挂载，无需额外 Vue 应用。配置为顶部居中、系统主题、音量 `0.5`；音效读取 `Script.toastSound`，默认开启。
 - `openTab('settings' | 'about')`：用 `GM_openInTab` 打开 SSL VPN 设置/关于页。
 - `betterNXUVersionClick()`：通过 `GM.xmlHttpRequest` 获取一言并 toast。
-- `toast(type, message, duration)`：将消息转义为纯文本后传给远程 `createToast`，不可用时降级日志。
-- `toastTrustedHtml(type, message, duration)`：仅接收项目静态构造的配置入口 HTML。
-- `removeToastHandle(handle)`：包装 `removeToast`。
+- `toast(type, message, duration, options)`：纯文本提示，返回 Ding 调用方 ID。`duration` 沿用秒数，默认 5 秒，`loading` 默认常驻；第四参透传原生 `description`、`action`、`progress` 等选项。
+- `updateToastHandle(handle, patch)`：原地更新原生通知；`progress` 为 `0–1`，`null` 清除进度条，`patch.duration` 使用毫秒。进度更新不附带 `type`，避免重复提示音和屏幕阅读器播报。
+- `removeToastHandle(handle)`：调用原生 `dismiss`；空句柄不关闭其他通知。
+- `setToastSound(enabled)`：切换原生音效配置；设置页修改开关后立即生效。
+- `toastPromise(task, messages)`：使用原生 Promise 通知，由 `loading` 原地切换为 `success`/`error`，返回原 Promise；结果持续时间遵循 Ding 默认值。
 
-页面在第一次 toast 前先调用 `installNotification()`。普通消息直接传原文，不重复转义；只有静态配置入口使用专用 HTML 接口。
+`toast()` 和 `toastPromise()` 自动确保挂载。普通消息直接传原文，不转义为 HTML 实体。Ding 负责计时、音效、动画和调用方归属；已被较新消息接管的通知忽略旧任务更新，不自建通知队列。
 
 ### 其他适配器
 

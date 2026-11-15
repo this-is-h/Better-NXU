@@ -3,23 +3,24 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isTuanweiDownloadRoute } from '../src/utils/route-guards.js';
 import { MyConsole } from '../src/utils/console.js';
+import { toast as ding } from '@yusufceng1z/ding';
 
 let events;
 let nextHandle = 0;
-const page = {
-  addToast: () => events.push({ event: 'install' }),
-  createToast(type, message, duration) {
+test.beforeEach((t) => {
+  t.mock.method(ding, 'show', (type, message, { duration }) => {
     const handle = ++nextHandle;
     events.push({ event: 'show', handle, type, message, duration });
     return handle;
-  },
-  removeToast: (handle) => events.push({ event: 'remove', handle }),
-};
+  });
+  t.mock.method(ding, 'update', (handle, patch) => events.push({ event: 'update', handle, ...patch }));
+  t.mock.method(ding, 'dismiss', (handle) => events.push({ event: 'remove', handle }));
+});
 document[globalThis.__MONKEY_WINDOW_KEY__] = {
-  unsafeWindow: page,
+  unsafeWindow: {},
   GM_getResourceText: () => '',
 };
-const { installNotification, toast, removeToastHandle } = await import('../src/libraries/notification.js');
+const { toast, removeToastHandle, updateToastHandle } = await import('../src/libraries/notification.js');
 const source = readFileSync(new URL('../src/sites/tuanwei/pages/download.page.js', import.meta.url), 'utf8');
 // Keep the real page orchestration and notification adapter; replace only the download boundary.
 const loadPage = new Function(
@@ -30,6 +31,7 @@ const loadPage = new Function(
   'installNotification',
   'toast',
   'removeToastHandle',
+  'updateToastHandle',
   'window',
   'MyConsole',
   source
@@ -46,9 +48,10 @@ function setup(run, { enabled = true, location = url } = {}) {
     () => enabled,
     isTuanweiDownloadRoute,
     run,
-    installNotification,
+    () => events.push({ event: 'install' }),
     toast,
     removeToastHandle,
+    updateToastHandle,
     window,
     MyConsole
   );
@@ -56,14 +59,17 @@ function setup(run, { enabled = true, location = url } = {}) {
 }
 function assertNoPersistentToast() {
   for (const show of events.filter((event) => event.event === 'show' && event.duration === 0)) {
-    assert.equal(
-      events.filter((event) => event.event === 'remove' && event.handle === show.handle).length,
-      1
+    assert.ok(
+      events.some(
+        (event) =>
+          event.handle === show.handle &&
+          (event.event === 'remove' || (event.event === 'update' && event.type && event.type !== 'loading'))
+      )
     );
   }
 }
 
-test('download page replaces progress toasts and announces success once', async () => {
+test('download page updates one loading toast and morphs it into success once', async () => {
   let finish;
   let runs = 0;
   const f = setup(async ({ report, autoClose }) => {
@@ -71,6 +77,7 @@ test('download page replaces progress toasts and announces success once', async 
     assert.equal(autoClose, true);
     report('加载组件');
     report('识别验证码');
+    report('识别验证码', 'info', 0.5);
     await new Promise((resolve) => {
       finish = resolve;
     });
@@ -84,18 +91,21 @@ test('download page replaces progress toasts and announces success once', async 
   const progress = events.filter((event) => event.event === 'show');
   assert.deepEqual(
     progress.map((event) => [event.type, event.duration]),
-    [
-      ['info', 0],
-      ['info', 0],
-    ]
+    [['loading', 0]]
   );
-  assert.ok(events.some((event) => event.event === 'remove' && event.handle === progress[0].handle));
+  assert.ok(
+    events.some(
+      (event) =>
+        event.event === 'update' && event.title === '识别验证码' && event.handle === progress[0].handle
+    )
+  );
+  assert.ok(events.some((event) => event.progress === 0.5 && event.meta === '50%'));
   finish();
   await task;
   assertNoPersistentToast();
   assert.deepEqual(
-    events.filter((event) => event.type === 'success').map((event) => [event.message, event.duration]),
-    [['附件下载完成', 3]]
+    events.filter((event) => event.type === 'success').map((event) => [event.title, event.duration]),
+    [['附件下载完成', 3000]]
   );
 });
 
@@ -108,10 +118,10 @@ test('download errors and manual takeover clear progress and display finite toas
     });
     await f.register();
     assertNoPersistentToast();
-    const finalToast = events.filter((event) => event.event === 'show').at(-1);
+    const finalToast = events.filter((event) => event.event === 'update').at(-1);
     assert.equal(finalToast.type, outcome === 'error' ? 'error' : 'info');
     assert.ok(finalToast.duration > 0);
-    if (outcome === 'error') assert.match(finalToast.message, /&lt;fixture&gt;/);
+    if (outcome === 'error') assert.match(finalToast.title, /<fixture>/);
   }
 });
 

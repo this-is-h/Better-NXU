@@ -490,7 +490,6 @@
  */
 import { ref, reactive, computed, watch, nextTick, onUnmounted, h } from 'vue';
 import {
-  showToast,
   showConfirmDialog,
   Field,
   NavBar as VanNavBar,
@@ -528,7 +527,7 @@ import { downloadSnapdomImage } from '../../../../utils/snapdom.js';
 import { GM_openInTab, GM_setClipboard, unsafeWindow as grantedUnsafeWindow } from '#gm';
 import { MyConsole } from '../../../../utils/console.js';
 import { getGMValue, setGMValue } from '../../../../config/gm-store.js';
-import { removeToastHandle, toast } from '../../../../libraries/notification.js';
+import { toast, toastPromise } from '../../../../libraries/notification.js';
 import { prepareScheduleExport } from '../../../../composables/use-schedule-export.js';
 import { searchTeachers } from './teacher-search.js';
 import { getIcsId, getStudentOwner } from './ics-id.js';
@@ -637,7 +636,7 @@ const teacherClick = (teacher) => {
   const number = String(teacher?.number || '');
   if (!number) return;
   setClipboard?.(number);
-  showToast('工号已复制');
+  toast('success', '工号已复制');
 };
 
 // ===== 多人空课表节次行常量（个人课表常量 personalDays/personalPeriodRows 已抽到 components/tools/schedule-view.js，P3） =====
@@ -957,7 +956,7 @@ const requestStudentId = async (initialValue = '') => {
         ]),
       beforeClose(action) {
         if (action === 'confirm' && !/^\d{6,}$/.test(value.value.trim())) {
-          showToast('请输入有效学号');
+          toast('warning', '请输入有效学号');
           return false;
         }
         return true;
@@ -1044,7 +1043,7 @@ const requestImageName = async (initialName = '') => {
         ]),
       beforeClose(action) {
         if (action === 'confirm' && !name.value.trim()) {
-          showToast('请输入姓名');
+          toast('warning', '请输入姓名');
           return false;
         }
         return true;
@@ -1080,7 +1079,7 @@ const getImageExportName = (schedule) =>
     },
     requestName: requestImageName,
     getOwner: lookupStudentOwner,
-    onLookupError: () => showToast('获取姓名失败，请直接填写姓名'),
+    onLookupError: () => toast('warning', '获取姓名失败，请直接填写姓名'),
   });
 
 const personalExportPending = ref(false);
@@ -1128,6 +1127,7 @@ const exportPersonalJson = async () => {
 const exportPersonalImage = async () => {
   if (personalExportPending.value || personalLoading.value || !personalSchedule.value) return;
   personalExportPending.value = true;
+  let exporting = false;
   try {
     const { filename, assertCurrent } = await prepareCurrentScheduleImageExport({
       getSchedule: () => (personalLoading.value ? null : personalSchedule.value),
@@ -1147,25 +1147,28 @@ const exportPersonalImage = async () => {
       return;
     }
     console('开始导出', { tab: personalTab.value }, 'info');
-    const progressToast = toast('info', '正在生成课表图片，请稍候', 0);
-    try {
-      await downloadSnapdomImage({
-        snapdom: pageWindow.snapdom,
-        target,
-        options: {
-          format: 'png',
-          filename,
-          scale: 2.5,
-          quality: 1,
-        },
-        fixWebVpn: true,
-        pageWindow,
-      });
-    } finally {
-      removeToastHandle(progressToast);
-    }
+    exporting = true;
+    await toastPromise(
+      () =>
+        downloadSnapdomImage({
+          snapdom: pageWindow.snapdom,
+          target,
+          options: {
+            format: 'png',
+            filename,
+            scale: 2.5,
+            quality: 1,
+          },
+          fixWebVpn: true,
+          pageWindow,
+        }),
+      {
+        loading: '正在生成课表图片，请稍候',
+        success: '课表图片已导出',
+        error: '导出图片失败，请重试',
+      }
+    );
     console('导出完成', { tab: personalTab.value }, 'info');
-    toast('success', '课表图片已导出', 3);
   } catch (error) {
     if (error.code === 'EXPORT_CANCELLED' || error?.name === 'AbortError') return;
     if (error.code === 'SCHEDULE_CHANGED') {
@@ -1173,7 +1176,7 @@ const exportPersonalImage = async () => {
       return;
     }
     console('导出失败', { tab: personalTab.value, error }, 'error');
-    toast('error', '导出图片失败，请重试', 3);
+    if (!exporting) toast('error', '导出图片失败，请重试', 3);
   } finally {
     personalExportPending.value = false;
   }
@@ -1474,28 +1477,31 @@ const exportToImage = async () => {
   if (multiScheduleLoading.value) return;
   multiScheduleLoading.value = true;
   try {
-    const progressToast = toast('info', '正在生成空课表图片，请稍候', 0);
-    try {
-      await nextTick();
-      await downloadSnapdomImage({
-        snapdom: pageWindow.snapdom,
-        target: multiEmptyTable.value,
-        options: {
-          format: 'png',
-          filename: '空课表.png',
-          scale: 2.5,
-          quality: 1,
-        },
-        fixWebVpn: true,
-        pageWindow,
-      });
-    } finally {
-      removeToastHandle(progressToast);
-    }
+    await toastPromise(
+      async () => {
+        await nextTick();
+        await downloadSnapdomImage({
+          snapdom: pageWindow.snapdom,
+          target: multiEmptyTable.value,
+          options: {
+            format: 'png',
+            filename: '空课表.png',
+            scale: 2.5,
+            quality: 1,
+          },
+          fixWebVpn: true,
+          pageWindow,
+        });
+      },
+      {
+        loading: '正在生成空课表图片，请稍候',
+        success: '空课表图片已导出',
+        error: (error) => error.message || '导出图片失败，请重试',
+      }
+    );
     showExportMenu.value = false;
-    toast('success', '空课表图片已导出', 3);
   } catch (error) {
-    toast('error', error.message || '导出图片失败，请重试', 3);
+    console('导出图片失败', error, 'error');
   } finally {
     multiScheduleLoading.value = false;
   }

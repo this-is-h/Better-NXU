@@ -57,7 +57,7 @@ export function mountAppPage({ id, title, deployMessage = '请等待工具部署
   // 保持原入口顺序：Vant 基础样式先注入，页面专属样式随后覆盖。
   installVantStyle();
   // 4+. 部署中常驻 toast（1.x 行 3763/4467/4912：duration=0 常驻）。
-  const deployToast = toast('info', deployMessage, 0);
+  const deployToast = toast('loading', deployMessage, 0);
 
   // 6. 挂 <div id> 容器。等价 1.x `GM_addElement(body,'div',{id})`（1.x 行 3768/4473/4914）：
   //  走原生 createElement+appendChild（这三处只设 id 一个属性，等价；免依赖 GM_addElement）。

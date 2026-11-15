@@ -39,6 +39,7 @@
     "node": "^22.13.0 || >=24.0.0"
   },
   "dependencies": {
+    "@yusufceng1z/ding": "0.0.6",
     "captcha-recognizer-js": "1.0.4",
     "vant": "4.10.2",
     "vue": "3.5.43"

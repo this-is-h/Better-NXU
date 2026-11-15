@@ -4,7 +4,7 @@
  * 依赖：config/gm-store（getGMValue 读 Schedule.encryptionKeyPair）、crypto（normalize / encryptSchedule /
  *       importPublicKey / importPrivateKey / storageKey）、utils/errors（EXPORT_CANCELLED + scheduleOperationError）、
  *       libraries/notification（toast 兜底）、vue（`import { ref, h } from 'vue'`，externalGlobals 别名 'Vue'）、vant（npm 按需
- *       import showConfirmDialog/showToast 与 Field 组件对象；样式由实际 Vant 页面按需注入）、utils/console
+ *       import showConfirmDialog 与 Field 组件对象；样式由实际 Vant 页面按需注入）、utils/console
  * 入口/被谁调用：B6 sites/jwgl/components/course-table/course-reader.js（hExportJson 加密分支）、B7 sites/webvpn 工具页
  *               （ScheduleUpload/ScheduleExportBar 共用同一份密钥协商）——提前到 B6 落地以解 jwgl/B7 共需
  *
@@ -12,7 +12,7 @@
  *  1.x 这三函数直接调 page 全局 vant/Vue；2.0 改 npm 按需 import vant 的函数式 API 与 Field 组件，Vue 用
  *  `import { ref, h } from 'vue'`（与 use-vue-app / SFC 同源，vite-plugin-monkey 改写为对 IIFE 参数 vue 的引用；
  *  不再经 globalThis.Vue——ScriptCat sandbox 下取不到，见 [[scriptcat-require-sandbox-scope]]）。不注入整包 vant 全局
- *  （与 1.x unsafeWindow.vant=vant 不同）——函数式 showConfirmDialog/showToast 直接调、Field 作 render 节点即可。
+ *  （与 1.x unsafeWindow.vant=vant 不同）——函数式 showConfirmDialog 直接调、Field 作 render 节点即可。
  *
  * 与 1.x 行为等价点（C5，逐字对齐行 1704-1800）：
  *  - requestScheduleKey(type): 弹粘贴密钥框（public/private 二态文案），beforeClose 校验 → importKey →
@@ -27,8 +27,9 @@
  *  已需 prepareScheduleExport；经用户确认提前到 B6 落平级 composables 共享，jwgl 与 B7 工具页共用同一份。详见
  *  memory better-nxu-2.0-refactor B4 段（已同步修订）。
  */
-import { showConfirmDialog, showToast, Field } from 'vant';
+import { showConfirmDialog, Field } from 'vant';
 import { ref, h } from 'vue';
+import { toast } from '../libraries/notification.js';
 import { getGMValue } from '../config/gm-store.js';
 import { encryptSchedule, importPublicKey, importPrivateKey, storageKey } from '../crypto/index.js';
 import { normalize } from '../schedule/index.js';
@@ -82,7 +83,7 @@ export async function requestScheduleKey(type, options = {}) {
       async beforeClose(action) {
         if (action !== 'confirm') return true;
         if (!value.value.trim()) {
-          showToast(isPublic ? '请粘贴加密密钥' : '请粘贴解密密钥');
+          toast('warning', isPublic ? '请粘贴加密密钥' : '请粘贴解密密钥');
           return false;
         }
         try {
@@ -91,7 +92,7 @@ export async function requestScheduleKey(type, options = {}) {
             : await importPrivateKey(value.value.trim());
           return true;
         } catch (error) {
-          showToast(error.message || '密钥格式无效');
+          toast('warning', error.message || '密钥格式无效');
           return false;
         }
       },

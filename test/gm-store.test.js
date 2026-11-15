@@ -96,7 +96,7 @@ test('single writes reject unregistered keys', async () => {
 test('Tuanwei settings retain explicit old values and both resets default to off', async () => {
   const { ConfigVersion } = await import('../src/config/config-version.js');
   const { resetAllSettingValues } = await import('../src/config/gm-store.js');
-  assert.equal(ConfigVersion, 8);
+  assert.equal(ConfigVersion, 9);
   for (const key of ['TuanWei.autoDownload', 'TuanWei.autoDownloadClose']) {
     assert.equal(getGMValue(key), false);
     persisted.set(key, true);
@@ -105,4 +105,17 @@ test('Tuanwei settings retain explicit old values and both resets default to off
     assert.equal((await resetFunctionSettingValues())[key], false);
     assert.equal((await resetAllSettingValues())[key], false);
   }
+});
+
+test('notification sound defaults to on, preserves an explicit mute and resets to on', async () => {
+  const { resetAllSettingValues } = await import('../src/config/gm-store.js');
+  const key = 'Script.toastSound';
+  calls.length = 0;
+  assert.equal(getGMValue(key), true);
+  assert.ok(calls.every((call) => call.api === 'GM_getValue'));
+  persisted.set(key, false);
+  assert.equal(getGMValue(key), false);
+  assert.equal((await resetFunctionSettingValues())[key], true);
+  assert.equal((await resetAllSettingValues())[key], true);
+  persisted.delete(key);
 });

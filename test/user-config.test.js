@@ -8,6 +8,12 @@ test('Tuanwei native settings are available and default to off', () => {
   assert.equal(config.match(/default: false/g).length, 2);
 });
 
+test('notification settings are the first native group and sound defaults to on', () => {
+  const config = USER_CONFIG_BLOCK.split('WebVPN:')[0];
+  assert.match(config, /==UserConfig==\s*Script:/);
+  assert.match(config, /toastSound:[\s\S]*title: 通知音效[\s\S]*type: checkbox\s*default: true/);
+});
+
 test('native ScriptCat configuration keeps automatic login opt-in', () => {
   assert.deepEqual(USER_CONFIG_SAFE_DEFAULTS, {
     'WebVPN.autoLogin': false,

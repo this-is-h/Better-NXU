@@ -30,7 +30,7 @@ import { mountAppPage } from '../../../composables/use-app-page.js';
 import { mountVueApp } from '../../../composables/use-vue-app.js';
 import { GM_openInTab } from '#gm';
 import { buildWebVpnUrl } from '../../../utils/webvpn-url.js';
-import { removeToastHandle, toast } from '../../../libraries/notification.js';
+import { updateToastHandle, toast } from '../../../libraries/notification.js';
 import { MyConsole } from '../../../utils/console.js';
 import ToolsApp from '../components/tools/ToolsApp.vue';
 
@@ -76,8 +76,7 @@ export async function register() {
   mountVueApp({ root: ToolsApp, id: 'tools' });
 
   // 1.x 行 7195-7199 mounted 钩子等价：移除部署中 toast + 部署完毕两条提示。
-  removeToastHandle(deployToast);
-  toast('success', '小工具部署完毕', 2);
+  updateToastHandle(deployToast, { type: 'success', title: '小工具部署完毕', duration: 2000 });
   toast(
     'info',
     '由于获取课表信息需要，我们正在后台打开信息门户和学工系统页面，请稍后再打开"课表信息"页面，以免获取信息失败',

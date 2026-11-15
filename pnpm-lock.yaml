@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@yusufceng1z/ding':
+        specifier: 0.0.6
+        version: 0.0.6
       captcha-recognizer-js:
         specifier: 1.0.4
         version: 1.0.4
@@ -671,6 +674,10 @@ packages:
 
   '@vue/shared@3.5.43':
     resolution: {integrity: sha512-uksS7YGMR5NZyr4JNq0Rp+QyLns0ueaz20KwzIPW9R0LH1Vnt4E+XUM29PNseEbf1www2gOuhuDi5AKOIXag9Q==}
+
+  '@yusufceng1z/ding@0.0.6':
+    resolution: {integrity: sha512-+lyjKToND4adhXO/oDmwabZQRp32wiEbm9gfZGdSi2E+0UmWmYfVRDEkEQkM1UjCOk6X3p+V3tZp6QcSYv2ftw==}
+    engines: {node: '>=18'}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -1975,6 +1982,8 @@ snapshots:
       '@vue/shared': 3.5.43
 
   '@vue/shared@3.5.43': {}
+
+  '@yusufceng1z/ding@0.0.6': {}
 
   acorn-jsx@5.3.2(acorn@8.18.0):
     dependencies:

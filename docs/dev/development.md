@@ -91,7 +91,7 @@ vite-plugin-monkey 官方支持动态 import，但会改用 SystemJS 构建。�
 
 账号密码默认 `undefined`；自动登录 UI 必须在凭证不完整时禁用并持久化为 `false`。
 
-`test/settings-panel.test.js` 使用 Vue 编译器运行实际设置组件的 setup，逐一核对模板中的 16 个 `v-model` 与 GM 键的保存、重新加载、数组修改、凭证联动、两种重置和写入失败提示。复选框整行点击的参数来自模板自动解包后的数组，不能再次读取 `.value`。这些测试使用内存 GM 后端，Vant 点击和真实 ScriptCat 存储仍需浏览器回归。
+`test/settings-panel.test.js` 使用 Vue 编译器运行实际设置组件的 setup，逐一核对模板中的 17 个 `v-model` 与 GM 键的保存、重新加载、数组修改、凭证联动、两种重置和写入失败提示。复选框整行点击的参数来自模板自动解包后的数组，不能再次读取 `.value`。这些测试使用内存 GM 后端，Vant 点击和真实 ScriptCat 存储仍需浏览器回归。
 
 ## 5. 引入依赖或远程资源
 
