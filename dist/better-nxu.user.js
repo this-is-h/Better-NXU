@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better NXU
 // @namespace    https://thisish.com/
-// @version      2.0.6
+// @version      2.1.0
 // @author       H
 // @description  这是一个提高各种 NXU 网站体验的用户脚本（Userscript）
 // @match        *://webvpn.nxu.edu.cn/*
@@ -22,8 +22,7 @@
 // @match        *://www.cnki.net/reader/xml*
 // @match        *://www.cnki.net/xmlRead/trialRead*
 // @match        *://f.wanfangdata.com.cn/online/pc/periodical_html*
-// @require      https://scriptcat.org/lib/1405/1.0.7/h.notification.js#sha384-Ef8dnXffgAqEVHA7uHKmtub7Uh4Ji/Yv60yL+Himym+PdTNeb/NAKi+d9qh9olzC
-// @require      data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bw.addToast%3DaddToast%3Bw.createToast%3DcreateToast%3Bw.removeToast%3DremoveToast%3Bw.ToastCss%3DToastCss%3Bvar%20c%3D(typeof%20CAT_userConfig!%3D%3D'undefined')%3FCAT_userConfig%3Aundefined%3Bif(c)%7Bw.CAT_userConfig%3Dc%3Bwindow.CAT_userConfig%3Dc%3B%7D%7D)()%3B
+// @require      data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bvar%20c%3D(typeof%20CAT_userConfig!%3D%3D'undefined')%3FCAT_userConfig%3Aundefined%3Bif(c)%7Bw.CAT_userConfig%3Dc%3Bwindow.CAT_userConfig%3Dc%3B%7D%7D)()%3B
 // @require      https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.45/vue.global.prod.min.js#sha384-8SaM1k/WoMo3RugF5T99/LlfVn0iWchtOkmpk2rEECKX/BrhEgV44Ab22Y4CKKDx
 // @require      https://unpkg.com/@zumer/snapdom@3.7.5/dist/snapdom.js#sha384-xiTilgh2FRBi16JzGVQOJiZ0G+TqHazobQjzh9flLx4M2hI/27tUWcGVv4lK/lsJ
 // @require      data:application/javascript,%3B(function()%7Bvar%20w%3D(typeof%20unsafeWindow!%3D%3D'undefined')%3FunsafeWindow%3Awindow%3Bvar%20s%3D(typeof%20snapdom!%3D%3D'undefined')%3Fsnapdom%3A(typeof%20window!%3D%3D'undefined'%3Fwindow.snapdom%3Aundefined)%3Bif(s)%7Bw.snapdom%3Ds%3Bwindow.snapdom%3Ds%3B%7D%7D)()%3B
@@ -33,7 +32,6 @@
 // @resource     dompurify-js         https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.18/purify.min.js#sha384-lkArbWjiZKuE+bzKbj1vOEF7DKYBDNvgwZMCt5OH8bdRB92zpzyNska9Q/XKPHQD
 // @resource     github-markdown-css  https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.9.0/github-markdown.min.css#sha384-dvqix+FXNZkkgkfxRwowYZelxQUSFEjEbDpb1k1mIMw84dsT8M3NM2CJC3xyp2hh
 // @resource     marked-js            https://unpkg.com/marked@18.2.0/lib/marked.umd.js#sha384-DDYDxilZ1LlqPSbaRHlrwh12h+3fUewuQj7HjscrZIWt5bGyQ+n0DHtIoZE3i3zU
-// @resource     svg-logo             https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.2.1/css/all.min.css#sha384-twcuYPV86B3vvpwNhWJuaLdUSLF9+ttgM2A6M870UYXrOsxKfER2MKox5cirApyA
 // @resource     tesseract-js         https://unpkg.com/tesseract.js@7.0.0/dist/tesseract.min.js#sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM
 // @resource     update-md            https://raw.giteeusercontent.com/thisish/Better-NXU/raw/main/CHANGELOG.md
 // @resource     vant-css             https://cdnjs.cloudflare.com/ajax/libs/vant/4.10.2/index.min.css#sha384-/emcjTEhfcL99sMjPCGhXaThIpqFm61vsVdjpoJHtfHHJ/mY354KjvR3/POEs56i
@@ -64,6 +62,12 @@
 // ==/UserScript==
 
 /* ==UserConfig==
+Script:
+    toastSound:
+        title: 通知音效
+        description: 是否播放通知提示音
+        type: checkbox
+        default: true
 WebVPN:
     username:
         title: 账号
@@ -153,40 +157,6 @@ TuanWei:
         type: checkbox
         default: false
  ==/UserConfig== */
-
-/*! captcha-recognizer-js@1.0.4
-MIT License
-
-Copyright (c) 2026 slider-captcha-gap contributors
-
-Inference/postprocess logic is a JavaScript port of captcha-recognizer
-(https://github.com/chenwei-zhao/captcha-recognizer), MIT License,
-Copyright 2024 Zhao Chenwei. The quantized ONNX model
-(model/slider.onnx.q8.onnx) is derived from that project's
-captcha_recognizer/models/slider.onnx and remains subject to its MIT license.
-
-This package bundles no third-party code at runtime; ONNX Runtime Web
-(MIT, © Microsoft Corporation) is loaded from jsDelivr at runtime.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-*/
 
 (async function(vue) {
 	"use strict";
@@ -368,103 +338,1180 @@ SOFTWARE.
 		if (!context) throw new Error("context 尚未初始化：请在 main.js 中先调用 initContext()");
 		return context;
 	}
-	var FONT_AWESOME_WEBFONTS_URL = "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/webfonts";
-	var installed$2 = false;
-	function installFontAwesome() {
-		if (installed$2) return;
-		const css = _GM_getResourceText?.("svg-logo");
-		if (!css) return;
-		_GM_addStyle?.(css.replace(/\.\.\/webfonts/g, FONT_AWESOME_WEBFONTS_URL));
-		installed$2 = true;
+	var ctx;
+	var CUES = {
+		success: [[
+			392,
+			0,
+			1
+		], [
+			523.3,
+			.1,
+			1
+		]],
+		error: [[
+			233.1,
+			0,
+			1
+		], [
+			185,
+			.13,
+			1
+		]],
+		warning: [[
+			349.2,
+			0,
+			.8
+		], [
+			349.2,
+			.16,
+			.6
+		]],
+		info: [[
+			466.2,
+			0,
+			.9
+		]]
+	};
+	function tone(c, out, freq, at, level) {
+		const t = c.currentTime + at;
+		const f = freq * (1 + (Math.random() - .5) * .008);
+		for (const [mult, gain, decay] of [[
+			1,
+			.6,
+			.5
+		], [
+			2,
+			.06,
+			.15
+		]]) {
+			const osc = c.createOscillator();
+			const g = c.createGain();
+			osc.frequency.value = f * mult;
+			g.gain.setValueAtTime(1e-4, t);
+			g.gain.linearRampToValueAtTime(gain * level, t + .015);
+			g.gain.exponentialRampToValueAtTime(1e-4, t + decay);
+			osc.connect(g).connect(out);
+			osc.start(t);
+			osc.stop(t + decay + .05);
+		}
 	}
-	async function downloadTextFile(content, filename, mimeType = "application/json;charset=utf-8") {
-		const blob = new Blob([content], { type: mimeType });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = filename;
-		link.style.display = "none";
+	function chime(type, volume = .5) {
+		const cue = CUES[type];
+		if (!cue || typeof AudioContext === "undefined") return;
 		try {
-			document.body.appendChild(link);
-			link.click();
-		} catch (error) {
-			URL.revokeObjectURL(url);
-			throw error;
+			ctx ??= new AudioContext();
+			if (ctx.state === "suspended") ctx.resume();
+			if (ctx.state === "closed") return;
+			const master = ctx.createGain();
+			master.gain.value = Math.min(1, Math.max(0, volume)) * .45;
+			const soften = ctx.createBiquadFilter();
+			soften.type = "lowpass";
+			soften.frequency.value = 1300;
+			const echo = ctx.createDelay();
+			echo.delayTime.value = .11;
+			const wet = ctx.createGain();
+			wet.gain.value = .1;
+			master.connect(soften);
+			soften.connect(ctx.destination);
+			soften.connect(echo).connect(wet).connect(ctx.destination);
+			for (const [f, at, level] of cue) tone(ctx, master, f, at, level);
+		} catch {}
+	}
+	var RING = "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18";
+	var ICONS = {
+		success: [RING, "M7.9 12.4l3 3 5.3-6"],
+		error: [
+			RING,
+			"M9.3 9.3l5.4 5.4",
+			"M14.7 9.3l-5.4 5.4"
+		],
+		warning: [
+			RING,
+			"M12 7.6v5.2",
+			"M12 16.3h.01"
+		],
+		info: [
+			RING,
+			"M12 11v5.2",
+			"M12 7.8h.01"
+		],
+		loading: [RING]
+	};
+	function setIcons(icons) {
+		for (const type of Object.keys(icons)) {
+			const paths = icons[type];
+			if (paths?.length) ICONS[type] = [...paths];
 		}
-		setTimeout(() => {
-			link.remove();
-			URL.revokeObjectURL(url);
-		}, 100);
 	}
-	var AMP = "&amp;";
-	var LT = "&lt;";
-	var GT = "&gt;";
-	var QUOT = "&quot;";
-	var APOS = "&#39;";
-	function escapeHtml$1(value) {
-		return String(value || "").replace(/[&<>"']/g, (character) => ({
-			"&": AMP,
-			"<": LT,
-			">": GT,
-			"\"": QUOT,
-			"'": APOS
-		})[character]);
+	function position(t, k, c, m) {
+		const w0 = Math.sqrt(k / m);
+		const z = c / (2 * Math.sqrt(k * m));
+		if (z < 1) {
+			const wd = w0 * Math.sqrt(1 - z * z);
+			return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + z * w0 / wd * Math.sin(wd * t));
+		}
+		if (z === 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+		const s = w0 * Math.sqrt(z * z - 1);
+		const r1 = -z * w0 + s;
+		const r2 = -z * w0 - s;
+		return 1 - (r2 * Math.exp(r1 * t) - r1 * Math.exp(r2 * t)) / (r2 - r1);
 	}
-	function closeCurrentTab() {
-		try {
-			if (typeof _monkeyWindow?.close !== "function") return false;
-			_monkeyWindow.close();
-			return true;
-		} catch {
-			return false;
+	function springEasing(config = {}) {
+		const { stiffness = 170, damping = 18, mass = 1 } = config;
+		const f = (t) => position(t, stiffness, damping, mass);
+		const dt = 1 / 120;
+		const maxT = 5;
+		let settle = 0;
+		for (let t = 0; t <= maxT; t += dt) if (Math.abs(1 - f(t)) > .001) settle = t;
+		settle = Math.max(settle + dt, .05);
+		const steps = Math.max(2, Math.ceil(settle * 60));
+		const pts = [];
+		for (let i = 0; i <= steps; i++) pts.push(String(+f(i / steps * settle).toFixed(4)));
+		pts[steps] = "1";
+		return {
+			easing: `linear(${pts.join(",")})`,
+			duration: Math.round(settle * 1e3)
+		};
+	}
+	var configs = {
+		enter: {
+			stiffness: 320,
+			damping: 26
+		},
+		morph: {
+			stiffness: 340,
+			damping: 27
+		},
+		stack: {
+			stiffness: 400,
+			damping: 36
+		}
+	};
+	var cache;
+	var getSpringConfigs = () => configs;
+	function getSprings() {
+		return cache ??= {
+			enter: springEasing(configs.enter),
+			morph: springEasing(configs.morph),
+			stack: springEasing(configs.stack)
+		};
+	}
+	function setSprings(p) {
+		Object.assign(configs.enter, p.enter);
+		Object.assign(configs.morph, p.morph);
+		Object.assign(configs.stack, p.stack);
+		cache = void 0;
+		if (typeof document !== "undefined") {
+			const el2 = document.querySelector("style[data-toast]");
+			if (el2) el2.textContent = buildCss();
 		}
 	}
-	var console$40 = MyConsole("[notification]");
-	var global$1 = _unsafeWindow ?? window;
-	var installed$1 = false;
-	function installNotification() {
-		if (typeof global$1.addToast === "function") global$1.addToast();
-		else console$40("h.notification.js 的 addToast 未就绪（@require 可能被 ScriptCat 拒载）", void 0, "warn");
-		if (!installed$1 && typeof global$1.ToastCss === "string") _GM_addStyle?.(global$1.ToastCss);
-		if (!installed$1) installFontAwesome();
-		installed$1 = true;
+	function buildCss() {
+		const { stack, enter } = getSprings();
+		return `
+.tst-viewport{color-scheme:light dark;--tst-stack:${stack.easing};--tst-stack-dur:${stack.duration}ms;--tst-pop:${enter.easing};--tst-pop-dur:${enter.duration}ms;
+--tst-bg:light-dark(#fff,#0c0c0d);--tst-fg:light-dark(#0f0f13,#fafafa);--tst-ring:light-dark(oklch(0 0 0/.08),oklch(1 0 0/.1));
+--tst-shadow:0 0 0 1px var(--tst-ring),0 4px 12px -4px light-dark(oklch(0 0 0/.14),oklch(0 0 0/.45));
+--tst-success:light-dark(#12a36b,#4ade80);--tst-error:light-dark(#e5484d,#f87171);--tst-warning:light-dark(#c77d00,#fbbf24);--tst-info:light-dark(#2f7de1,#60a5fa);
+--tst-size:44px;--tst-radius:22px;--tst-gap:8px;--tst-pad:16px;--tst-stack-offset:10px;--tst-stack-scale:.05;
+position:fixed;inset:0;z-index:2147483647;pointer-events:none;font:500 14px/1.3 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.tst-viewport[data-theme=light]{color-scheme:light}
+.tst-viewport[data-theme=dark]{color-scheme:dark}
+.tst-viewport:dir(rtl){--tst-flip:-1}
+.tst-viewport:dir(rtl) .tst-progress::after{transform-origin:right}
+.tst-viewport[data-position^=top]{--tst-dir:-1}
+.tst-viewport[data-position^=bottom]{--tst-dir:1}
+.tst-viewport{--tst-y0:calc(var(--tst-dir,-1)*(var(--tst-size) + var(--tst-pad) + 24px))}
+.tst-viewport[data-position$=center]{--tst-ox:50%;--tx:-50%}
+.tst-viewport[data-position$=left]{--tst-ox:0%;--tx:0px}
+.tst-viewport[data-position$=right]{--tst-ox:100%;--tx:0px}
+.tst-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.tst-slot{position:absolute;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab;--tst-i:0;
+--y:calc(var(--tst-dir)*-1*var(--tst-i)*var(--tst-stack-offset));--s:calc(1 - var(--tst-i)*var(--tst-stack-scale));
+transform:translate(calc(var(--tx) + var(--dx,0px)),calc(var(--y) + var(--dy,0px))) scale(var(--s));
+transform-origin:var(--tst-ox) var(--tst-oy);z-index:calc(100 - var(--tst-i));
+transition-property:transform,opacity;transition-duration:var(--tst-stack-dur),.25s;transition-timing-function:var(--tst-stack),ease-out}
+/* a held toast and quick toasts on screen together: one column, the newest by the screen edge, older ones are pushed away */
+.tst-viewport[data-list] .tst-slot{--y:calc(var(--tst-dir)*-1*var(--tst-ey,0px));--s:1}
+.tst-slot[data-new]{transition:none}
+.tst-slot::after{content:'';position:absolute;z-index:-1;left:0;right:0;top:calc(var(--tst-gap)/-2);bottom:calc(var(--tst-gap)/-2)}
+.tst-slot[data-dragging]{transition:none;cursor:grabbing}
+.tst-slot[data-flung]{transition:transform .38s cubic-bezier(.2,.8,.3,1),opacity .25s ease-out;opacity:0;pointer-events:none}
+.tst-viewport[data-position^=top] .tst-slot{top:calc(var(--tst-pad) + env(safe-area-inset-top,0px));--tst-oy:0%}
+.tst-viewport[data-position^=bottom] .tst-slot{bottom:calc(var(--tst-pad) + env(safe-area-inset-bottom,0px));--tst-oy:100%}
+.tst-viewport[data-position$=center] .tst-slot{left:50%}
+.tst-viewport[data-position$=left] .tst-slot{left:var(--tst-pad)}
+.tst-viewport[data-position$=right] .tst-slot{right:var(--tst-pad)}
+/* --c: status color for the glyph \xB7 --fill/--on: status surface + its text (used by filled styles) */
+.tst{--c:var(--tst-fg);--fill:var(--tst-bg);--on:var(--tst-fg);--tp:0;--ap:0;position:relative;box-sizing:border-box;width:var(--tst-size);height:var(--tst-size);border:1px solid transparent;
+border-radius:var(--r,min(var(--tst-radius),calc(var(--tst-size)/2)));overflow:hidden;color:var(--on);background:var(--fill);box-shadow:var(--tst-shadow);
+translate:0 var(--tst-y0);scale:var(--tst-enter-scale,.5);opacity:0;will-change:translate,scale}
+.tst[data-settled]{will-change:auto}
+.tst[data-settled] .tst-body{filter:none;transform:none}
+.tst[data-phase=exit]{animation:tst-out .15s ease-out both}
+.tst[data-type=success]{--c:var(--tst-success)}
+.tst[data-type=error]{--c:var(--tst-error)}
+.tst[data-type=warning]{--c:var(--tst-warning)}
+.tst[data-type=info]{--c:var(--tst-info)}
+
+.tst-icon{position:absolute;inset-inline-start:-1px;top:-1px;width:var(--tst-size);height:var(--tst-size);display:grid;place-items:center}
+.tst-media{width:28px;height:28px;border-radius:50%;object-fit:cover;outline:1px solid light-dark(oklch(0 0 0/.1),oklch(1 0 0/.1));outline-offset:-1px;animation:tst-swap var(--tst-stack-dur) var(--tst-stack) .1s both}
+.tst-badge{position:relative;width:24px;height:24px;display:grid;place-items:center}
+.tst-svg{width:22px;height:22px;fill:none;stroke:var(--c);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .3s cubic-bezier(.2,0,0,1);animation:tst-swap var(--tst-stack-dur) var(--tst-stack) .1s both}
+.tst-svg path{stroke-dasharray:1;stroke-dashoffset:1;animation:tst-draw .5s cubic-bezier(.4,0,.2,1) .15s forwards}
+.tst-svg path:first-child{stroke-dasharray:1 1;transition:stroke-dasharray .65s cubic-bezier(.4,0,.2,1)}
+.tst[data-type=loading] .tst-svg path:first-child{stroke-dasharray:.28 .72}
+.tst{--md:.55s}
+.tst[data-ready]{--md:.05s}
+.tst-svg path{transform-box:fill-box;transform-origin:center}
+.tst-svg path:nth-child(n+2){animation-duration:.32s;animation-delay:var(--md)}
+.tst-svg path:nth-child(3){animation-delay:calc(var(--md) + .08s)}
+/* each status has its own little gesture, built from the parts of its glyph */
+.tst[data-type=success] .tst-svg{animation:tst-swap var(--tst-stack-dur) var(--tst-stack) .1s both,tst-pulse .45s var(--tst-pop) calc(var(--md) + .25s)}
+.tst[data-type=success] .tst-badge::after{content:'';position:absolute;inset:1px;border-radius:50%;border:1.5px solid var(--c);opacity:0;animation:tst-ripple .7s cubic-bezier(.2,0,0,1) calc(var(--md) + .25s)}
+.tst[data-type=error] .tst-svg{animation:tst-swap var(--tst-stack-dur) var(--tst-stack) .1s both,tst-shake .42s cubic-bezier(.3,0,.3,1) calc(var(--md) + .3s)}
+.tst[data-type=warning] .tst-svg path:nth-child(2){stroke-dasharray:none;stroke-dashoffset:0;animation:tst-drop .5s var(--tst-pop) var(--md) both}
+.tst[data-type=warning] .tst-svg path:nth-child(3){stroke-dasharray:none;stroke-dashoffset:0;animation:tst-dot .38s var(--tst-pop) calc(var(--md) + .16s) both}
+.tst[data-type=info] .tst-svg path:nth-child(3){stroke-dasharray:none;stroke-dashoffset:0;animation:tst-dot .4s var(--tst-pop) var(--md) both}
+.tst[data-type=info] .tst-svg path:nth-child(2){animation-delay:calc(var(--md) + .16s)}
+
+.tst-body{position:absolute;inset-inline-start:calc(var(--tst-size) - 1px);top:-1px;display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;width:max-content;max-width:calc(100vw - 2*var(--tst-pad) - var(--tst-size) + 1px);min-height:var(--tst-size);padding-inline-end:8px;
+opacity:calc(var(--tp)*1.5 - .25);filter:blur(calc((1 - var(--tp))*10px));transform:translateX(calc((1 - var(--tp))*-12px*var(--tst-flip,1)))}
+.tst-body:has(.tst-action,.tst-close){padding-inline-end:8px;padding-bottom:0}
+.tst-body[data-wrapped]{padding-bottom:10px}
+.tst-body[data-wrapped] .tst-copy{flex-basis:100%;max-width:none}
+.tst-body[data-wrapped] .tst-copy + *{margin-inline-start:auto}
+.tst-copy{width:max-content;max-width:min(340px,calc(100vw - 176px));padding-block:12px;padding-inline:0 6px;line-height:1.4;text-wrap:pretty;overflow-wrap:anywhere}
+.tst-title{font-weight:550;font-variant-numeric:tabular-nums}
+.tst-count,.tst-meta{margin-inline-start:6px;opacity:.7}
+.tst-meta{font-weight:450;font-size:12px}
+.tst-timer{position:absolute;inset:auto 0 0 0;height:2px;background:var(--c);opacity:.45;transform-origin:left;animation:tst-timer var(--tst-life) linear forwards;pointer-events:none}
+.tst-viewport:hover .tst-timer,.tst-viewport:has(:focus-visible) .tst-timer{animation-play-state:paused}
+.tst-viewport:dir(rtl) .tst-timer{transform-origin:right}
+.tst-ghost{position:absolute;inset-inline-start:0;top:0;pointer-events:none}
+.tst-progress{position:absolute;inset:auto 0 0 0;height:3px;background:color-mix(in srgb,var(--on) 14%,transparent);opacity:var(--tp);pointer-events:none}
+.tst-progress::after{content:'';position:absolute;inset:0;background:var(--c);transform-origin:left;transform:scaleX(var(--pg,0));transition:transform .3s cubic-bezier(.2,0,0,1)}
+.tst-desc{margin-top:3px;font-size:13px;font-weight:450;opacity:.65}
+.tst[data-phase=open] .tst-desc{animation:tst-in-up var(--tst-pop-dur) var(--tst-pop) .1s both}
+.tst[data-phase=open] .tst-action,.tst[data-phase=open] .tst-close{animation:tst-in-btn var(--tst-pop-dur) var(--tst-pop) .16s backwards}
+.tst[data-phase=open] .tst-secondary{animation-delay:.1s}
+.tst-action,.tst-close{position:relative;flex:none;margin:0;border:0;color:inherit;font:inherit;cursor:pointer;background:transparent;
+opacity:calc(var(--ap)*1.3 - .15);transform:scale(calc(.85 + var(--ap)*.15));
+transition-property:background-color,scale;transition-duration:.15s;transition-timing-function:ease-out}
+.tst-action{height:30px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;background:var(--on);color:var(--fill)}
+.tst-secondary{background:transparent;color:color-mix(in srgb,var(--on) 65%,transparent);padding:0 10px}
+.tst-close{width:30px;height:30px;padding:0;border-radius:50%;display:grid;place-items:center}
+/* 30px look, 44px target: taller hit area, narrow enough sideways that neighbours (8px apart) never overlap */
+.tst-action::before,.tst-close::before{content:'';position:absolute;inset:-7px -3px}
+.tst-slot:focus-visible{outline:none}
+.tst-slot:focus-visible .tst{outline:2px solid var(--on);outline-offset:-5px}
+.tst-close svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+@media (hover:hover){.tst-action:hover{background:color-mix(in srgb,var(--on) 82%,var(--fill))}.tst-secondary:hover,.tst-close:hover{background:color-mix(in srgb,var(--on) 10%,transparent);color:var(--on)}}
+.tst-action:not(:disabled):active,.tst-close:not(:disabled):active{scale:.96}
+.tst-action:focus-visible,.tst-close:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+
+@keyframes tst-out{to{transform:translateY(calc(var(--tst-dir)*12px)) scale(.92);opacity:0;filter:blur(4px)}}
+@keyframes tst-swap{from{opacity:0;scale:.25;filter:blur(4px)}}
+@keyframes tst-timer{to{transform:scaleX(0)}}
+@keyframes tst-in-btn{from{opacity:0;translate:0 8px;filter:blur(4px)}}
+@keyframes tst-in-up{from{opacity:0;transform:translateY(12px);filter:blur(4px)}}
+@keyframes tst-draw{to{stroke-dashoffset:0}}
+@keyframes tst-pulse{40%{transform:scale(1.14)}}
+@keyframes tst-ripple{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(1.9)}}
+@keyframes tst-shake{20%{translate:-2.5px 0}45%{translate:2.5px 0}70%{translate:-1.5px 0}to{translate:0}}
+@keyframes tst-drop{from{opacity:0;translate:0 -5px}}
+@keyframes tst-dot{from{opacity:0;scale:0}}
+@keyframes tst-fade{from{opacity:0}}
+@keyframes tst-fade-out{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){
+.tst{translate:none!important;scale:none!important;animation:tst-fade .2s ease-out both}
+.tst[data-phase=exit],.tst-body{filter:none!important;transform:none!important}
+.tst-svg,.tst-desc,.tst-media,.tst-action,.tst-close,.tst-badge::after{animation:none!important}
+.tst-timer{display:none}
+.tst-svg path{animation:none!important;stroke-dashoffset:0!important}
+.tst-slot{transition-property:opacity}
+}
+`;
 	}
-	function betterNXUVersionClick() {
-		if (typeof _GM?.xmlHttpRequest !== "function") {
-			toast("warning", "一言暂时不可用，请稍后重试", 3);
-			return;
+	function injectStyles(doc = document, opts = {}) {
+		if (doc.querySelector("style[data-toast]")) return;
+		const el2 = doc.createElement("style");
+		el2.setAttribute("data-toast", "");
+		if (opts.nonce) el2.nonce = opts.nonce;
+		el2.textContent = buildCss();
+		doc.head.prepend(el2);
+	}
+	var TIMING = {
+		openDelay: 450,
+		closing: 340,
+		exit: 220,
+		duration: 5e3
+	};
+	var autoDuration = (type, hasAction) => type === "loading" || type === "error" || hasAction ? 0 : TIMING.duration;
+	var DEFAULT_LABELS = {
+		region: "Notifications",
+		dismiss: "Dismiss notification"
+	};
+	var definedOnly = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== void 0));
+	function createToaster() {
+		let state = {
+			toasts: [],
+			position: "top-center",
+			theme: "system",
+			labels: DEFAULT_LABELS,
+			status: "",
+			alert: ""
+		};
+		let flip = false;
+		const subs = new Set();
+		const entries = new Map();
+		let counter = 0;
+		let sound = false;
+		let volume = .5;
+		let held = "list";
+		let releasing = false;
+		const pending = [];
+		const live = new Map();
+		const owner = new Map();
+		const emit = () => subs.forEach((fn) => fn());
+		const setToasts = (toasts) => {
+			state = {
+				...state,
+				toasts
+			};
+			emit();
+		};
+		const announce = (type, title, description) => {
+			if (typeof sound === "function") sound(type);
+			else if (sound) chime(type, volume);
+			flip = !flip;
+			const text = (description ? `${title}. ${description}` : title) + (flip ? "\xA0" : "");
+			state = {
+				...state,
+				[type === "error" ? "alert" : "status"]: text
+			};
+			emit();
+		};
+		const find = (id) => state.toasts.find((t) => t.id === id);
+		const patch = (id, p) => setToasts(state.toasts.map((t) => t.id === id ? {
+			...t,
+			...p
+		} : t));
+		function startLife(id) {
+			const e = entries.get(id);
+			if (!e) return;
+			clearTimeout(e.lifeTimer);
+			e.lifeTimer = void 0;
+			if (find(id)?.phase !== "open" || e.paused || e.remaining <= 0) return;
+			e.startedAt = Date.now();
+			e.lifeTimer = setTimeout(() => dismiss(id), e.remaining);
 		}
-		_GM.xmlHttpRequest({
-			method: "GET",
-			url: "https://v1.hitokoto.cn/"
-		}).then((response) => {
-			try {
-				const json = JSON.parse(response.responseText);
-				toast("info", json?.hitokoto ? `${json.hitokoto}\n——${json.from || ""}` : "之前点的太快啦，请稍后重试", 3);
-			} catch {
-				toast("info", "之前点的太快啦，请稍后重试", 3);
+		function show(type, title, opts = {}) {
+			if (opts.id === void 0 && !opts.action && !opts.secondary && !opts.image && !opts.meta && !opts.className) {
+				const dup = state.toasts.at(-1);
+				if (dup && dup.type === type && dup.title === title && dup.description === opts.description && (dup.phase === "enter" || dup.phase === "open")) {
+					bump(dup.id);
+					return dup.id;
+				}
 			}
-		}).catch(() => {
-			toast("warning", "一言暂时不可用，请稍后重试", 3);
+			const id = opts.id ?? `toast-${++counter}`;
+			const open = state.toasts.filter((t) => t.phase === "enter" || t.phase === "open");
+			const holds = (opts.duration ?? autoDuration(type, !!(opts.action || opts.secondary))) === 0;
+			const isHeld = (t) => entries.get(t.id)?.base === 0 && t.type !== "loading";
+			if (held === "queue" && !releasing && (open.some(isHeld) || pending.length)) {
+				pending.push({
+					id,
+					type,
+					title,
+					opts,
+					holds
+				});
+				return id;
+			}
+			let cur = open.at(-1);
+			if (held === "list") {
+				if (!holds) cur = open.filter((t) => !isHeld(t)).at(-1);
+				else if (cur && isHeld(cur)) cur = void 0;
+			}
+			if (cur) {
+				live.set(id, cur.id);
+				owner.set(cur.id, id);
+				patch(cur.id, { count: 1 });
+				apply(cur.id, {
+					type,
+					title,
+					description: opts.description ?? "",
+					action: opts.action ?? null,
+					secondary: opts.secondary ?? null,
+					meta: opts.meta ?? null,
+					image: opts.image ?? null,
+					className: opts.className ?? null,
+					progress: opts.progress ?? null,
+					...opts.duration !== void 0 && { duration: opts.duration }
+				});
+				return id;
+			}
+			owner.set(id, id);
+			const first = opts.duration ?? autoDuration(type, !!(opts.action || opts.secondary));
+			const e = {
+				startedAt: 0,
+				remaining: first,
+				base: first,
+				paused: false
+			};
+			entries.set(id, e);
+			setToasts([...state.toasts, {
+				id,
+				type,
+				title,
+				description: opts.description,
+				phase: "enter",
+				duration: e.remaining,
+				action: opts.action,
+				secondary: opts.secondary,
+				meta: opts.meta,
+				image: opts.image,
+				progress: opts.progress,
+				count: 1,
+				className: opts.className
+			}]);
+			announce(type, title, opts.description);
+			e.phaseTimer = setTimeout(() => {
+				if (find(id)?.phase !== "enter") return;
+				patch(id, { phase: "open" });
+				startLife(id);
+			}, TIMING.openDelay);
+			return id;
+		}
+		function flush() {
+			if (pending.length && !state.toasts.some((t) => t.phase === "enter" || t.phase === "open")) {
+				const next = pending.shift();
+				releasing = true;
+				show(next.type, next.title, {
+					...next.opts,
+					id: next.id
+				});
+				releasing = false;
+			}
+		}
+		function update(callerId, p) {
+			const wait = pending.find((x) => x.id === callerId);
+			if (wait) {
+				const o = wait.opts;
+				for (const [k, v] of Object.entries(p)) {
+					if (v === void 0) continue;
+					if (k === "type") wait.type = v;
+					else if (k === "title") wait.title = v;
+					else o[k] = v ?? void 0;
+				}
+				wait.holds = (wait.opts.duration ?? autoDuration(wait.type, !!(wait.opts.action || wait.opts.secondary))) === 0;
+				return;
+			}
+			const id = live.get(callerId) ?? callerId;
+			if (owner.get(id) === callerId) apply(id, p);
+		}
+		function apply(id, p) {
+			const t = find(id);
+			const e = entries.get(id);
+			if (!t || !e) return;
+			patch(id, {
+				...p.title !== void 0 && { title: p.title },
+				...p.description !== void 0 && { description: p.description },
+				...p.progress !== void 0 && { progress: p.progress ?? void 0 },
+				...p.action !== void 0 && { action: p.action ?? void 0 },
+				...p.secondary !== void 0 && { secondary: p.secondary ?? void 0 },
+				...p.meta !== void 0 && { meta: p.meta ?? void 0 },
+				...p.image !== void 0 && { image: p.image ?? void 0 },
+				...p.className !== void 0 && { className: p.className ?? void 0 },
+				...p.type !== void 0 && { type: p.type }
+			});
+			if (p.duration !== void 0) e.remaining = p.duration;
+			else if (p.type !== void 0 || p.action !== void 0 || p.secondary !== void 0) {
+				const n = find(id);
+				e.remaining = autoDuration(n.type, !!(n.action || n.secondary));
+			}
+			if (p.duration !== void 0 || p.type !== void 0 || p.action !== void 0 || p.secondary !== void 0) e.base = e.remaining, patch(id, { duration: e.remaining });
+			startLife(id);
+			if (!(p.progress !== void 0 && p.type === void 0) && (p.title !== void 0 || p.description !== void 0 || p.type !== void 0)) announce(p.type ?? t.type, p.title ?? t.title, p.description ?? t.description);
+		}
+		function act(id, which = "action") {
+			const result = find(id)?.[which]?.onClick();
+			if (result && typeof result === "object") apply(id, {
+				action: null,
+				secondary: null,
+				...result
+			});
+			else dismiss(id);
+		}
+		function bump(id) {
+			const e = entries.get(id);
+			const t = find(id);
+			if (!e || !t) return;
+			patch(id, { count: t.count + 1 });
+			e.remaining = e.base;
+			startLife(id);
+		}
+		function dismiss(id, opts = {}) {
+			if (id === void 0) return pending.length = 0, state.toasts.forEach((t2) => dismiss(t2.id, opts));
+			const waiting = pending.findIndex((x) => x.id === id);
+			if (waiting >= 0) return void pending.splice(waiting, 1);
+			id = live.get(id) ?? id;
+			const t = find(id);
+			const e = entries.get(id);
+			if (!t || !e || t.phase === "exit" || t.phase === "closing" && !opts.immediate) return;
+			clearTimeout(e.phaseTimer);
+			clearTimeout(e.lifeTimer);
+			const leave = () => {
+				patch(id, { phase: "exit" });
+				e.phaseTimer = setTimeout(() => {
+					entries.delete(id);
+					owner.delete(id);
+					live.forEach((v, k) => v === id && live.delete(k));
+					setToasts(state.toasts.filter((x) => x.id !== id));
+					flush();
+				}, TIMING.exit);
+			};
+			if (opts.immediate) return leave();
+			patch(id, { phase: "closing" });
+			e.phaseTimer = setTimeout(leave, TIMING.closing);
+		}
+		function pause(id) {
+			if (id === void 0) return [...entries.keys()].forEach(pause);
+			const e = entries.get(id);
+			if (!e || e.paused) return;
+			e.paused = true;
+			if (e.lifeTimer) {
+				clearTimeout(e.lifeTimer);
+				e.lifeTimer = void 0;
+				e.remaining = Math.max(0, e.remaining - (Date.now() - e.startedAt));
+			}
+		}
+		function resume(id) {
+			if (id === void 0) return [...entries.keys()].forEach(resume);
+			const e = entries.get(id);
+			if (!e) return;
+			e.paused = false;
+			startLife(id);
+		}
+		function promise(p, m) {
+			const id = show("loading", m.loading);
+			const pr = typeof p === "function" ? p() : p;
+			pr.then((v) => update(id, {
+				type: "success",
+				title: typeof m.success === "function" ? m.success(v) : m.success
+			}), (err) => update(id, {
+				type: "error",
+				title: typeof m.error === "function" ? m.error(err) : m.error
+			}));
+			return pr;
+		}
+		return {
+			show,
+			success: (title, o) => show("success", title, o),
+			error: (title, o) => show("error", title, o),
+			warning: (title, o) => show("warning", title, o),
+			info: (title, o) => show("info", title, o),
+			loading: (title, o) => show("loading", title, o),
+			promise,
+			update,
+			act,
+			dismiss,
+			pause,
+			resume,
+			configure(c) {
+				if (c.springs) setSprings(c.springs);
+				if (c.held) held = c.held;
+				if (c.icons) setIcons(c.icons);
+				if (c.sound !== void 0) sound = c.sound;
+				if (c.volume !== void 0) volume = c.volume;
+				state = {
+					...state,
+					...c.position && { position: c.position },
+					...c.theme && { theme: c.theme },
+					...c.labels && { labels: {
+						...state.labels,
+						...definedOnly(c.labels)
+					} }
+				};
+				emit();
+			},
+			subscribe(fn) {
+				subs.add(fn);
+				return () => void subs.delete(fn);
+			},
+			getState: () => state
+		};
+	}
+	var toast$1 = createToaster();
+	var Spring = class {
+		constructor(x, cfg) {
+			this.x = x;
+			this.to = x;
+			this.cfg = {
+				stiffness: 170,
+				damping: 18,
+				mass: 1,
+				...cfg
+			};
+		}
+		x;
+		v = 0;
+		to;
+		cfg;
+		tune(c) {
+			Object.assign(this.cfg, c);
+		}
+		step(dt) {
+			const { stiffness: k, damping: c, mass: m } = this.cfg;
+			const h = 1 / 240;
+			for (let t = 0; t < dt; t += h) {
+				this.v += (-k * (this.x - this.to) - c * this.v) / m * h;
+				this.x += this.v * h;
+			}
+			if (Math.abs(this.v) < .05 && Math.abs(this.x - this.to) < .05) {
+				this.x = this.to;
+				this.v = 0;
+				return false;
+			}
+			return true;
+		}
+	};
+	var tasks = new Set();
+	var raf$1 = 0;
+	var last = 0;
+	function tick(now) {
+		const dt = Math.min(.1, (now - last) / 1e3);
+		last = now;
+		for (const t of tasks) if (!t(dt)) tasks.delete(t);
+		raf$1 = tasks.size ? requestAnimationFrame(tick) : 0;
+	}
+	function run(task) {
+		tasks.add(task);
+		if (!raf$1) {
+			last = performance.now();
+			raf$1 = requestAnimationFrame(tick);
+		}
+	}
+	var reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+	var clamp$1 = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+	var layoutQueued = false;
+	function scheduleLayout(vp) {
+		if (!vp || layoutQueued) return;
+		layoutQueued = true;
+		requestAnimationFrame(() => {
+			layoutQueued = false;
+			const gap = parseFloat(getComputedStyle(vp).getPropertyValue("--tst-gap")) || 8;
+			const slots = [...vp.querySelectorAll(".tst-slot")].map((s) => [Number(s.style.getPropertyValue("--tst-i")) || 0, s]).sort((a, b) => a[0] - b[0]);
+			const phaseOf = (s) => s.firstElementChild?.getAttribute("data-phase");
+			if (slots.filter(([, s]) => phaseOf(s) === "enter" || phaseOf(s) === "open").length > 1) vp.setAttribute("data-list", "");
+			else if (slots.length <= 1) vp.removeAttribute("data-list");
+			let acc = 0;
+			for (const [, s] of slots) {
+				const v = `${acc}px`;
+				if (!s.style.getPropertyValue("--tst-ey")) {
+					s.setAttribute("data-new", "");
+					requestAnimationFrame(() => requestAnimationFrame(() => s.removeAttribute("data-new")));
+				}
+				if (s.style.getPropertyValue("--tst-ey") !== v) s.style.setProperty("--tst-ey", v);
+				if (phaseOf(s) !== "closing" && phaseOf(s) !== "exit") acc += s.offsetHeight + gap;
+			}
 		});
 	}
-	function toast(type, message, duration) {
-		return toastTrustedHtml(type, escapeHtml$1(String(message ?? "")), duration);
+	function watchMotion(slot, id, t) {
+		const pill = slot.firstElementChild;
+		if (!(pill instanceof HTMLElement)) return () => {};
+		const body = pill.querySelector(".tst-body");
+		const cs = getComputedStyle(pill);
+		const SIZE = parseFloat(cs.getPropertyValue("--tst-size")) || 44;
+		const dir = Number(cs.getPropertyValue("--tst-dir")) || -1;
+		const Y0 = dir * (SIZE + (parseFloat(cs.getPropertyValue("--tst-pad")) || 16) + 24);
+		const readR = () => {
+			const v = parseFloat(cs.getPropertyValue("--tst-radius"));
+			return Number.isNaN(v) ? 24 : v;
+		};
+		readR();
+		const num = (name, d) => {
+			const v = parseFloat(cs.getPropertyValue(name));
+			return Number.isNaN(v) ? d : v;
+		};
+		const s0 = num("--tst-enter-scale", .5);
+		const stretchOn = num("--tst-stretch", 1);
+		const cfg = getSpringConfigs();
+		const w = new Spring(SIZE, cfg.morph);
+		const h = new Spring(SIZE, cfg.morph);
+		const y = new Spring(Y0, cfg.enter);
+		y.to = 0;
+		const x = new Spring(0, {
+			stiffness: 520,
+			damping: 13
+		});
+		let phase = t.getState().toasts.find((x2) => x2.id === id)?.phase ?? "enter";
+		let copyEnd = SIZE, actionW = 0, fullW = SIZE, fullH = SIZE;
+		const apply = () => {
+			const tp = clamp$1((w.x - SIZE) / Math.max(1, copyEnd - SIZE));
+			const ap = actionW > 2 ? clamp$1((w.x - copyEnd) / actionW) : clamp$1((tp - .45) / .55);
+			const e = (y.x - Y0) / -Y0;
+			const stretch = clamp$1(Math.abs(y.v) / 6e3, 0, .18) * stretchOn;
+			const squash = clamp$1(Math.abs(w.v) / 2e4, 0, .05);
+			const k = s0 + (1 - s0) * e;
+			pill.style.width = `${w.x}px`;
+			pill.style.height = `${h.x}px`;
+			pill.style.setProperty("--r", `${Math.min(h.x / 2, readR())}px`);
+			pill.style.translate = `${x.x}px ${y.x}px`;
+			pill.style.scale = `${k * (1 - stretch * .7) * (1 + squash * .5)} ${k * (1 + stretch) * (1 - squash)}`;
+			pill.style.opacity = String(clamp$1(e * 2));
+			pill.style.setProperty("--tp", tp.toFixed(3));
+			pill.style.setProperty("--ap", ap.toFixed(3));
+			pill.toggleAttribute("data-settled", tp >= 1);
+		};
+		const task = (dt) => {
+			const moving = [
+				w.step(dt),
+				h.step(dt),
+				y.step(dt),
+				x.step(dt)
+			].some(Boolean);
+			apply();
+			if (!moving && phase !== "exit") {
+				pill.style.translate = "none";
+				pill.style.scale = "none";
+			}
+			return moving;
+		};
+		const kick = () => {
+			if (reduced()) {
+				[
+					w,
+					h,
+					y,
+					x
+				].forEach((s) => (s.x = s.to, s.v = 0));
+				apply();
+			} else run(task);
+		};
+		const aim = () => {
+			const open = phase === "open";
+			w.to = open ? fullW : SIZE;
+			h.to = open ? fullH : SIZE;
+		};
+		const measure = () => {
+			if (!body) return;
+			const copy2 = body.querySelector(".tst-copy");
+			const action = body.querySelector(".tst-action, .tst-close");
+			const wrapped = !!copy2 && [...body.querySelectorAll(".tst-action, .tst-close")].some((b) => b.offsetTop >= copy2.offsetTop + copy2.offsetHeight);
+			body.toggleAttribute("data-wrapped", wrapped);
+			fullW = Math.ceil((SIZE + body.offsetWidth) / 2) * 2;
+			fullH = Math.max(SIZE, body.offsetHeight);
+			const stacked = !!action && !!copy2 && action.offsetTop >= copy2.offsetTop + copy2.offsetHeight;
+			copyEnd = action && copy2 && !stacked ? SIZE + copy2.offsetWidth + 6 : fullW;
+			actionW = fullW - copyEnd;
+			if (phase === "open") aim(), kick();
+		};
+		const lro = new ResizeObserver(() => scheduleLayout(slot.parentElement));
+		lro.observe(slot);
+		scheduleLayout(slot.parentElement);
+		const ro = new ResizeObserver(measure);
+		if (body) ro.observe(body);
+		measure();
+		if (phase === "open") [w.x, h.x] = [fullW, fullH];
+		kick();
+		const react = (type) => {
+			if (reduced()) return;
+			if (type === "error") x.v = 380;
+			else if (type === "warning") y.v = -dir * 200;
+			else return;
+			kick();
+		};
+		let lastType = t.getState().toasts.find((e) => e.id === id)?.type;
+		let count = t.getState().toasts.find((x2) => x2.id === id)?.count ?? 1;
+		const unsub = t.subscribe(() => {
+			scheduleLayout(slot.parentElement);
+			const it = t.getState().toasts.find((x2) => x2.id === id);
+			if (!it) return;
+			if (it.count > count && phase === "open") {
+				y.v = -dir * 240;
+				kick();
+			}
+			count = it.count;
+			if (it.type !== lastType) {
+				lastType = it.type;
+				if (phase === "open") react(it.type);
+			}
+			if (it.phase === phase) return;
+			phase = it.phase;
+			if (phase === "closing") {
+				w.tune({
+					stiffness: 380,
+					damping: 36
+				});
+				h.tune({
+					stiffness: 380,
+					damping: 36
+				});
+				w.v = 320;
+			} else {
+				w.tune(cfg.morph);
+				h.tune(cfg.morph);
+				if (phase === "open") {
+					w.v = -260;
+					setTimeout(() => lastType && react(lastType), 200);
+				}
+			}
+			if (phase !== "exit") aim(), kick();
+		});
+		const copy = body?.querySelector(".tst-copy");
+		const titleOf = () => copy?.querySelector(".tst-title")?.innerHTML;
+		const kind = () => `${pill.dataset.type}|${!!pill.querySelector(".tst-progress")}`;
+		let snap = copy ? {
+			html: copy.innerHTML,
+			w: copy.offsetWidth,
+			title: titleOf(),
+			kind: kind()
+		} : void 0;
+		let ghost;
+		let lastRoll = 0;
+		const mo = new MutationObserver(() => {
+			if (!copy || !body) return;
+			const prev = snap;
+			snap = {
+				html: copy.innerHTML,
+				w: copy.offsetWidth,
+				title: titleOf(),
+				kind: kind()
+			};
+			if (!prev || prev.html === snap.html || prev.title === snap.title || prev.kind === snap.kind && snap.kind.endsWith("true") || phase !== "open" || reduced()) return;
+			if (performance.now() - lastRoll < 450) return;
+			lastRoll = performance.now();
+			ghost?.remove();
+			ghost = document.createElement("div");
+			ghost.className = "tst-copy tst-ghost";
+			ghost.setAttribute("aria-hidden", "true");
+			ghost.style.width = `${prev.w}px`;
+			ghost.innerHTML = prev.html;
+			body.append(ghost);
+			const g = ghost;
+			const easing = "cubic-bezier(.2,.8,.2,1)";
+			g.animate([{
+				opacity: 1,
+				transform: "none",
+				filter: "blur(0)"
+			}, {
+				opacity: 0,
+				transform: "translateY(-12px)",
+				filter: "blur(4px)"
+			}], {
+				duration: 280,
+				easing,
+				fill: "forwards"
+			}).onfinish = () => g.remove();
+			copy.animate([{
+				opacity: 0,
+				transform: "translateY(12px)",
+				filter: "blur(4px)"
+			}, {
+				opacity: 1,
+				transform: "none",
+				filter: "blur(0)"
+			}], {
+				duration: 380,
+				easing
+			});
+		});
+		if (copy) mo.observe(copy, {
+			childList: true,
+			characterData: true,
+			subtree: true
+		});
+		const getSvg = () => pill.querySelector(".tst-svg");
+		let spin;
+		let spinOn = null;
+		const startSpin = () => {
+			spin?.cancel();
+			spin = void 0;
+			spinOn = getSvg();
+			if (spinOn && !reduced()) spin = spinOn.animate([{ rotate: "0deg" }, { rotate: "360deg" }], {
+				duration: 800,
+				iterations: Infinity
+			});
+		};
+		let curType = pill.dataset.type;
+		if (curType === "loading") startSpin();
+		const ready = setTimeout(() => pill.setAttribute("data-ready", ""), 900);
+		const tmo = new MutationObserver(() => {
+			const next = pill.dataset.type;
+			if (next === curType) return;
+			const was = curType;
+			curType = next;
+			if (next === "loading") return startSpin();
+			const now = getSvg();
+			if (now && was !== "loading" && !reduced()) {
+				const { easing, duration } = getSprings().stack;
+				now.animate([{
+					scale: .6,
+					opacity: .3
+				}, {
+					scale: 1,
+					opacity: 1
+				}], {
+					duration,
+					easing
+				});
+			}
+			const svg2 = spinOn;
+			if (was === "loading" && spin && svg2?.isConnected) {
+				const deg = Number(spin.currentTime) % 800 / 800 * 360;
+				spin.cancel();
+				spin = void 0;
+				svg2.animate([{ rotate: `${deg}deg` }, { rotate: "360deg" }], {
+					duration: 650,
+					easing: "cubic-bezier(.2,.7,.2,1)"
+				});
+			}
+		});
+		const imo = new MutationObserver(() => {
+			if (curType === "loading" && (!spinOn?.isConnected || spinOn !== getSvg())) startSpin();
+		});
+		imo.observe(pill, {
+			childList: true,
+			subtree: true
+		});
+		tmo.observe(pill, {
+			attributes: true,
+			attributeFilter: ["data-type"]
+		});
+		return () => {
+			clearTimeout(ready);
+			imo.disconnect();
+			tmo.disconnect();
+			spin?.cancel();
+			ro.disconnect();
+			lro.disconnect();
+			mo.disconnect();
+			unsub();
+			ghost?.remove();
+		};
 	}
-	function toastTrustedHtml(type, message, duration) {
-		const impl = global$1.createToast;
-		if (typeof impl === "function") return impl(type, message, duration);
-		console$40("createToast 全局未就绪，降级记日志", {
-			type,
-			message
-		}, "warn");
-		return null;
+	function watchDrag(slot, id, t) {
+		let sx = 0, sy = 0, t0 = 0, active = false;
+		const edge = () => slot.closest(".tst-viewport")?.dataset.position?.startsWith("top") ? -1 : 1;
+		const down = (e) => {
+			if (e.button !== 0 || e.target.closest("button")) return;
+			[sx, sy, t0, active] = [
+				e.clientX,
+				e.clientY,
+				e.timeStamp,
+				true
+			];
+			slot.setPointerCapture(e.pointerId);
+			slot.setAttribute("data-dragging", "");
+		};
+		const move = (e) => {
+			if (!active) return;
+			const dx = e.clientX - sx;
+			let dy = e.clientY - sy;
+			if (dy * edge() < 0) dy *= .2;
+			slot.style.setProperty("--dx", `${dx}px`);
+			slot.style.setProperty("--dy", `${dy}px`);
+		};
+		const up = (e) => {
+			if (!active) return;
+			active = false;
+			const dx = e.clientX - sx;
+			const rawDy = e.clientY - sy;
+			const dy = rawDy * edge();
+			const speed = Math.hypot(dx, dy) / Math.max(1, e.timeStamp - t0);
+			const away = dy > 40 || Math.abs(dx) > 80 || speed > .5 && (dy > 15 || Math.abs(dx) > 15);
+			slot.removeAttribute("data-dragging");
+			if (away) {
+				const len = Math.hypot(dx, rawDy) || 1;
+				const reach = Math.max(160, speed * 320);
+				slot.setAttribute("data-flung", "");
+				slot.style.setProperty("--dx", `${dx / len * reach}px`);
+				slot.style.setProperty("--dy", `${rawDy / len * reach}px`);
+				t.dismiss(id, { immediate: true });
+			} else slot.style.removeProperty("--dx"), slot.style.removeProperty("--dy");
+		};
+		slot.addEventListener("pointerdown", down);
+		slot.addEventListener("pointermove", move);
+		slot.addEventListener("pointerup", up);
+		slot.addEventListener("pointercancel", up);
+		return () => {
+			slot.removeEventListener("pointerdown", down);
+			slot.removeEventListener("pointermove", move);
+			slot.removeEventListener("pointerup", up);
+			slot.removeEventListener("pointercancel", up);
+		};
 	}
-	function removeToastHandle(handle) {
-		const impl = global$1.removeToast;
-		if (typeof impl === "function") impl(handle);
+	function bindToast(slot, id, t = toast$1) {
+		const stopDrag = watchDrag(slot, id, t);
+		const stopMotion = watchMotion(slot, id, t);
+		return () => (stopDrag(), stopMotion());
+	}
+	var BUSY = "dialog,[role=dialog],[aria-modal=true],[role=menu],[role=listbox],input,textarea,select,[contenteditable]";
+	function onToastKey(e) {
+		if (e.defaultPrevented || !toast$1.getState().toasts.length) return;
+		if (e.key === "Escape") {
+			if (!document.activeElement?.closest(BUSY)) toast$1.dismiss();
+		} else if (e.altKey && e.code === "KeyT") {
+			const slots = document.querySelectorAll(".tst-viewport .tst-slot");
+			(document.querySelector(".tst-viewport button:not([tabindex=\"-1\"])") ?? slots[slots.length - 1])?.focus();
+		}
+	}
+	var el = (tag, cls, parent) => {
+		const n = document.createElement(tag);
+		n.className = cls;
+		parent?.append(n);
+		return n;
+	};
+	var svg = (cls, paths, size) => {
+		const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		s.setAttribute("width", String(size));
+		s.setAttribute("height", String(size));
+		s.setAttribute("viewBox", "0 0 24 24");
+		s.setAttribute("aria-hidden", "true");
+		s.setAttribute("class", cls);
+		for (const d of paths) {
+			const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+			p.setAttribute("d", d);
+			p.setAttribute("pathLength", "1");
+			s.append(p);
+		}
+		return s;
+	};
+	function mountToaster(opts = {}) {
+		if (typeof document === "undefined") return () => {};
+		const { nonce, ...config } = opts;
+		injectStyles(document, { nonce });
+		toast$1.configure(config);
+		const vp = el("div", "tst-viewport", document.body);
+		vp.setAttribute("role", "region");
+		const status = el("div", "tst-sr", vp);
+		status.setAttribute("role", "status");
+		const alert = el("div", "tst-sr", vp);
+		alert.setAttribute("role", "alert");
+		vp.onpointerenter = () => toast$1.pause();
+		vp.onpointerleave = () => toast$1.resume();
+		vp.addEventListener("focusin", (e) => e.target.matches(":focus-visible") && toast$1.pause());
+		vp.addEventListener("focusout", () => toast$1.resume());
+		document.addEventListener("keydown", onToastKey);
+		const nodes = new Map();
+		function build(t) {
+			const slot = el("div", "tst-slot", vp);
+			slot.tabIndex = -1;
+			el("div", "tst", slot);
+			return { slot };
+		}
+		function render() {
+			const s = toast$1.getState();
+			vp.dataset.position = s.position;
+			vp.dataset.theme = s.theme;
+			vp.setAttribute("aria-label", s.labels.region);
+			status.textContent = s.status;
+			alert.textContent = s.alert;
+			const live = new Set(s.toasts.map((t) => t.id));
+			for (const [id, n] of nodes) if (!live.has(id)) n.off?.(), n.slot.remove(), nodes.delete(id);
+			s.toasts.forEach((t, idx) => {
+				let n = nodes.get(t.id);
+				if (!n) nodes.set(t.id, n = build(t));
+				const i = s.toasts.length - 1 - idx;
+				n.slot.style.setProperty("--tst-i", String(i));
+				const card = n.slot.firstElementChild;
+				card.className = t.className ? `tst ${t.className}` : "tst";
+				card.dataset.phase = t.phase;
+				card.dataset.type = t.type;
+				card.style.setProperty("--tst-life", `${t.duration}ms`);
+				const iconKey = t.image ?? t.type;
+				if (n.type !== iconKey) {
+					card.querySelector(".tst-icon")?.remove();
+					const icon = el("div", "tst-icon");
+					if (t.image) Object.assign(el("img", "tst-media", icon), {
+						src: t.image,
+						alt: "",
+						width: 28,
+						height: 28
+					});
+					else el("div", "tst-badge", icon).append(svg("tst-svg", ICONS[t.type], 22));
+					card.prepend(icon);
+					n.type = iconKey;
+				}
+				const timed = (t.action || t.secondary) && t.duration > 0;
+				const timer = card.querySelector(".tst-timer");
+				if (!timed || timer?.dataset.k !== String(t.duration)) {
+					timer?.remove();
+					if (timed) el("div", "tst-timer", card).dataset.k = String(t.duration);
+				}
+				let bar = card.querySelector(".tst-progress");
+				if (t.progress === void 0) bar?.remove();
+				else (bar ??= card.insertBefore(el("div", "tst-progress"), card.firstChild)).style.setProperty("--pg", String(t.progress));
+				let body = card.querySelector(".tst-body");
+				if (!body) {
+					body = el("div", "tst-body", card);
+					el("div", "tst-title", el("div", "tst-copy", body));
+				}
+				const copy = body.querySelector(".tst-copy");
+				const title = copy.querySelector(".tst-title");
+				const label = `${t.title}|${t.count}|${t.meta ?? ""}`;
+				if (title.dataset.k !== label) {
+					title.textContent = t.title;
+					if (t.count > 1) el("span", "tst-count", title).textContent = `\xD7${t.count}`;
+					if (t.meta) el("span", "tst-meta", title).textContent = t.meta;
+					title.dataset.k = label;
+				}
+				let desc = copy.querySelector(".tst-desc");
+				if (!t.description) desc?.remove();
+				else (desc ??= el("div", "tst-desc", copy)).textContent = t.description;
+				let sec = body.querySelector(".tst-secondary");
+				if (!t.secondary) sec?.remove();
+				else {
+					if (!sec) {
+						sec = el("button", "tst-action tst-secondary");
+						sec.type = "button";
+						sec.onclick = () => toast$1.act(t.id, "secondary");
+						body.insertBefore(sec, body.querySelector(".tst-action, .tst-close"));
+					}
+					sec.textContent = t.secondary.label;
+					sec.tabIndex = t.phase === "open" ? 0 : -1;
+				}
+				let act = body.querySelector(".tst-action:not(.tst-secondary)");
+				if (!t.action) act?.remove();
+				else {
+					if (!act) {
+						act = el("button", "tst-action");
+						act.type = "button";
+						body.insertBefore(act, body.querySelector(".tst-close"));
+						act.onclick = () => toast$1.act(t.id);
+					}
+					act.textContent = t.action.label;
+					act.tabIndex = t.phase === "open" ? 0 : -1;
+				}
+				const sticky = t.duration === 0 && t.type !== "loading" && !t.secondary;
+				let close = body.querySelector(".tst-close");
+				if (!sticky) close?.remove();
+				else {
+					if (!close) {
+						close = el("button", "tst-close", body);
+						close.type = "button";
+						close.append(svg("", ["M6 6l12 12M18 6L6 18"], 12));
+						close.onclick = () => toast$1.dismiss(t.id);
+					}
+					close.setAttribute("aria-label", s.labels.dismiss);
+					close.tabIndex = t.phase === "open" ? 0 : -1;
+				}
+				n.off ??= bindToast(n.slot, t.id);
+			});
+		}
+		const off = toast$1.subscribe(render);
+		render();
+		return () => {
+			off();
+			document.removeEventListener("keydown", onToastKey);
+			nodes.forEach((n) => n.off?.());
+			vp.remove();
+		};
 	}
 	var GM_VALUE_DEFAULTS = Object.freeze({
+		"Script.toastSound": true,
 		"WebVPN.username": void 0,
 		"WebVPN.password": void 0,
 		"WebVPN.autoLogin": false,
@@ -494,6 +1541,7 @@ SOFTWARE.
 		"Schedule.encryptionKeyPair": void 0
 	});
 	var SETTINGS_RESET_KEYS = Object.freeze([
+		"Script.toastSound",
 		"WebVPN.autoLogin",
 		"WebVPN.autoReLogin",
 		"WebVPN.autoClose",
@@ -557,6 +1605,83 @@ SOFTWARE.
 		const defaults = getAllSettingDefaults();
 		await setValues(defaults);
 		return defaults;
+	}
+	var TOAST_CONFIG = {
+		position: "top-center",
+		theme: "system",
+		sound: true,
+		volume: .5
+	};
+	var TOAST_STYLE = `
+.tst-viewport .tst[data-type=success] { --fill: #15803d; --on: #fff; --c: #fff; }
+.tst-viewport .tst[data-type=error] { --fill: #dc2626; --on: #fff; --c: #fff; }
+.tst-viewport .tst[data-type=warning] { --fill: #b45309; --on: #fff; --c: #fff; }
+.tst-viewport .tst[data-type=info] { --fill: #1d4ed8; --on: #fff; --c: #fff; }
+.tst-viewport .tst[data-type=loading] { --fill: #374151; --on: #fff; --c: #fff; }
+`;
+	var unmount;
+	var viewport;
+	var styleInstalled = false;
+	function installNotification() {
+		if (!document.body) return;
+		if (viewport?.isConnected) return;
+		toast$1.configure({
+			...TOAST_CONFIG,
+			sound: getGMValue("Script.toastSound")
+		});
+		unmount?.();
+		if (!styleInstalled) {
+			_GM_addStyle?.(TOAST_STYLE);
+			styleInstalled = true;
+		}
+		unmount = mountToaster({
+			position: TOAST_CONFIG.position,
+			theme: TOAST_CONFIG.theme,
+			labels: {
+				region: "通知",
+				dismiss: "关闭通知"
+			}
+		});
+		viewport = [...document.querySelectorAll(".tst-viewport")].at(-1);
+	}
+	function setToastSound(enabled) {
+		toast$1.configure({ sound: enabled });
+	}
+	function betterNXUVersionClick() {
+		if (typeof _GM?.xmlHttpRequest !== "function") {
+			toast("warning", "一言暂时不可用，请稍后重试", 3);
+			return;
+		}
+		_GM.xmlHttpRequest({
+			method: "GET",
+			url: "https://v1.hitokoto.cn/"
+		}).then((response) => {
+			try {
+				const json = JSON.parse(response.responseText);
+				toast("info", json?.hitokoto ? `${json.hitokoto}\n——${json.from || ""}` : "之前点的太快啦，请稍后重试", 3);
+			} catch {
+				toast("info", "之前点的太快啦，请稍后重试", 3);
+			}
+		}).catch(() => {
+			toast("warning", "一言暂时不可用，请稍后重试", 3);
+		});
+	}
+	function toast(type, message, duration = type === "loading" ? 0 : 5, options = {}) {
+		installNotification();
+		return toast$1.show(type, String(message ?? ""), {
+			...options,
+			duration: duration * 1e3
+		});
+	}
+	function updateToastHandle(handle, patch) {
+		if (handle) toast$1.update(handle, patch);
+	}
+	function removeToastHandle(handle) {
+		if (handle) toast$1.dismiss(handle);
+	}
+	function toastPromise(task, messages) {
+		installNotification();
+		return toast$1.promise(task, messages);
 	}
 	var OCR_ENGINE_UNAVAILABLE = "OCR_ENGINE_UNAVAILABLE";
 	var OCR_EMPTY_RESULT = "OCR_EMPTY_RESULT";
@@ -682,14 +1807,20 @@ SOFTWARE.
 		return /用户名|账号|密码/.test(errorText) && /错误|有误|不存在|失败/.test(errorText);
 	}
 	function buildCredentialsErrorToast(options = {}) {
-		const { missing = true, opener = "settingsPage" } = options;
-		const headline = missing ? "账号密码未配置" : "账号密码配置错误";
-		const link = opener === "openConfig" ? "<a href=\"javascript:void(0)\" onclick=\"CAT_userConfig()\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>" : "<a href=\"https://sslvpn.nxu.edu.cn/h/settings\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"font-weight:bold;font-size:small\">> 前往配置 <</a>";
-		return [`<p style="margin-bottom:0.5em;margin-top: 0">${escapeHtml$1(headline)}<br>请前往配置相关信息</p>`, link].join("");
+		return options.missing === false ? "账号密码配置错误" : "账号密码未配置";
 	}
 	var console$37 = MyConsole("[credentials]");
-	function resolveOpener(host) {
-		return host === "Jwgl" ? "openConfig" : "settingsPage";
+	function settingsOptions(host) {
+		return {
+			description: "请前往配置相关信息",
+			action: {
+				label: "前往配置",
+				onClick: () => {
+					if (host === "Jwgl") _unsafeWindow.CAT_userConfig();
+					else _GM_openInTab("https://sslvpn.nxu.edu.cn/h/settings", { active: true });
+				}
+			}
+		};
 	}
 	function requireCredentials(host) {
 		const username = getGMValue(`${host}.username`);
@@ -697,19 +1828,13 @@ SOFTWARE.
 		if (username && password) return true;
 		console$37(`[${host}] 未配置登录账号或密码，停止自动登录`, "请前往 Better NXU 设置页面补充", "warn");
 		installNotification();
-		toastTrustedHtml("error", buildCredentialsErrorToast({
-			missing: true,
-			opener: resolveOpener(host)
-		}), 0);
+		toast("error", buildCredentialsErrorToast({ missing: true }), 0, settingsOptions(host));
 		return false;
 	}
 	function notifyCredentialsProblem(host, duration = 5) {
 		console$37(`[${host}] 页面提示账号或密码错误，停止自动登录，请更新凭证`, "", "warn");
 		installNotification();
-		toastTrustedHtml("error", buildCredentialsErrorToast({
-			missing: false,
-			opener: resolveOpener(host)
-		}), duration);
+		toast("error", buildCredentialsErrorToast({ missing: false }), duration, settingsOptions(host));
 	}
 	var CONF_THRESHOLD = .5;
 	var IOU_THRESHOLD = .8;
@@ -1410,13 +2535,12 @@ self.onmessage = async (e) => {
 			console$36("滑块验证码未出现，跳过");
 			return false;
 		}
-		let toastHandle = toast("info", "正在识别滑块验证…", 0);
+		let toastHandle = toast("loading", "正在识别滑块验证…", 0);
 		const controller = new AbortController();
 		const onPageHide = () => controller.abort(new Error("页面已离开"));
 		window.addEventListener("pagehide", onPageHide, { once: true });
 		const showProgress = (message) => {
-			if (toastHandle) removeToastHandle(toastHandle);
-			toastHandle = toast("info", message, 0);
+			updateToastHandle(toastHandle, { title: message });
 		};
 		console$36("发现滑块验证码，开始自动识别");
 		try {
@@ -1451,9 +2575,12 @@ self.onmessage = async (e) => {
 			});
 			if (result === "exhausted" || result === "manual") {
 				console$36(result === "exhausted" ? "滑块验证已达 3 次尝试上限，停止自动识别" : manualMessage, { result }, "warn");
-				removeToastHandle(toastHandle);
+				updateToastHandle(toastHandle, {
+					type: "warning",
+					title: result === "exhausted" ? "滑块自动验证已尝试 3 次，请手动完成验证" : manualMessage,
+					duration: 0
+				});
 				toastHandle = null;
-				toast("warning", result === "exhausted" ? "滑块自动验证已尝试 3 次，请手动完成验证" : manualMessage, 0);
 				return false;
 			}
 			console$36("滑块自动处理结束", { result }, "info");
@@ -1465,9 +2592,12 @@ self.onmessage = async (e) => {
 			}
 			const isScheduleError = err?.code === SLIDER_RECOGNIZER_UNAVAILABLE;
 			console$36("滑块验证识别异常", err, "error");
-			removeToastHandle(toastHandle);
+			updateToastHandle(toastHandle, {
+				type: "error",
+				title: isScheduleError ? err.message : "滑块验证识别失败，请手动操作",
+				duration: 5e3
+			});
 			toastHandle = null;
-			toast("error", isScheduleError ? err.message : "滑块验证识别失败，请手动操作", 5);
 			return false;
 		} finally {
 			if (toastHandle) removeToastHandle(toastHandle);
@@ -1863,7 +2993,7 @@ self.onmessage = async (e) => {
 		if (title) document.title = title;
 		installNotification();
 		installVantStyle();
-		const deployToast = toast("info", deployMessage, 0);
+		const deployToast = toast("loading", deployMessage, 0);
 		const mountEl = document.createElement("div");
 		mountEl.id = id;
 		document.body.appendChild(mountEl);
@@ -1914,10 +3044,6 @@ self.onmessage = async (e) => {
 	var makeArrayProp = () => ({
 		type: Array,
 		default: () => []
-	});
-	var makeNumberProp = (defaultVal) => ({
-		type: Number,
-		default: defaultVal
 	});
 	var makeNumericProp = (defaultVal) => ({
 		type: numericProp,
@@ -2270,7 +3396,7 @@ self.onmessage = async (e) => {
 		});
 		return to;
 	}
-	var stdin_default$38 = {
+	var stdin_default$37 = {
 		name: "姓名",
 		tel: "电话",
 		save: "保存",
@@ -2336,8 +3462,8 @@ self.onmessage = async (e) => {
 		vanAddressList: { add: "新增地址" }
 	};
 	var lang = (0, vue.ref)("zh-CN");
-	var messages = (0, vue.reactive)({ "zh-CN": stdin_default$38 });
-	var stdin_default$37 = {
+	var messages = (0, vue.reactive)({ "zh-CN": stdin_default$37 });
+	var stdin_default$36 = {
 		messages() {
 			return messages[lang.value];
 		},
@@ -2352,7 +3478,7 @@ self.onmessage = async (e) => {
 	function createTranslate(name) {
 		const prefix = camelize(name) + ".";
 		return (path, ...args) => {
-			const messages = stdin_default$37.messages();
+			const messages = stdin_default$36.messages();
 			const message = get(messages, prefix + path) || get(messages, path);
 			return isFunction(message) ? message(...args) : message;
 		};
@@ -2440,24 +3566,24 @@ self.onmessage = async (e) => {
 			"style": { height: height.value ? `${height.value}px` : void 0 }
 		}, [renderContent()]);
 	}
-	var [name$33, bem$34] = createNamespace("action-bar");
-	var ACTION_BAR_KEY = Symbol(name$33);
+	var [name$32, bem$33] = createNamespace("action-bar");
+	var ACTION_BAR_KEY = Symbol(name$32);
 	var ActionBar = withInstall((0, vue.defineComponent)({
-		name: name$33,
+		name: name$32,
 		props: {
 			placeholder: Boolean,
 			safeAreaInsetBottom: truthProp
 		},
 		setup(props, { slots }) {
 			const root = (0, vue.ref)();
-			const renderPlaceholder = usePlaceholder(root, bem$34);
+			const renderPlaceholder = usePlaceholder(root, bem$33);
 			const { linkChildren } = useChildren(ACTION_BAR_KEY);
 			linkChildren();
 			const renderActionBar = () => {
 				var _a;
 				return (0, vue.createVNode)("div", {
 					"ref": root,
-					"class": [bem$34(), { "van-safe-area-bottom": props.safeAreaInsetBottom }]
+					"class": [bem$33(), { "van-safe-area-bottom": props.safeAreaInsetBottom }]
 				}, [(_a = slots.default) == null ? void 0 : _a.call(slots)]);
 			};
 			return () => {
@@ -2483,7 +3609,7 @@ self.onmessage = async (e) => {
 		const vm = (0, vue.getCurrentInstance)().proxy;
 		return () => route(vm);
 	}
-	var [name$32, bem$33] = createNamespace("badge");
+	var [name$31, bem$32] = createNamespace("badge");
 	var badgeProps = {
 		dot: Boolean,
 		max: numericProp,
@@ -2495,7 +3621,7 @@ self.onmessage = async (e) => {
 		position: makeStringProp("top-right")
 	};
 	var Badge = withInstall((0, vue.defineComponent)({
-		name: name$32,
+		name: name$31,
 		props: badgeProps,
 		setup(props, { slots }) {
 			const hasContent = () => {
@@ -2532,7 +3658,7 @@ self.onmessage = async (e) => {
 			});
 			const renderBadge = () => {
 				if (hasContent() || props.dot) return (0, vue.createVNode)("div", {
-					"class": bem$33([props.position, {
+					"class": bem$32([props.position, {
 						dot: props.dot,
 						fixed: !!slots.default
 					}]),
@@ -2542,7 +3668,7 @@ self.onmessage = async (e) => {
 			return () => {
 				if (slots.default) {
 					const { tag } = props;
-					return (0, vue.createVNode)(tag, { "class": bem$33("wrapper") }, { default: () => [slots.default(), renderBadge()] });
+					return (0, vue.createVNode)(tag, { "class": bem$32("wrapper") }, { default: () => [slots.default(), renderBadge()] });
 				}
 				return renderBadge();
 			};
@@ -2553,8 +3679,8 @@ self.onmessage = async (e) => {
 	var setGlobalZIndex = (val) => {
 		globalZIndex = val;
 	};
-	var [name$31, bem$32] = createNamespace("config-provider");
-	var CONFIG_PROVIDER_KEY = Symbol(name$31);
+	var [name$30, bem$31] = createNamespace("config-provider");
+	var CONFIG_PROVIDER_KEY = Symbol(name$30);
 	var configProviderProps = {
 		tag: makeStringProp("div"),
 		theme: makeStringProp("light"),
@@ -2585,7 +3711,7 @@ self.onmessage = async (e) => {
 		});
 	}
 	(0, vue.defineComponent)({
-		name: name$31,
+		name: name$30,
 		props: configProviderProps,
 		setup(props, { slots }) {
 			const style = (0, vue.computed)(() => mapThemeVarsToCSSVars(extend({}, props.themeVars, props.theme === "dark" ? props.themeVarsDark : props.themeVarsLight)));
@@ -2617,7 +3743,7 @@ self.onmessage = async (e) => {
 				if (props.zIndex !== void 0) setGlobalZIndex(props.zIndex);
 			});
 			return () => (0, vue.createVNode)(props.tag, {
-				"class": bem$32(),
+				"class": bem$31(),
 				"style": props.themeVarsScope === "local" ? style.value : void 0
 			}, { default: () => {
 				var _a;
@@ -2625,7 +3751,7 @@ self.onmessage = async (e) => {
 			} });
 		}
 	});
-	var [name$30, bem$31] = createNamespace("icon");
+	var [name$29, bem$30] = createNamespace("icon");
 	var isImage = (name2) => name2 == null ? void 0 : name2.includes("/");
 	var iconProps = {
 		dot: Boolean,
@@ -2638,11 +3764,11 @@ self.onmessage = async (e) => {
 		classPrefix: String
 	};
 	var Icon = withInstall((0, vue.defineComponent)({
-		name: name$30,
+		name: name$29,
 		props: iconProps,
 		setup(props, { slots }) {
 			const config = (0, vue.inject)(CONFIG_PROVIDER_KEY, null);
-			const classPrefix = (0, vue.computed)(() => props.classPrefix || (config == null ? void 0 : config.iconPrefix) || bem$31());
+			const classPrefix = (0, vue.computed)(() => props.classPrefix || (config == null ? void 0 : config.iconPrefix) || bem$30());
 			return () => {
 				const { tag, dot, name: name2, size, badge, color } = props;
 				const isImageIcon = isImage(name2);
@@ -2658,18 +3784,18 @@ self.onmessage = async (e) => {
 				}, props.badgeProps), { default: () => {
 					var _a;
 					return [(_a = slots.default) == null ? void 0 : _a.call(slots), isImageIcon && (0, vue.createVNode)("img", {
-						"class": bem$31("image"),
+						"class": bem$30("image"),
 						"src": name2
 					}, null)];
 				} });
 			};
 		}
 	}));
-	var stdin_default$32 = Icon;
-	var [name$29, bem$30] = createNamespace("loading");
-	var SpinIcon = Array(12).fill(null).map((_, index) => (0, vue.createVNode)("i", { "class": bem$30("line", String(index + 1)) }, null));
+	var stdin_default$31 = Icon;
+	var [name$28, bem$29] = createNamespace("loading");
+	var SpinIcon = Array(12).fill(null).map((_, index) => (0, vue.createVNode)("i", { "class": bem$29("line", String(index + 1)) }, null));
 	var CircularIcon = (0, vue.createVNode)("svg", {
-		"class": bem$30("circular"),
+		"class": bem$29("circular"),
 		"viewBox": "25 25 50 50"
 	}, [(0, vue.createVNode)("circle", {
 		"cx": "50",
@@ -2686,21 +3812,21 @@ self.onmessage = async (e) => {
 		textColor: String
 	};
 	var Loading = withInstall((0, vue.defineComponent)({
-		name: name$29,
+		name: name$28,
 		props: loadingProps,
 		setup(props, { slots }) {
 			const spinnerStyle = (0, vue.computed)(() => extend({ color: props.color }, getSizeStyle(props.size)));
 			const renderIcon = () => {
 				const DefaultIcon = props.type === "spinner" ? SpinIcon : CircularIcon;
 				return (0, vue.createVNode)("span", {
-					"class": bem$30("spinner", props.type),
+					"class": bem$29("spinner", props.type),
 					"style": spinnerStyle.value
 				}, [slots.icon ? slots.icon() : DefaultIcon]);
 			};
 			const renderText = () => {
 				var _a;
 				if (slots.default) return (0, vue.createVNode)("span", {
-					"class": bem$30("text"),
+					"class": bem$29("text"),
 					"style": {
 						fontSize: addUnit(props.textSize),
 						color: (_a = props.textColor) != null ? _a : props.color
@@ -2710,14 +3836,14 @@ self.onmessage = async (e) => {
 			return () => {
 				const { type, vertical } = props;
 				return (0, vue.createVNode)("div", {
-					"class": bem$30([type, { vertical }]),
+					"class": bem$29([type, { vertical }]),
 					"aria-live": "polite",
 					"aria-busy": true
 				}, [renderIcon(), renderText()]);
 			};
 		}
 	}));
-	var [name$28, bem$29] = createNamespace("button");
+	var [name$27, bem$28] = createNamespace("button");
 	var buttonProps = extend({}, routeProps, {
 		tag: makeStringProp("button"),
 		text: String,
@@ -2740,7 +3866,7 @@ self.onmessage = async (e) => {
 		iconPosition: makeStringProp("left")
 	});
 	var Button = withInstall((0, vue.defineComponent)({
-		name: name$28,
+		name: name$27,
 		props: buttonProps,
 		emits: ["click"],
 		setup(props, { emit, slots }) {
@@ -2750,15 +3876,15 @@ self.onmessage = async (e) => {
 				return (0, vue.createVNode)(Loading, {
 					"size": props.loadingSize,
 					"type": props.loadingType,
-					"class": bem$29("loading")
+					"class": bem$28("loading")
 				}, null);
 			};
 			const renderIcon = () => {
 				if (props.loading) return renderLoadingIcon();
-				if (slots.icon) return (0, vue.createVNode)("div", { "class": bem$29("icon") }, [slots.icon()]);
+				if (slots.icon) return (0, vue.createVNode)("div", { "class": bem$28("icon") }, [slots.icon()]);
 				if (props.icon) return (0, vue.createVNode)(Icon, {
 					"name": props.icon,
-					"class": bem$29("icon"),
+					"class": bem$28("icon"),
 					"classPrefix": props.iconPrefix
 				}, null);
 			};
@@ -2766,7 +3892,7 @@ self.onmessage = async (e) => {
 				let text;
 				if (props.loading) text = props.loadingText;
 				else text = slots.default ? slots.default() : props.text;
-				if (text) return (0, vue.createVNode)("span", { "class": bem$29("text") }, [text]);
+				if (text) return (0, vue.createVNode)("span", { "class": bem$28("text") }, [text]);
 			};
 			const getStyle = () => {
 				const { color, plain } = props;
@@ -2787,7 +3913,7 @@ self.onmessage = async (e) => {
 			};
 			return () => {
 				const { tag, type, size, block, round, plain, square, loading, disabled, hairline, nativeType, iconPosition } = props;
-				const classes = [bem$29([
+				const classes = [bem$28([
 					type,
 					size,
 					{
@@ -2806,7 +3932,7 @@ self.onmessage = async (e) => {
 					"style": getStyle(),
 					"disabled": disabled,
 					"onClick": onClick
-				}, { default: () => [(0, vue.createVNode)("div", { "class": bem$29("content") }, [
+				}, { default: () => [(0, vue.createVNode)("div", { "class": bem$28("content") }, [
 					iconPosition === "left" && renderIcon(),
 					renderText(),
 					iconPosition === "right" && renderIcon()
@@ -2814,7 +3940,7 @@ self.onmessage = async (e) => {
 			};
 		}
 	}));
-	var [name$27, bem$28] = createNamespace("action-bar-button");
+	var [name$26, bem$27] = createNamespace("action-bar-button");
 	var actionBarButtonProps = extend({}, routeProps, {
 		type: String,
 		text: String,
@@ -2824,7 +3950,7 @@ self.onmessage = async (e) => {
 		disabled: Boolean
 	});
 	var ActionBarButton = withInstall((0, vue.defineComponent)({
-		name: name$27,
+		name: name$26,
 		props: actionBarButtonProps,
 		setup(props, { slots }) {
 			const route = useRoute();
@@ -2845,7 +3971,7 @@ self.onmessage = async (e) => {
 			return () => {
 				const { type, icon, text, color, loading, disabled } = props;
 				return (0, vue.createVNode)(Button, {
-					"class": bem$28([type, {
+					"class": bem$27([type, {
 						last: isLast.value,
 						first: isFirst.value
 					}]),
@@ -2983,9 +4109,9 @@ self.onmessage = async (e) => {
 		const { scopeId } = ((_a = (0, vue.getCurrentInstance)()) == null ? void 0 : _a.vnode) || {};
 		return scopeId ? { [scopeId]: "" } : null;
 	};
-	var [name$26, bem$27] = createNamespace("overlay");
+	var [name$25, bem$26] = createNamespace("overlay");
 	var Overlay = withInstall((0, vue.defineComponent)({
-		name: name$26,
+		name: name$25,
 		inheritAttrs: false,
 		props: {
 			show: Boolean,
@@ -3010,7 +4136,7 @@ self.onmessage = async (e) => {
 				return (0, vue.withDirectives)((0, vue.createVNode)("div", (0, vue.mergeProps)({
 					"ref": root,
 					"style": style,
-					"class": [bem$27(), props.className]
+					"class": [bem$26(), props.className]
 				}, attrs), [(_a = slots.default) == null ? void 0 : _a.call(slots)]), [[vue.vShow, props.show]]);
 			});
 			useEventListener("touchmove", onTouchMove, { target: root });
@@ -3037,9 +4163,9 @@ self.onmessage = async (e) => {
 		safeAreaInsetTop: Boolean,
 		safeAreaInsetBottom: Boolean
 	});
-	var [name$25, bem$26] = createNamespace("popup");
+	var [name$24, bem$25] = createNamespace("popup");
 	var Popup = withInstall((0, vue.defineComponent)({
-		name: name$25,
+		name: name$24,
 		inheritAttrs: false,
 		props: popupProps$1,
 		emits: [
@@ -3107,7 +4233,7 @@ self.onmessage = async (e) => {
 					"role": "button",
 					"tabindex": 0,
 					"name": props.closeIcon,
-					"class": [bem$26("close-icon", props.closeIconPosition), HAPTICS_FEEDBACK],
+					"class": [bem$25("close-icon", props.closeIconPosition), HAPTICS_FEEDBACK],
 					"classPrefix": props.iconPrefix,
 					"onClick": onClickCloseIcon
 				}, null);
@@ -3130,7 +4256,7 @@ self.onmessage = async (e) => {
 					"style": style.value,
 					"role": "dialog",
 					"tabindex": 0,
-					"class": [bem$26({
+					"class": [bem$25({
 						round,
 						[position]: position
 					}), {
@@ -3324,7 +4450,7 @@ self.onmessage = async (e) => {
 		(0, vue.onBeforeUnmount)(unobserve);
 		onMountedOrActivated(observe);
 	}
-	var [name$24, bem$25] = createNamespace("sticky");
+	var [name$23, bem$24] = createNamespace("sticky");
 	var stickyProps = {
 		zIndex: numericProp,
 		position: makeStringProp("top"),
@@ -3333,7 +4459,7 @@ self.onmessage = async (e) => {
 		offsetBottom: makeNumericProp(0)
 	};
 	var Sticky = withInstall((0, vue.defineComponent)({
-		name: name$24,
+		name: name$23,
 		props: stickyProps,
 		emits: ["scroll", "change"],
 		setup(props, { emit, slots }) {
@@ -3416,13 +4542,13 @@ self.onmessage = async (e) => {
 					"ref": root,
 					"style": rootStyle.value
 				}, [(0, vue.createVNode)("div", {
-					"class": bem$25({ fixed: state.fixed && !isReset.value }),
+					"class": bem$24({ fixed: state.fixed && !isReset.value }),
 					"style": stickyStyle.value
 				}, [(_a = slots.default) == null ? void 0 : _a.call(slots)])]);
 			};
 		}
 	}));
-	var [name$23, bem$24] = createNamespace("swipe");
+	var [name$22, bem$23] = createNamespace("swipe");
 	var swipeProps = {
 		loop: truthProp,
 		width: numericProp,
@@ -3437,9 +4563,9 @@ self.onmessage = async (e) => {
 		showIndicators: truthProp,
 		stopPropagation: truthProp
 	};
-	var SWIPE_KEY = Symbol(name$23);
+	var SWIPE_KEY = Symbol(name$22);
 	var Swipe = withInstall((0, vue.defineComponent)({
-		name: name$23,
+		name: name$22,
 		props: swipeProps,
 		emits: [
 			"change",
@@ -3651,7 +4777,7 @@ self.onmessage = async (e) => {
 				const style = active ? { backgroundColor: props.indicatorColor } : void 0;
 				return (0, vue.createVNode)("i", {
 					"style": style,
-					"class": bem$24("indicator", { active })
+					"class": bem$23("indicator", { active })
 				}, null);
 			};
 			const renderIndicator = () => {
@@ -3659,7 +4785,7 @@ self.onmessage = async (e) => {
 					active: activeIndicator.value,
 					total: count.value
 				});
-				if (props.showIndicators && count.value > 1) return (0, vue.createVNode)("div", { "class": bem$24("indicators", { vertical: props.vertical }) }, [Array(count.value).fill("").map(renderDot)]);
+				if (props.showIndicators && count.value > 1) return (0, vue.createVNode)("div", { "class": bem$23("indicators", { vertical: props.vertical }) }, [Array(count.value).fill("").map(renderDot)]);
 			};
 			useExpose({
 				prev,
@@ -3697,11 +4823,11 @@ self.onmessage = async (e) => {
 				var _a;
 				return (0, vue.createVNode)("div", {
 					"ref": root,
-					"class": bem$24()
+					"class": bem$23()
 				}, [(0, vue.createVNode)("div", {
 					"ref": track,
 					"style": trackStyle.value,
-					"class": bem$24("track", { vertical: props.vertical }),
+					"class": bem$23("track", { vertical: props.vertical }),
 					"onTouchstartPassive": onTouchStart,
 					"onTouchend": onTouchEnd,
 					"onTouchcancel": onTouchEnd
@@ -3709,9 +4835,9 @@ self.onmessage = async (e) => {
 			};
 		}
 	}));
-	var [name$22, bem$23] = createNamespace("tabs");
-	var stdin_default$24 = (0, vue.defineComponent)({
-		name: name$22,
+	var [name$21, bem$22] = createNamespace("tabs");
+	var stdin_default$23 = (0, vue.defineComponent)({
+		name: name$21,
 		props: {
 			count: makeRequiredProp(Number),
 			inited: Boolean,
@@ -3731,7 +4857,7 @@ self.onmessage = async (e) => {
 				if (props.animated || props.swipeable) return (0, vue.createVNode)(Swipe, {
 					"ref": swipeRef,
 					"loop": false,
-					"class": bem$23("track"),
+					"class": bem$22("track"),
 					"duration": +props.duration * 1e3,
 					"touchable": props.swipeable,
 					"lazyRender": props.lazyRender,
@@ -3749,10 +4875,10 @@ self.onmessage = async (e) => {
 				swipeToCurrentTab(props.currentIndex);
 			});
 			useExpose({ swipeRef });
-			return () => (0, vue.createVNode)("div", { "class": bem$23("content", { animated: props.animated || props.swipeable }) }, [renderChildren()]);
+			return () => (0, vue.createVNode)("div", { "class": bem$22("content", { animated: props.animated || props.swipeable }) }, [renderChildren()]);
 		}
 	});
-	var [name$21, bem$22] = createNamespace("tabs");
+	var [name$20, bem$21] = createNamespace("tabs");
 	var tabsProps = {
 		type: makeStringProp("line"),
 		color: String,
@@ -3776,9 +4902,9 @@ self.onmessage = async (e) => {
 		titleActiveColor: String,
 		titleInactiveColor: String
 	};
-	var TABS_KEY = Symbol(name$21);
-	var stdin_default$23 = (0, vue.defineComponent)({
-		name: name$21,
+	var TABS_KEY = Symbol(name$20);
+	var stdin_default$22 = (0, vue.defineComponent)({
+		name: name$20,
 		props: tabsProps,
 		emits: [
 			"change",
@@ -3942,7 +5068,7 @@ self.onmessage = async (e) => {
 			};
 			const renderLine = () => {
 				if (props.type === "line" && children.length) return (0, vue.createVNode)("div", {
-					"class": bem$22("line"),
+					"class": bem$21("line"),
 					"style": state.lineStyle
 				}, null);
 			};
@@ -3951,11 +5077,11 @@ self.onmessage = async (e) => {
 				const { type, border, sticky } = props;
 				const Header = [(0, vue.createVNode)("div", {
 					"ref": sticky ? void 0 : wrapRef,
-					"class": [bem$22("wrap"), { [BORDER_TOP_BOTTOM]: type === "line" && border }]
+					"class": [bem$21("wrap"), { [BORDER_TOP_BOTTOM]: type === "line" && border }]
 				}, [(0, vue.createVNode)("div", {
 					"ref": navRef,
 					"role": "tablist",
-					"class": bem$22("nav", [type, {
+					"class": bem$21("nav", [type, {
 						shrink: props.shrink,
 						complete: scrollable.value
 					}]),
@@ -4030,12 +5156,12 @@ self.onmessage = async (e) => {
 			});
 			return () => (0, vue.createVNode)("div", {
 				"ref": root,
-				"class": bem$22([props.type])
+				"class": bem$21([props.type])
 			}, [props.showHeader ? props.sticky ? (0, vue.createVNode)(Sticky, {
 				"container": root.value,
 				"offsetTop": offsetTopPx.value,
 				"onScroll": onStickyScroll
-			}, { default: () => [renderHeader()] }) : renderHeader() : null, (0, vue.createVNode)(stdin_default$24, {
+			}, { default: () => [renderHeader()] }) : renderHeader() : null, (0, vue.createVNode)(stdin_default$23, {
 				"ref": contentRef,
 				"count": children.length,
 				"inited": state.inited,
@@ -4061,9 +5187,9 @@ self.onmessage = async (e) => {
 			return (allTabStatus == null || allTabStatus.value) && status.value;
 		}));
 	};
-	var [name$20, bem$21] = createNamespace("tab");
+	var [name$19, bem$20] = createNamespace("tab");
 	var TabTitle = (0, vue.defineComponent)({
-		name: name$20,
+		name: name$19,
 		props: {
 			id: String,
 			dot: Boolean,
@@ -4096,7 +5222,7 @@ self.onmessage = async (e) => {
 				return style2;
 			});
 			const renderText = () => {
-				const Text = (0, vue.createVNode)("span", { "class": bem$21("text", { ellipsis: !props.scrollable }) }, [slots.title ? slots.title() : props.title]);
+				const Text = (0, vue.createVNode)("span", { "class": bem$20("text", { ellipsis: !props.scrollable }) }, [slots.title ? slots.title() : props.title]);
 				if (props.dot || isDef(props.badge) && props.badge !== "") return (0, vue.createVNode)(Badge, {
 					"dot": props.dot,
 					"content": props.badge,
@@ -4107,7 +5233,7 @@ self.onmessage = async (e) => {
 			return () => (0, vue.createVNode)("div", {
 				"id": props.id,
 				"role": "tab",
-				"class": [bem$21([props.type, {
+				"class": [bem$20([props.type, {
 					grow: props.scrollable && !props.shrink,
 					shrink: props.shrink,
 					active: props.isActive,
@@ -4122,9 +5248,9 @@ self.onmessage = async (e) => {
 			}, [renderText()]);
 		}
 	});
-	var [name$19, bem$20] = createNamespace("swipe-item");
+	var [name$18, bem$19] = createNamespace("swipe-item");
 	var SwipeItem = withInstall((0, vue.defineComponent)({
-		name: name$19,
+		name: name$18,
 		setup(props, { slots }) {
 			let rendered;
 			const state = (0, vue.reactive)({
@@ -4164,13 +5290,13 @@ self.onmessage = async (e) => {
 			return () => {
 				var _a;
 				return (0, vue.createVNode)("div", {
-					"class": bem$20(),
+					"class": bem$19(),
 					"style": style.value
 				}, [shouldRender.value ? (_a = slots.default) == null ? void 0 : _a.call(slots) : null]);
 			};
 		}
 	}));
-	var [name$18, bem$19] = createNamespace("tab");
+	var [name$17, bem$18] = createNamespace("tab");
 	var tabProps = extend({}, routeProps, {
 		dot: Boolean,
 		name: numericProp,
@@ -4182,7 +5308,7 @@ self.onmessage = async (e) => {
 		showZeroBadge: truthProp
 	});
 	var Tab = withInstall((0, vue.defineComponent)({
-		name: name$18,
+		name: name$17,
 		props: tabProps,
 		setup(props, { slots }) {
 			const id = useId();
@@ -4260,20 +5386,20 @@ self.onmessage = async (e) => {
 				if (animated || swipeable) return (0, vue.createVNode)(SwipeItem, {
 					"id": id,
 					"role": "tabpanel",
-					"class": bem$19("panel-wrapper", { inactive: hasInactiveClass.value }),
+					"class": bem$18("panel-wrapper", { inactive: hasInactiveClass.value }),
 					"tabindex": active.value ? 0 : -1,
 					"aria-hidden": !active.value,
 					"aria-labelledby": label,
 					"data-allow-mismatch": "attribute"
 				}, { default: () => {
 					var _a2;
-					return [(0, vue.createVNode)("div", { "class": bem$19("panel") }, [(_a2 = slots.default) == null ? void 0 : _a2.call(slots)])];
+					return [(0, vue.createVNode)("div", { "class": bem$18("panel") }, [(_a2 = slots.default) == null ? void 0 : _a2.call(slots)])];
 				} });
 				const Content = inited.value || scrollspy || !lazyRender ? (_a = slots.default) == null ? void 0 : _a.call(slots) : null;
 				return (0, vue.withDirectives)((0, vue.createVNode)("div", {
 					"id": id,
 					"role": "tabpanel",
-					"class": bem$19("panel"),
+					"class": bem$18("panel"),
 					"tabindex": show ? 0 : -1,
 					"aria-labelledby": label,
 					"data-allow-mismatch": "attribute"
@@ -4281,8 +5407,8 @@ self.onmessage = async (e) => {
 			};
 		}
 	}));
-	var Tabs = withInstall(stdin_default$23);
-	var [name$17, bem$18] = createNamespace("cell");
+	var Tabs = withInstall(stdin_default$22);
+	var [name$16, bem$17] = createNamespace("cell");
 	var cellSharedProps = {
 		tag: makeStringProp("div"),
 		icon: String,
@@ -4310,12 +5436,12 @@ self.onmessage = async (e) => {
 	};
 	var cellProps = extend({}, cellSharedProps, routeProps);
 	var Cell = withInstall((0, vue.defineComponent)({
-		name: name$17,
+		name: name$16,
 		props: cellProps,
 		setup(props, { slots }) {
 			const route = useRoute();
 			const renderLabel = () => {
-				if (slots.label || isDef(props.label)) return (0, vue.createVNode)("div", { "class": [bem$18("label"), props.labelClass] }, [slots.label ? slots.label() : props.label]);
+				if (slots.label || isDef(props.label)) return (0, vue.createVNode)("div", { "class": [bem$17("label"), props.labelClass] }, [slots.label ? slots.label() : props.label]);
 			};
 			const renderTitle = () => {
 				var _a;
@@ -4323,20 +5449,20 @@ self.onmessage = async (e) => {
 					const titleSlot = (_a = slots.title) == null ? void 0 : _a.call(slots);
 					if (Array.isArray(titleSlot) && titleSlot.length === 0) return;
 					return (0, vue.createVNode)("div", {
-						"class": [bem$18("title"), props.titleClass],
+						"class": [bem$17("title"), props.titleClass],
 						"style": props.titleStyle
 					}, [titleSlot || (0, vue.createVNode)("span", null, [props.title]), renderLabel()]);
 				}
 			};
 			const renderValue = () => {
 				const slot = slots.value || slots.default;
-				if (slot || isDef(props.value)) return (0, vue.createVNode)("div", { "class": [bem$18("value"), props.valueClass] }, [slot ? slot() : (0, vue.createVNode)("span", null, [props.value])]);
+				if (slot || isDef(props.value)) return (0, vue.createVNode)("div", { "class": [bem$17("value"), props.valueClass] }, [slot ? slot() : (0, vue.createVNode)("span", null, [props.value])]);
 			};
 			const renderLeftIcon = () => {
 				if (slots.icon) return slots.icon();
 				if (props.icon) return (0, vue.createVNode)(Icon, {
 					"name": props.icon,
-					"class": bem$18("left-icon"),
+					"class": bem$17("left-icon"),
 					"classPrefix": props.iconPrefix
 				}, null);
 			};
@@ -4346,7 +5472,7 @@ self.onmessage = async (e) => {
 					const name2 = props.arrowDirection && props.arrowDirection !== "right" ? `arrow-${props.arrowDirection}` : "arrow";
 					return (0, vue.createVNode)(Icon, {
 						"name": name2,
-						"class": bem$18("right-icon")
+						"class": bem$17("right-icon")
 					}, null);
 				}
 			};
@@ -4362,7 +5488,7 @@ self.onmessage = async (e) => {
 				};
 				if (size) classes[size] = !!size;
 				return (0, vue.createVNode)(tag, {
-					"class": bem$18(classes),
+					"class": bem$17(classes),
 					"role": clickable ? "button" : void 0,
 					"tabindex": clickable ? 0 : void 0,
 					"onClick": clickable ? route : void 0
@@ -4450,7 +5576,7 @@ self.onmessage = async (e) => {
 	function cutString(str, maxlength) {
 		return [...str].slice(0, maxlength).join("");
 	}
-	var [name$16, bem$17] = createNamespace("field");
+	var [name$15, bem$16] = createNamespace("field");
 	var fieldSharedProps = {
 		id: String,
 		name: String,
@@ -4507,7 +5633,7 @@ self.onmessage = async (e) => {
 		}
 	});
 	var Field = withInstall((0, vue.defineComponent)({
-		name: name$16,
+		name: name$15,
 		props: fieldProps,
 		emits: [
 			"blur",
@@ -4737,7 +5863,7 @@ self.onmessage = async (e) => {
 			const getInputId = () => props.id || `${id}-input`;
 			const getValidationStatus = () => state.status;
 			const renderInput = () => {
-				const controlClass = bem$17("control", [getProp("inputAlign"), {
+				const controlClass = bem$16("control", [getProp("inputAlign"), {
 					error: showError.value,
 					custom: !!slots.input,
 					"min-height": props.type === "textarea" && !props.autosize
@@ -4778,7 +5904,7 @@ self.onmessage = async (e) => {
 			const renderLeftIcon = () => {
 				const leftIconSlot = slots["left-icon"];
 				if (props.leftIcon || leftIconSlot) return (0, vue.createVNode)("div", {
-					"class": bem$17("left-icon"),
+					"class": bem$16("left-icon"),
 					"onClick": onClickLeftIcon
 				}, [leftIconSlot ? leftIconSlot() : (0, vue.createVNode)(Icon, {
 					"name": props.leftIcon,
@@ -4788,7 +5914,7 @@ self.onmessage = async (e) => {
 			const renderRightIcon = () => {
 				const rightIconSlot = slots["right-icon"];
 				if (props.rightIcon || rightIconSlot) return (0, vue.createVNode)("div", {
-					"class": bem$17("right-icon"),
+					"class": bem$16("right-icon"),
 					"onClick": onClickRightIcon
 				}, [rightIconSlot ? rightIconSlot() : (0, vue.createVNode)(Icon, {
 					"name": props.rightIcon,
@@ -4798,8 +5924,8 @@ self.onmessage = async (e) => {
 			const renderWordLimit = () => {
 				if (props.showWordLimit && props.maxlength) {
 					const count = getStringLength(getModelValue());
-					return (0, vue.createVNode)("div", { "class": bem$17("word-limit") }, [
-						(0, vue.createVNode)("span", { "class": bem$17("word-num") }, [count]),
+					return (0, vue.createVNode)("div", { "class": bem$16("word-limit") }, [
+						(0, vue.createVNode)("span", { "class": bem$16("word-num") }, [count]),
 						(0, vue.createTextVNode)("/"),
 						props.maxlength
 					]);
@@ -4811,7 +5937,7 @@ self.onmessage = async (e) => {
 				if (message) {
 					const slot = slots["error-message"];
 					const errorMessageAlign = getProp("errorMessageAlign");
-					return (0, vue.createVNode)("div", { "class": bem$17("error-message", errorMessageAlign) }, [slot ? slot({ message }) : message]);
+					return (0, vue.createVNode)("div", { "class": bem$16("error-message", errorMessageAlign) }, [slot ? slot({ message }) : message]);
 				}
 			};
 			const renderLabel = () => {
@@ -4831,15 +5957,15 @@ self.onmessage = async (e) => {
 				}, [props.label + colon]);
 			};
 			const renderFieldBody = () => [
-				(0, vue.createVNode)("div", { "class": bem$17("body") }, [
+				(0, vue.createVNode)("div", { "class": bem$16("body") }, [
 					renderInput(),
 					showClear.value && (0, vue.createVNode)(Icon, {
 						"ref": clearIconRef,
 						"name": props.clearIcon,
-						"class": bem$17("clear")
+						"class": bem$16("clear")
 					}, null),
 					renderRightIcon(),
-					slots.button && (0, vue.createVNode)("div", { "class": bem$17("button") }, [slots.button()])
+					slots.button && (0, vue.createVNode)("div", { "class": bem$16("button") }, [slots.button()])
 				]),
 				renderWordLimit(),
 				renderMessage()
@@ -4883,7 +6009,7 @@ self.onmessage = async (e) => {
 				};
 				return (0, vue.createVNode)(Cell, {
 					"size": props.size,
-					"class": bem$17({
+					"class": bem$16({
 						error: showError.value,
 						disabled,
 						[`label-${labelAlign}`]: labelAlign
@@ -4894,8 +6020,8 @@ self.onmessage = async (e) => {
 					"clickable": disabled ? false : props.clickable,
 					"onClick": disabled ? (e) => e.stopImmediatePropagation() : void 0,
 					"titleStyle": labelStyle.value,
-					"valueClass": bem$17("value"),
-					"titleClass": [bem$17("label", [labelAlign, { required: showRequiredMark.value }]), props.labelClass],
+					"valueClass": bem$16("value"),
+					"titleClass": [bem$16("label", [labelAlign, { required: showRequiredMark.value }]), props.labelClass],
 					"arrowDirection": props.arrowDirection
 				}, {
 					icon: LeftIcon && labelAlign !== "top" ? () => LeftIcon : null,
@@ -4906,118 +6032,6 @@ self.onmessage = async (e) => {
 			};
 		}
 	}));
-	var lockCount = 0;
-	function lockClick(lock) {
-		if (lock) {
-			if (!lockCount) document.body.classList.add("van-toast--unclickable");
-			lockCount++;
-		} else if (lockCount) {
-			lockCount--;
-			if (!lockCount) document.body.classList.remove("van-toast--unclickable");
-		}
-	}
-	var [name$15, bem$16] = createNamespace("toast");
-	var popupInheritProps$1 = [
-		"show",
-		"overlay",
-		"teleport",
-		"transition",
-		"overlayClass",
-		"overlayStyle",
-		"closeOnClickOverlay",
-		"zIndex"
-	];
-	var toastProps = {
-		icon: String,
-		show: Boolean,
-		type: makeStringProp("text"),
-		overlay: Boolean,
-		message: numericProp,
-		iconSize: numericProp,
-		duration: makeNumberProp(2e3),
-		position: makeStringProp("middle"),
-		teleport: [String, Object],
-		wordBreak: String,
-		className: null,
-		iconPrefix: String,
-		transition: makeStringProp("van-fade"),
-		loadingType: String,
-		forbidClick: Boolean,
-		overlayClass: null,
-		overlayStyle: Object,
-		closeOnClick: Boolean,
-		closeOnClickOverlay: Boolean,
-		zIndex: numericProp
-	};
-	var stdin_default$18 = (0, vue.defineComponent)({
-		name: name$15,
-		props: toastProps,
-		emits: ["update:show"],
-		setup(props, { emit, slots }) {
-			let timer;
-			let clickable = false;
-			const toggleClickable = () => {
-				const newValue = props.show && props.forbidClick;
-				if (clickable !== newValue) {
-					clickable = newValue;
-					lockClick(clickable);
-				}
-			};
-			const updateShow = (show) => emit("update:show", show);
-			const onClick = () => {
-				if (props.closeOnClick) updateShow(false);
-			};
-			const clearTimer = () => clearTimeout(timer);
-			const renderIcon = () => {
-				const { icon, type, iconSize, iconPrefix, loadingType } = props;
-				if (icon || type === "success" || type === "fail") return (0, vue.createVNode)(Icon, {
-					"name": icon || type,
-					"size": iconSize,
-					"class": bem$16("icon"),
-					"classPrefix": iconPrefix
-				}, null);
-				if (type === "loading") return (0, vue.createVNode)(Loading, {
-					"class": bem$16("loading"),
-					"size": iconSize,
-					"type": loadingType
-				}, null);
-			};
-			const renderMessage = () => {
-				const { type, message } = props;
-				if (slots.message) return (0, vue.createVNode)("div", { "class": bem$16("text") }, [slots.message()]);
-				if (isDef(message) && message !== "") return type === "html" ? (0, vue.createVNode)("div", {
-					"key": 0,
-					"class": bem$16("text"),
-					"innerHTML": String(message)
-				}, null) : (0, vue.createVNode)("div", { "class": bem$16("text") }, [message]);
-			};
-			(0, vue.watch)(() => [props.show, props.forbidClick], toggleClickable);
-			(0, vue.watch)(() => [
-				props.show,
-				props.type,
-				props.message,
-				props.duration
-			], () => {
-				clearTimer();
-				if (props.show && props.duration > 0) timer = setTimeout(() => {
-					updateShow(false);
-				}, props.duration);
-			});
-			(0, vue.onMounted)(toggleClickable);
-			(0, vue.onUnmounted)(toggleClickable);
-			return () => (0, vue.createVNode)(Popup, (0, vue.mergeProps)({
-				"class": [bem$16([
-					props.position,
-					props.wordBreak === "normal" ? "break-normal" : props.wordBreak,
-					{ [props.type]: !props.icon }
-				]), props.className],
-				"lockScroll": false,
-				"onClick": onClick,
-				"onClosed": clearTimer,
-				"onUpdate:show": updateShow
-			}, pick(props, popupInheritProps$1)), { default: () => [renderIcon(), renderMessage()] });
-		}
-	});
 	function usePopupState() {
 		const state = (0, vue.reactive)({ show: false });
 		const toggle = (show) => {
@@ -5051,77 +6065,6 @@ self.onmessage = async (e) => {
 				document.body.removeChild(root);
 			}
 		};
-	}
-	var defaultOptions = {
-		icon: "",
-		type: "text",
-		message: "",
-		className: "",
-		overlay: false,
-		onClose: void 0,
-		onOpened: void 0,
-		duration: 2e3,
-		teleport: "body",
-		iconSize: void 0,
-		iconPrefix: void 0,
-		position: "middle",
-		transition: "van-fade",
-		forbidClick: false,
-		loadingType: void 0,
-		overlayClass: "",
-		overlayStyle: void 0,
-		closeOnClick: false,
-		closeOnClickOverlay: false
-	};
-	var queue = [];
-	var allowMultiple = false;
-	var currentOptions$2 = extend({}, defaultOptions);
-	var defaultOptionsMap = new Map();
-	function parseOptions$1(message) {
-		if (isObject$1(message)) return message;
-		return { message };
-	}
-	function createInstance() {
-		const { instance, unmount } = mountComponent({ setup() {
-			const message = (0, vue.ref)("");
-			const { open, state, close, toggle } = usePopupState();
-			const onClosed = () => {
-				if (allowMultiple) {
-					queue = queue.filter((item) => item !== instance);
-					unmount();
-				}
-			};
-			const render = () => {
-				return (0, vue.createVNode)(stdin_default$18, (0, vue.mergeProps)(state, {
-					onClosed,
-					"onUpdate:show": toggle
-				}), null);
-			};
-			(0, vue.watch)(message, (val) => {
-				state.message = val;
-			});
-			(0, vue.getCurrentInstance)().render = render;
-			return {
-				open,
-				close,
-				message
-			};
-		} });
-		return instance;
-	}
-	function getInstance() {
-		if (!queue.length || allowMultiple) {
-			const instance = createInstance();
-			queue.push(instance);
-		}
-		return queue[queue.length - 1];
-	}
-	function showToast(options = {}) {
-		if (!inBrowser$1) return {};
-		const toast = getInstance();
-		const parsedOptions = parseOptions$1(options);
-		toast.open(extend({}, currentOptions$2, defaultOptionsMap.get(parsedOptions.type || currentOptions$2.type), parsedOptions));
-		return toast;
 	}
 	var [name$14, bem$15] = createNamespace("switch");
 	var Switch = withInstall((0, vue.defineComponent)({
@@ -6277,7 +7220,7 @@ self.onmessage = async (e) => {
 					"onTouchcancel": onTouchEnd,
 					"onClickCapture": onClick,
 					"style": rootStyle.value
-				}, attrs), [slots.default ? slots.default() : (0, vue.createVNode)(stdin_default$32, {
+				}, attrs), [slots.default ? slots.default() : (0, vue.createVNode)(stdin_default$31, {
 					"name": props.icon,
 					"class": bem$8("icon")
 				}, null)]), [[vue.vShow, show.value]]);
@@ -7518,6 +8461,8 @@ self.onmessage = async (e) => {
 	var _hoisted_10$1 = { class: "group" };
 	var _hoisted_11$1 = { class: "group-content" };
 	var _hoisted_12$1 = { class: "group" };
+	var _hoisted_13$1 = { class: "group-content" };
+	var _hoisted_14$1 = { class: "group" };
 	var _sfc_main$8 = {
 		__name: "SettingsPanel",
 		props: {
@@ -7534,6 +8479,8 @@ self.onmessage = async (e) => {
 			const console = MyConsole("[设置]");
 			const pageWindow = _unsafeWindow ?? window;
 			const props = __props;
+			const toastSound = (0, vue.ref)(getGMValue("Script.toastSound"));
+			(0, vue.watch)(toastSound, setToastSound);
 			const cellCheckBoxToggle = (refs, index) => {
 				refs[index]?.toggle();
 			};
@@ -7584,6 +8531,7 @@ self.onmessage = async (e) => {
 			enforceAutoLoginCredentials(webVPNCredentialsReady, webVPNAutoLogin, "WebVPN.autoLogin", "WebVPN ", false);
 			enforceAutoLoginCredentials(jwglCredentialsReady, jwglAutoLogin, "Jwgl.autoLogin", "教务系统", false);
 			const resettableSettingModels = {
+				"Script.toastSound": toastSound,
 				"WebVPN.autoLogin": webVPNAutoLogin,
 				"WebVPN.autoReLogin": webVPNAutoReLogin,
 				"WebVPN.autoClose": webVPNAutoClose,
@@ -7684,19 +8632,23 @@ self.onmessage = async (e) => {
 				jwglCustomMenuRefs.value = [];
 			});
 			(0, vue.onMounted)(() => {
-				if (props.deployToast) removeToastHandle(props.deployToast);
-				toast("success", "设置页面部署完毕", 2);
+				if (props.deployToast) updateToastHandle(props.deployToast, {
+					type: "success",
+					title: "设置页面部署完毕",
+					duration: 2e3
+				});
+				else toast("success", "设置页面部署完毕", 2);
 			});
 			return (_ctx, _cache) => {
 				const _component_van_form = (0, vue.resolveComponent)("van-form");
-				return (0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, [(0, vue.createElementVNode)("section", _hoisted_1$8, [(0, vue.createElementVNode)("div", _hoisted_2$7, [_cache[18] || (_cache[18] = (0, vue.createElementVNode)("span", { class: "settings-function-title" }, "脚本设置", -1)), (0, vue.createElementVNode)("span", _hoisted_3$7, "修改会自动保存 · Better NXU V " + (0, vue.toDisplayString)(__props.scriptVersion), 1)]), (0, vue.createElementVNode)("div", _hoisted_4$5, [
+				return (0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, [(0, vue.createElementVNode)("section", _hoisted_1$8, [(0, vue.createElementVNode)("div", _hoisted_2$7, [_cache[19] || (_cache[19] = (0, vue.createElementVNode)("span", { class: "settings-function-title" }, "Better NXU 设置", -1)), (0, vue.createElementVNode)("span", _hoisted_3$7, "修改会自动保存 · Better NXU V " + (0, vue.toDisplayString)(__props.scriptVersion), 1)]), (0, vue.createElementVNode)("div", _hoisted_4$5, [
 					(0, vue.createVNode)((0, vue.unref)(Button), {
 						size: "small",
 						plain: "",
 						icon: "setting-o",
 						onClick: openNativeConfig
 					}, {
-						default: (0, vue.withCtx)(() => [..._cache[19] || (_cache[19] = [(0, vue.createTextVNode)("ScriptCat 原生配置", -1)])]),
+						default: (0, vue.withCtx)(() => [..._cache[20] || (_cache[20] = [(0, vue.createTextVNode)("ScriptCat 原生配置", -1)])]),
 						_: 1
 					}),
 					(0, vue.createVNode)((0, vue.unref)(Button), {
@@ -7706,7 +8658,7 @@ self.onmessage = async (e) => {
 						icon: "replay",
 						onClick: resetFunctionSettings
 					}, {
-						default: (0, vue.withCtx)(() => [..._cache[20] || (_cache[20] = [(0, vue.createTextVNode)("恢复功能默认值", -1)])]),
+						default: (0, vue.withCtx)(() => [..._cache[21] || (_cache[21] = [(0, vue.createTextVNode)("恢复功能默认值", -1)])]),
 						_: 1
 					}),
 					(0, vue.createVNode)((0, vue.unref)(Button), {
@@ -7715,13 +8667,28 @@ self.onmessage = async (e) => {
 						icon: "delete-o",
 						onClick: resetAllSettings
 					}, {
-						default: (0, vue.withCtx)(() => [..._cache[21] || (_cache[21] = [(0, vue.createTextVNode)("完全重置", -1)])]),
+						default: (0, vue.withCtx)(() => [..._cache[22] || (_cache[22] = [(0, vue.createTextVNode)("完全重置", -1)])]),
 						_: 1
 					})
 				])]), (0, vue.createElementVNode)("div", _hoisted_5$5, [
-					(0, vue.createElementVNode)("div", _hoisted_6$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "WebVPN 页面设置" }), (0, vue.createElementVNode)("div", _hoisted_7$1, [(0, vue.createVNode)(_component_van_form, null, {
+					(0, vue.createElementVNode)("div", _hoisted_6$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "脚本设置" }), (0, vue.createElementVNode)("div", _hoisted_7$1, [_cache[23] || (_cache[23] = (0, vue.createElementVNode)("h2", null, "通知设置", -1)), (0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
+						default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Cell), {
+							center: "",
+							title: "通知音效",
+							label: "播放通知提示音"
+						}, {
+							"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
+								modelValue: toastSound.value,
+								"onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => toastSound.value = $event),
+								"aria-label": "通知音效"
+							}, null, 8, ["modelValue"])]),
+							_: 1
+						})]),
+						_: 1
+					})])]),
+					(0, vue.createElementVNode)("div", _hoisted_8$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "WebVPN 页面设置" }), (0, vue.createElementVNode)("div", _hoisted_9$1, [(0, vue.createVNode)(_component_van_form, null, {
 						default: (0, vue.withCtx)(() => [
-							_cache[22] || (_cache[22] = (0, vue.createElementVNode)("h2", null, "登录设置", -1)),
+							_cache[24] || (_cache[24] = (0, vue.createElementVNode)("h2", null, "登录设置", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 								default: (0, vue.withCtx)(() => [
 									(0, vue.createVNode)((0, vue.unref)(Cell), {
@@ -7732,21 +8699,21 @@ self.onmessage = async (e) => {
 									}, {
 										"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 											modelValue: webVPNAutoLogin.value,
-											"onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => webVPNAutoLogin.value = $event),
+											"onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => webVPNAutoLogin.value = $event),
 											disabled: !webVPNCredentialsReady.value
 										}, null, 8, ["modelValue", "disabled"])]),
 										_: 1
 									}, 8, ["label", "class"]),
 									(0, vue.createVNode)((0, vue.unref)(Field), {
 										modelValue: webVPNAccount.value,
-										"onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => webVPNAccount.value = $event),
+										"onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => webVPNAccount.value = $event),
 										label: "账号",
 										autocomplete: "off",
 										placeholder: "请输入账号（学号）"
 									}, null, 8, ["modelValue"]),
 									(0, vue.createVNode)((0, vue.unref)(Field), {
 										modelValue: webVPNPassword.value,
-										"onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => webVPNPassword.value = $event),
+										"onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => webVPNPassword.value = $event),
 										type: "password",
 										autocomplete: "off",
 										label: "密码",
@@ -7758,14 +8725,14 @@ self.onmessage = async (e) => {
 									}, {
 										"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 											modelValue: webVPNAutoReLogin.value,
-											"onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => webVPNAutoReLogin.value = $event)
+											"onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => webVPNAutoReLogin.value = $event)
 										}, null, 8, ["modelValue"])]),
 										_: 1
 									})
 								]),
 								_: 1
 							}),
-							_cache[23] || (_cache[23] = (0, vue.createElementVNode)("h2", null, "卡片设置", -1)),
+							_cache[25] || (_cache[25] = (0, vue.createElementVNode)("h2", null, "卡片设置", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 								default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Cell), {
 									center: "",
@@ -7773,7 +8740,7 @@ self.onmessage = async (e) => {
 								}, {
 									"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 										modelValue: webVPNCourseGrab.value,
-										"onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => webVPNCourseGrab.value = $event)
+										"onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => webVPNCourseGrab.value = $event)
 									}, null, 8, ["modelValue"])]),
 									_: 1
 								}), (0, vue.createVNode)((0, vue.unref)(Cell), {
@@ -7782,16 +8749,16 @@ self.onmessage = async (e) => {
 								}, {
 									"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 										modelValue: webVPNCustomTool.value,
-										"onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => webVPNCustomTool.value = $event)
+										"onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => webVPNCustomTool.value = $event)
 									}, null, 8, ["modelValue"])]),
 									_: 1
 								})]),
 								_: 1
 							}),
-							_cache[24] || (_cache[24] = (0, vue.createElementVNode)("h3", null, "需要添加的自定义卡片", -1)),
+							_cache[26] || (_cache[26] = (0, vue.createElementVNode)("h3", null, "需要添加的自定义卡片", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CheckboxGroup), {
 								modelValue: webVPNCustomCard.value,
-								"onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => webVPNCustomCard.value = $event)
+								"onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => webVPNCustomCard.value = $event)
 							}, {
 								default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 									default: (0, vue.withCtx)(() => [((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(webVPNCustomCardList, (item, index) => {
@@ -7805,7 +8772,7 @@ self.onmessage = async (e) => {
 												ref_for: true,
 												ref: (el) => webVPNCustomCardRefs.value[index] = el,
 												name: item,
-												onClick: _cache[6] || (_cache[6] = (0, vue.withModifiers)(() => {}, ["stop"]))
+												onClick: _cache[7] || (_cache[7] = (0, vue.withModifiers)(() => {}, ["stop"]))
 											}, null, 8, ["name"])]),
 											_: 2
 										}, 1032, ["title", "onClick"]);
@@ -7814,7 +8781,7 @@ self.onmessage = async (e) => {
 								})]),
 								_: 1
 							}, 8, ["modelValue"]),
-							_cache[25] || (_cache[25] = (0, vue.createElementVNode)("h2", null, "其他设置", -1)),
+							_cache[27] || (_cache[27] = (0, vue.createElementVNode)("h2", null, "其他设置", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 								default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Cell), {
 									center: "",
@@ -7822,7 +8789,7 @@ self.onmessage = async (e) => {
 								}, {
 									"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 										modelValue: webVPNSearchClose.value,
-										"onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => webVPNSearchClose.value = $event)
+										"onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => webVPNSearchClose.value = $event)
 									}, null, 8, ["modelValue"])]),
 									_: 1
 								}), (0, vue.createVNode)((0, vue.unref)(Cell), {
@@ -7831,7 +8798,7 @@ self.onmessage = async (e) => {
 								}, {
 									"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 										modelValue: webVPNAutoClose.value,
-										"onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => webVPNAutoClose.value = $event)
+										"onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => webVPNAutoClose.value = $event)
 									}, null, 8, ["modelValue"])]),
 									_: 1
 								})]),
@@ -7840,9 +8807,9 @@ self.onmessage = async (e) => {
 						]),
 						_: 1
 					})])]),
-					(0, vue.createElementVNode)("div", _hoisted_8$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "教务系统页面设置" }), (0, vue.createElementVNode)("div", _hoisted_9$1, [(0, vue.createVNode)(_component_van_form, null, {
+					(0, vue.createElementVNode)("div", _hoisted_10$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "教务系统页面设置" }), (0, vue.createElementVNode)("div", _hoisted_11$1, [(0, vue.createVNode)(_component_van_form, null, {
 						default: (0, vue.withCtx)(() => [
-							_cache[26] || (_cache[26] = (0, vue.createElementVNode)("h2", null, "登录设置", -1)),
+							_cache[28] || (_cache[28] = (0, vue.createElementVNode)("h2", null, "登录设置", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 								default: (0, vue.withCtx)(() => [
 									(0, vue.createVNode)((0, vue.unref)(Cell), {
@@ -7853,21 +8820,21 @@ self.onmessage = async (e) => {
 									}, {
 										"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 											modelValue: jwglAutoLogin.value,
-											"onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => jwglAutoLogin.value = $event),
+											"onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => jwglAutoLogin.value = $event),
 											disabled: !jwglCredentialsReady.value
 										}, null, 8, ["modelValue", "disabled"])]),
 										_: 1
 									}, 8, ["label", "class"]),
 									(0, vue.createVNode)((0, vue.unref)(Field), {
 										modelValue: jwglAccount.value,
-										"onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => jwglAccount.value = $event),
+										"onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => jwglAccount.value = $event),
 										label: "账号",
 										autocomplete: "off",
 										placeholder: "请输入账号（学号）"
 									}, null, 8, ["modelValue"]),
 									(0, vue.createVNode)((0, vue.unref)(Field), {
 										modelValue: jwglPassword.value,
-										"onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => jwglPassword.value = $event),
+										"onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => jwglPassword.value = $event),
 										type: "password",
 										label: "密码",
 										autocomplete: "off",
@@ -7876,7 +8843,7 @@ self.onmessage = async (e) => {
 								]),
 								_: 1
 							}),
-							_cache[27] || (_cache[27] = (0, vue.createElementVNode)("h2", null, "功能设置", -1)),
+							_cache[29] || (_cache[29] = (0, vue.createElementVNode)("h2", null, "功能设置", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 								default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Cell), {
 									center: "",
@@ -7884,16 +8851,16 @@ self.onmessage = async (e) => {
 								}, {
 									"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 										modelValue: jwglCourseBeautify.value,
-										"onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => jwglCourseBeautify.value = $event)
+										"onUpdate:modelValue": _cache[14] || (_cache[14] = ($event) => jwglCourseBeautify.value = $event)
 									}, null, 8, ["modelValue"])]),
 									_: 1
 								})]),
 								_: 1
 							}),
-							_cache[28] || (_cache[28] = (0, vue.createElementVNode)("h3", null, "在菜单需要添加的条目", -1)),
+							_cache[30] || (_cache[30] = (0, vue.createElementVNode)("h3", null, "在菜单需要添加的条目", -1)),
 							(0, vue.createVNode)((0, vue.unref)(CheckboxGroup), {
 								modelValue: jwglCustomMenu.value,
-								"onUpdate:modelValue": _cache[15] || (_cache[15] = ($event) => jwglCustomMenu.value = $event)
+								"onUpdate:modelValue": _cache[16] || (_cache[16] = ($event) => jwglCustomMenu.value = $event)
 							}, {
 								default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 									default: (0, vue.withCtx)(() => [((0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, (0, vue.renderList)(jwglCustomMenuList, (item, index) => {
@@ -7907,7 +8874,7 @@ self.onmessage = async (e) => {
 												ref_for: true,
 												ref: (el) => jwglCustomMenuRefs.value[index] = el,
 												name: item,
-												onClick: _cache[14] || (_cache[14] = (0, vue.withModifiers)(() => {}, ["stop"]))
+												onClick: _cache[15] || (_cache[15] = (0, vue.withModifiers)(() => {}, ["stop"]))
 											}, null, 8, ["name"])]),
 											_: 2
 										}, 1032, ["title", "onClick"]);
@@ -7919,8 +8886,8 @@ self.onmessage = async (e) => {
 						]),
 						_: 1
 					})])]),
-					(0, vue.createElementVNode)("div", _hoisted_10$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "团委官网页面设置" }), (0, vue.createElementVNode)("div", _hoisted_11$1, [(0, vue.createVNode)(_component_van_form, null, {
-						default: (0, vue.withCtx)(() => [_cache[29] || (_cache[29] = (0, vue.createElementVNode)("h2", null, "下载设置", -1)), (0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
+					(0, vue.createElementVNode)("div", _hoisted_12$1, [(0, vue.createVNode)((0, vue.unref)(NavBar), { title: "团委官网页面设置" }), (0, vue.createElementVNode)("div", _hoisted_13$1, [(0, vue.createVNode)(_component_van_form, null, {
+						default: (0, vue.withCtx)(() => [_cache[31] || (_cache[31] = (0, vue.createElementVNode)("h2", null, "下载设置", -1)), (0, vue.createVNode)((0, vue.unref)(CellGroup), { inset: "" }, {
 							default: (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Cell), {
 								center: "",
 								title: "是否自动下载附件",
@@ -7928,7 +8895,7 @@ self.onmessage = async (e) => {
 							}, {
 								"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 									modelValue: tuanweiAutoDownload.value,
-									"onUpdate:modelValue": _cache[16] || (_cache[16] = ($event) => tuanweiAutoDownload.value = $event)
+									"onUpdate:modelValue": _cache[17] || (_cache[17] = ($event) => tuanweiAutoDownload.value = $event)
 								}, null, 8, ["modelValue"])]),
 								_: 1
 							}), (0, vue.createVNode)((0, vue.unref)(Cell), {
@@ -7938,7 +8905,7 @@ self.onmessage = async (e) => {
 							}, {
 								"right-icon": (0, vue.withCtx)(() => [(0, vue.createVNode)((0, vue.unref)(Switch), {
 									modelValue: tuanweiAutoDownloadClose.value,
-									"onUpdate:modelValue": _cache[17] || (_cache[17] = ($event) => tuanweiAutoDownloadClose.value = $event),
+									"onUpdate:modelValue": _cache[18] || (_cache[18] = ($event) => tuanweiAutoDownloadClose.value = $event),
 									disabled: !tuanweiAutoDownload.value
 								}, null, 8, ["modelValue", "disabled"])]),
 								_: 1
@@ -7947,14 +8914,14 @@ self.onmessage = async (e) => {
 						})]),
 						_: 1
 					})])]),
-					(0, vue.createElementVNode)("div", _hoisted_12$1, [(0, vue.createVNode)((0, vue.unref)(Empty), {
+					(0, vue.createElementVNode)("div", _hoisted_14$1, [(0, vue.createVNode)((0, vue.unref)(Empty), {
 						style: {
 							"width": "100%",
 							"height": "100%"
 						},
 						description: "更多设置等待建设中..."
 					}, {
-						image: (0, vue.withCtx)(() => [..._cache[30] || (_cache[30] = [(0, vue.createElementVNode)("svg", {
+						image: (0, vue.withCtx)(() => [..._cache[32] || (_cache[32] = [(0, vue.createElementVNode)("svg", {
 							width: "160",
 							viewBox: "0 0 24 24",
 							xmlns: "http://www.w3.org/2000/svg"
@@ -8269,8 +9236,12 @@ self.onmessage = async (e) => {
 			(0, vue.onMounted)(() => {
 				renderMarkdown(document.getElementById("aboutmd"), props.aboutMd);
 				renderMarkdown(document.getElementById("updatemd"), props.updateMd);
-				if (props.deployToast) removeToastHandle(props.deployToast);
-				toast("success", "关于我们部署完毕", 2);
+				if (props.deployToast) updateToastHandle(props.deployToast, {
+					type: "success",
+					title: "关于我们部署完毕",
+					duration: 2e3
+				});
+				else toast("success", "关于我们部署完毕", 2);
 			});
 			return (_ctx, _cache) => {
 				return (0, vue.openBlock)(), (0, vue.createElementBlock)(vue.Fragment, null, [
@@ -8559,14 +9530,14 @@ self.onmessage = async (e) => {
 			throw scheduleOperationError(OCR_ENGINE_UNAVAILABLE, `验证码识别组件加载失败：${error?.message || error}`);
 		}
 	}
-	var console$22 = MyConsole("[OCR]");
-	var LoadMessage = {
+	var OCR_STATUS_LABELS = {
 		"loading tesseract core": "OCR核心加载",
 		"initializing tesseract": "OCR初始化",
 		"loading language traineddata": "加载OCR语言训练数据",
 		"initializing api": "初始化OCR接口",
 		"recognizing text": "识别验证码"
 	};
+	var console$22 = MyConsole("[OCR]");
 	function withTimeout(promise, timeoutMs, message) {
 		let timer;
 		const timeout = new Promise((_, reject) => {
@@ -8574,32 +9545,31 @@ self.onmessage = async (e) => {
 		});
 		return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 	}
-	async function readJwglCaptcha() {
+	async function readJwglCaptcha(progressToast) {
 		const url = new URL("captcha/image.action", window.location.href).href;
 		console$22("开始加载验证码图片", { url }, "info");
 		installNotification();
 		let worker;
-		let progressToast = null;
+		const ownsToast = !progressToast;
+		progressToast ??= toast("loading", "正在识别验证码，首次使用需下载识别模型，请耐心等待...", 0);
 		let active = true;
 		let workerPromise;
 		try {
 			workerPromise = createOcrWorker("eng", 1, { logger: (m) => {
 				if (!active) return;
-				const statusText = LoadMessage[m.status];
+				const statusText = OCR_STATUS_LABELS[m.status];
 				if (statusText) console$22("识别进度", {
 					status: statusText,
 					progress: Number(m.progress || 0)
 				}, "debug");
 				const progress = Number(m.progress);
-				if (progress === 0) {
-					if (statusText) {
-						if (progressToast) removeToastHandle(progressToast);
-						progressToast = toast("info", statusText, 0);
-					}
-				} else if (progress === 1) {
-					if (progressToast) removeToastHandle(progressToast);
-					progressToast = null;
-					toast("success", "验证码识别组件加载完成", 2);
+				if (statusText && Number.isFinite(progress)) {
+					const value = Math.min(1, Math.max(0, progress));
+					updateToastHandle(progressToast, {
+						title: statusText,
+						progress: value,
+						meta: `${Math.round(value * 100)}%`
+					});
 				}
 			} });
 			worker = await withTimeout(workerPromise, 45e3, "验证码识别组件加载超时");
@@ -8609,7 +9579,7 @@ self.onmessage = async (e) => {
 			return code;
 		} finally {
 			active = false;
-			if (progressToast) removeToastHandle(progressToast);
+			if (ownsToast) removeToastHandle(progressToast);
 			if (!worker && workerPromise) workerPromise.then(async (lateWorker) => {
 				try {
 					await lateWorker?.terminate?.();
@@ -8641,9 +9611,9 @@ self.onmessage = async (e) => {
 				return;
 			}
 		}
-		const recognitionToast = toast("info", "正在识别验证码，首次使用需下载识别模型，请耐心等待...", 0);
+		const recognitionToast = toast("loading", "正在识别验证码，首次使用需下载识别模型，请耐心等待...", 0);
 		try {
-			const verification = await readJwglCaptcha();
+			const verification = await readJwglCaptcha(recognitionToast);
 			const usernameInput = document.getElementsByName("loginForm.name")[0];
 			const passwordInput = document.getElementsByName("loginForm.password")[0];
 			const captchaInput = document.getElementsByName("loginForm.captcha")[0];
@@ -8655,13 +9625,24 @@ self.onmessage = async (e) => {
 			fillInput(usernameInput, getGMValue("Jwgl.username"));
 			fillInput(passwordInput, getGMValue("Jwgl.password"));
 			fillInput(captchaInput, verification);
+			updateToastHandle(recognitionToast, {
+				type: "success",
+				title: "验证码识别完成，正在登录",
+				progress: null,
+				meta: null,
+				duration: 2e3
+			});
 			submitButton.click();
 			console$21("已触发教务登录提交，等待页面响应", "", "info");
 		} catch (error) {
 			console$21("自动填写失败", error, "error");
-			toast("error", "验证码识别失败，请手动输入后登录", 5);
-		} finally {
-			removeToastHandle(recognitionToast);
+			updateToastHandle(recognitionToast, {
+				type: "error",
+				title: "验证码识别失败，请手动输入后登录",
+				progress: null,
+				meta: null,
+				duration: 5e3
+			});
 		}
 	}
 	var console$20 = MyConsole("[jwgl.login]");
@@ -8769,6 +9750,34 @@ self.onmessage = async (e) => {
 			contentArray[i].unshift(contentArray[i - 1][0]);
 		}
 		return contentArray;
+	}
+	async function downloadTextFile(content, filename, mimeType = "application/json;charset=utf-8") {
+		const blob = new Blob([content], { type: mimeType });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = filename;
+		link.style.display = "none";
+		try {
+			document.body.appendChild(link);
+			link.click();
+		} catch (error) {
+			URL.revokeObjectURL(url);
+			throw error;
+		}
+		setTimeout(() => {
+			link.remove();
+			URL.revokeObjectURL(url);
+		}, 100);
+	}
+	function closeCurrentTab() {
+		try {
+			if (typeof _monkeyWindow?.close !== "function") return false;
+			_monkeyWindow.close();
+			return true;
+		} catch {
+			return false;
+		}
 	}
 	var webVpnCaptureTail = Promise.resolve();
 	var STYLE_BATCH_SIZE = 32;
@@ -10166,14 +11175,14 @@ self.onmessage = async (e) => {
 				async beforeClose(action) {
 					if (action !== "confirm") return true;
 					if (!value.value.trim()) {
-						showToast(isPublic ? "请粘贴加密密钥" : "请粘贴解密密钥");
+						toast("warning", isPublic ? "请粘贴加密密钥" : "请粘贴解密密钥");
 						return false;
 					}
 					try {
 						importedKey = isPublic ? await importPublicKey(value.value.trim()) : await importPrivateKey(value.value.trim());
 						return true;
 					} catch (error) {
-						showToast(error.message || "密钥格式无效");
+						toast("warning", error.message || "密钥格式无效");
 						return false;
 					}
 				}
@@ -11101,7 +12110,7 @@ self.onmessage = async (e) => {
 		console$14("检查首次配置与版本提示状态", {
 			firstSet,
 			configVersion,
-			ConfigVersion: 8
+			ConfigVersion: 9
 		});
 		mountVueApp({
 			root: _sfc_main$5,
@@ -11110,7 +12119,7 @@ self.onmessage = async (e) => {
 				firstSet,
 				configVersion,
 				scriptVersion,
-				configVersionLatest: 8
+				configVersionLatest: 9
 			}
 		});
 		const rtEl = document.querySelector("header .rt");
@@ -12259,7 +13268,7 @@ self.onmessage = async (e) => {
 				const number = String(teacher?.number || "");
 				if (!number) return;
 				setClipboard?.(number);
-				showToast("工号已复制");
+				toast("success", "工号已复制");
 			};
 			const scheduleManagerPeriodRows = [
 				{
@@ -12573,7 +13582,7 @@ self.onmessage = async (e) => {
 						})]),
 						beforeClose(action) {
 							if (action === "confirm" && !/^\d{6,}$/.test(value.value.trim())) {
-								showToast("请输入有效学号");
+								toast("warning", "请输入有效学号");
 								return false;
 							}
 							return true;
@@ -12642,7 +13651,7 @@ self.onmessage = async (e) => {
 						})]),
 						beforeClose(action) {
 							if (action === "confirm" && !name.value.trim()) {
-								showToast("请输入姓名");
+								toast("warning", "请输入姓名");
 								return false;
 							}
 							return true;
@@ -12674,7 +13683,7 @@ self.onmessage = async (e) => {
 				},
 				requestName: requestImageName,
 				getOwner: lookupStudentOwner,
-				onLookupError: () => showToast("获取姓名失败，请直接填写姓名")
+				onLookupError: () => toast("warning", "获取姓名失败，请直接填写姓名")
 			});
 			const personalExportPending = (0, vue.ref)(false);
 			const exportPersonalJson = async () => {
@@ -12716,6 +13725,7 @@ self.onmessage = async (e) => {
 			const exportPersonalImage = async () => {
 				if (personalExportPending.value || personalLoading.value || !personalSchedule.value) return;
 				personalExportPending.value = true;
+				let exporting = false;
 				try {
 					const { filename, assertCurrent } = await prepareCurrentScheduleImageExport({
 						getSchedule: () => personalLoading.value ? null : personalSchedule.value,
@@ -12734,25 +13744,24 @@ self.onmessage = async (e) => {
 						return;
 					}
 					console("开始导出", { tab: personalTab.value }, "info");
-					const progressToast = toast("info", "正在生成课表图片，请稍候", 0);
-					try {
-						await downloadSnapdomImage({
-							snapdom: pageWindow.snapdom,
-							target,
-							options: {
-								format: "png",
-								filename,
-								scale: 2.5,
-								quality: 1
-							},
-							fixWebVpn: true,
-							pageWindow
-						});
-					} finally {
-						removeToastHandle(progressToast);
-					}
+					exporting = true;
+					await toastPromise(() => downloadSnapdomImage({
+						snapdom: pageWindow.snapdom,
+						target,
+						options: {
+							format: "png",
+							filename,
+							scale: 2.5,
+							quality: 1
+						},
+						fixWebVpn: true,
+						pageWindow
+					}), {
+						loading: "正在生成课表图片，请稍候",
+						success: "课表图片已导出",
+						error: "导出图片失败，请重试"
+					});
 					console("导出完成", { tab: personalTab.value }, "info");
-					toast("success", "课表图片已导出", 3);
 				} catch (error) {
 					if (error.code === "EXPORT_CANCELLED" || error?.name === "AbortError") return;
 					if (error.code === "SCHEDULE_CHANGED") {
@@ -12763,7 +13772,7 @@ self.onmessage = async (e) => {
 						tab: personalTab.value,
 						error
 					}, "error");
-					toast("error", "导出图片失败，请重试", 3);
+					if (!exporting) toast("error", "导出图片失败，请重试", 3);
 				} finally {
 					personalExportPending.value = false;
 				}
@@ -13006,8 +14015,7 @@ self.onmessage = async (e) => {
 				if (multiScheduleLoading.value) return;
 				multiScheduleLoading.value = true;
 				try {
-					const progressToast = toast("info", "正在生成空课表图片，请稍候", 0);
-					try {
+					await toastPromise(async () => {
 						await (0, vue.nextTick)();
 						await downloadSnapdomImage({
 							snapdom: pageWindow.snapdom,
@@ -13021,13 +14029,14 @@ self.onmessage = async (e) => {
 							fixWebVpn: true,
 							pageWindow
 						});
-					} finally {
-						removeToastHandle(progressToast);
-					}
+					}, {
+						loading: "正在生成空课表图片，请稍候",
+						success: "空课表图片已导出",
+						error: (error) => error.message || "导出图片失败，请重试"
+					});
 					showExportMenu.value = false;
-					toast("success", "空课表图片已导出", 3);
 				} catch (error) {
-					toast("error", error.message || "导出图片失败，请重试", 3);
+					console("导出图片失败", error, "error");
 				} finally {
 					multiScheduleLoading.value = false;
 				}
@@ -13532,8 +14541,11 @@ self.onmessage = async (e) => {
 			root: _sfc_main,
 			id: "tools"
 		});
-		removeToastHandle(deployToast);
-		toast("success", "小工具部署完毕", 2);
+		updateToastHandle(deployToast, {
+			type: "success",
+			title: "小工具部署完毕",
+			duration: 2e3
+		});
 		toast("info", "由于获取课表信息需要，我们正在后台打开信息门户和学工系统页面，请稍后再打开\"课表信息\"页面，以免获取信息失败", 6);
 		console$10("小工具页部署完毕");
 	}
@@ -13624,7 +14636,7 @@ self.onmessage = async (e) => {
 			signal.removeEventListener("abort", abort);
 		}
 	}
-	async function createLocalOcrWorker(signal, { page = _unsafeWindow ?? window, loadAsset = fetchOcrAsset, createWorker = createOcrWorker } = {}) {
+	async function createLocalOcrWorker(signal, { page = _unsafeWindow ?? window, loadAsset = fetchOcrAsset, createWorker = createOcrWorker, logger } = {}) {
 		const controller = new AbortController();
 		const cancel = () => controller.abort(signal.reason);
 		signal.addEventListener("abort", cancel, { once: true });
@@ -13655,7 +14667,10 @@ self.onmessage = async (e) => {
 				workerBlobURL: false,
 				corePath: `${urls[1]}#.js`,
 				langPath: `${urls[2]}#`,
-				cacheMethod: "none"
+				cacheMethod: "none",
+				logger: (message) => {
+					if (!disposed && !controller.signal.aborted) logger?.(message);
+				}
 			});
 			worker = await withAbort(pendingWorker, controller.signal);
 			await withAbort(worker.setParameters({
@@ -13825,7 +14840,11 @@ self.onmessage = async (e) => {
 		page.addEventListener("pagehide", stop, { once: true });
 		try {
 			report("正在加载验证码识别组件…");
-			worker = await createWorker(signal);
+			worker = await createWorker(signal, { logger: ({ status, progress }) => {
+				if (signal.aborted || !OCR_STATUS_LABELS[status]) return;
+				const value = Number(progress);
+				if (Number.isFinite(value)) report(OCR_STATUS_LABELS[status], "info", Math.min(1, Math.max(0, value)));
+			} });
 			for (let attempt = 0; attempt < 3; attempt++) {
 				signal.throwIfAborted();
 				if (attempt) image.src = new URL(`${IMAGE_PATH}?randnum=${Date.now()}`, url).href;
@@ -13898,6 +14917,17 @@ self.onmessage = async (e) => {
 			if (progressToast) removeToastHandle(progressToast);
 			progressToast = null;
 		};
+		const finishProgress = (type, message, duration) => {
+			if (progressToast) updateToastHandle(progressToast, {
+				type,
+				title: message,
+				progress: null,
+				meta: null,
+				duration
+			});
+			else toast(type, message, duration / 1e3);
+			progressToast = null;
+		};
 		const onPageHide = () => {
 			console$6("页面已离开，停止自动下载流程", "", "info");
 			active = false;
@@ -13906,24 +14936,28 @@ self.onmessage = async (e) => {
 		window.addEventListener("pagehide", onPageHide, { once: true });
 		task = autoDownloadAttachment({
 			autoClose: getGMValue("TuanWei.autoDownloadClose") === true,
-			report: (message, type = "info") => {
+			report: (message, type = "info", progress) => {
 				if (!active) return;
 				console$6(message, "", "info");
-				clearProgress();
-				if (type === "success") toast("success", message, 3);
-				else progressToast = toast("info", message, 0);
+				if (type === "success") finishProgress("success", message, 3e3);
+				else {
+					if (!progressToast) progressToast = toast("loading", message, 0);
+					updateToastHandle(progressToast, {
+						title: message,
+						progress: progress ?? null,
+						meta: progress === void 0 ? null : `${Math.round(progress * 100)}%`
+					});
+				}
 			}
 		}).then((result) => {
 			if (active && result === "manual") {
 				console$6("已停止自动下载，请手动完成", "", "info");
-				clearProgress();
-				toast("info", "已停止自动下载，请手动完成", 4);
+				finishProgress("info", "已停止自动下载，请手动完成", 4e3);
 			}
 		}).catch((error) => {
 			if (!active) return;
 			console$6("自动下载异常终止，页面已保留，可手动下载", error, "error");
-			clearProgress();
-			toast("error", `${error?.message || "自动下载失败"}；页面已保留，可手动下载。`, 6);
+			finishProgress("error", `${error?.message || "自动下载失败"}；页面已保留，可手动下载。`, 6e3);
 		}).finally(() => {
 			clearProgress();
 			window.removeEventListener("pagehide", onPageHide);
@@ -14441,3 +15475,31 @@ self.onmessage = async (e) => {
 		}, "error");
 	}
 })(Vue);
+/*! MIT License
+
+Copyright (c) 2025 this-is-h
+Copyright (c) 2026 slider-captcha-gap contributors
+Copyright 2024 Zhao Chenwei
+Copyright (c) 2026 Yusuf Cengiz
+Copyright (c) Youzan
+Copyright (c) Chen Jiahan and other contributors
+Copyright (c) 2018-present, Yuxi (Evan) You
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
